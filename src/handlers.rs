@@ -46,12 +46,13 @@ pub async fn homepage() -> Html<String> {
     let mut variables = HashMap::new();
     variables.insert("recent_posts".to_string(), posts_html);
 
-    match template_engine.render("homepage.html", &variables) {
+    match template_engine.render("lamina_homepage.html", &variables) {
         Ok(content) => {
-            match template_engine.render_base_with_meta(
-                "Nornity - OS Designer & Developer",
+            match template_engine.render_base_with_meta_and_css(
+                "Lamina - High-performance compiler backend",
                 &content,
-                "OS Designer & Developer specializing in systems programming, compiler design, and low-level development. Explore my projects, blog posts, and technical insights."
+                "Lamina is a compiler backend for a compact, typed SSA IR with MIR optimization, direct machine-code generation, JIT execution, and cross-target ABI support.",
+                Some("/static/css/lamina.css?v=1"),
             ) {
                 Ok(html) => Html(html),
                 Err(e) => {
