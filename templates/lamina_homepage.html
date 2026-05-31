@@ -9,7 +9,8 @@
         <nav class="lmn-nav" aria-label="Homepage navigation">
             <a href="#pipeline">Pipeline</a>
             <a href="#targets">Targets</a>
-            <a href="#toolchain">Toolchain</a>
+            <a href="#modes">Modes</a>
+            <a href="/docs">Docs</a>
             <a href="/blog">Blog</a>
         </nav>
         <a class="lmn-header-link" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
@@ -26,7 +27,7 @@
             <h1>A compiler chain you can see <em>end to end.</em></h1>
             <p class="lmn-lede">
                 Lamina turns a compact, typed SSA IR into optimized machine code.
-                Build a frontend, hand it clean IR, and keep control of the rest of the pipeline.
+                Build ahead of time, compile at runtime, or use it as the backend for your own language.
             </p>
             <div class="lmn-actions">
                 <a class="lmn-button lmn-button-primary" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
@@ -43,7 +44,7 @@
                 <li>Rust</li>
                 <li>Apache-2.0</li>
                 <li>IR / MIR split</li>
-                <li>No LLVM or Cranelift</li>
+                <li>AOT + JIT modes</li>
             </ul>
         </div>
 
@@ -78,7 +79,7 @@
         <span></span>
         <p>Direct codegen</p>
         <span></span>
-        <p>JIT execution</p>
+        <p>AOT + JIT modes</p>
         <span></span>
         <p>Cross-target ABIs</p>
     </section>
@@ -119,7 +120,7 @@
                 <span>05</span>
                 <p class="lmn-stage-file">native executable</p>
                 <h3>Assemble and link</h3>
-                <p>Use Lamina's RAS and Weld toolchain path or choose familiar platform tools when your build needs them.</p>
+                <p>Produce a native executable in AOT mode, or stop at MIR and assembly when you need to inspect the build.</p>
             </article>
         </div>
     </section>
@@ -185,26 +186,72 @@
         </div>
     </section>
 
+    <section class="lmn-section lmn-modes-section" id="modes">
+        <div class="lmn-section-intro">
+            <p class="lmn-section-tag">Execution modes</p>
+            <h2>Compile for delivery. Compile at runtime.</h2>
+            <p>Use the same IR and lowering path for native builds or runtime-generated functions.</p>
+        </div>
+        <div class="lmn-mode-grid">
+            <article>
+                <p class="lmn-mode-index">01 / AOT</p>
+                <h3>Ahead-of-time builds</h3>
+                <p>Compile Lamina IR into target assembly and a linked native executable. Select a target, optimization level, and register allocator from the driver.</p>
+                <code>lamina app.lamina --opt-level 2</code>
+            </article>
+            <article>
+                <p class="lmn-mode-index">02 / JIT</p>
+                <h3>Runtime compilation</h3>
+                <p>Lower IR into executable memory and run it on the host. Use the CLI, the Rust runtime API, or the inline <code>lamina!</code> macro.</p>
+                <code>lamina app.lamina --jit</code>
+            </article>
+        </div>
+    </section>
+
     <section class="lmn-section lmn-toolchain-section" id="toolchain">
         <div class="lmn-toolchain-copy">
-            <p class="lmn-section-tag">Toolchain surface</p>
-            <h2>Use the full driver or inspect a single stage.</h2>
+            <p class="lmn-section-tag">Compiler driver</p>
+            <h2>Use the full chain or inspect a single stage.</h2>
             <p>
                 The CLI keeps the common path short while exposing the layers needed for compiler work:
-                MIR emission, assembly-only output, target selection, optimization levels, JIT execution,
+                MIR emission, assembly-only output, target selection, optimization levels, runtime compilation,
                 and selectable register allocators.
             </p>
-            <div class="lmn-actions">
-                <a class="lmn-button lmn-button-primary" href="https://docs.rs/lamina" target="_blank" rel="noopener">Read the Rust API</a>
-                <a class="lmn-button lmn-button-quiet" href="https://github.com/SkuldNorniern/lamina/tree/main/testcases" target="_blank" rel="noopener">Browse testcases</a>
-            </div>
         </div>
         <div class="lmn-command-list">
+            <p><code>lamina app.lamina --opt-level 2</code><span>AOT executable</span></p>
+            <p><code>lamina app.lamina --jit</code><span>JIT execute</span></p>
             <p><code>lamina app.lamina --emit-mir</code><span>inspect MIR</span></p>
             <p><code>lamina app.lamina --emit-asm</code><span>stop at assembly</span></p>
-            <p><code>lamina app.lamina --jit</code><span>compile and run</span></p>
             <p><code>lamina app.lamina --target aarch64_macos</code><span>cross-target</span></p>
-            <p><code>lamina app.lamina -c lamina</code><span>RAS + Weld path</span></p>
+        </div>
+    </section>
+
+    <section class="lmn-section lmn-docs-section" id="docs">
+        <div class="lmn-section-intro">
+            <p class="lmn-section-tag">Documentation</p>
+            <h2>Choose the integration surface.</h2>
+            <p>Start from the command line, embed Lamina from Rust, or follow the C-compatible runtime boundary.</p>
+        </div>
+        <div class="lmn-doc-grid">
+            <article>
+                <p class="lmn-doc-label">Official guides</p>
+                <h3>Lamina documentation</h3>
+                <p>Start with the compiler pipeline, AOT and JIT modes, target selection, and IRBuilder integration.</p>
+                <a href="/docs">Read the docs <span>→</span></a>
+            </article>
+            <article>
+                <p class="lmn-doc-label">Rust reference</p>
+                <h3>Rust API docs</h3>
+                <p>Use the IRBuilder, direct assembly helpers, runtime compiler, and inline <code>lamina!</code> macro from Rust.</p>
+                <a href="https://docs.rs/lamina" target="_blank" rel="noopener">Open docs.rs <span>↗</span></a>
+            </article>
+            <article>
+                <p class="lmn-doc-label">C bindings</p>
+                <h3>C API guide</h3>
+                <p>Track the C builder, AOT, and JIT integration surface as the stable binding layer is introduced.</p>
+                <a href="/docs#c-bindings">Read the C guide <span>→</span></a>
+            </article>
         </div>
     </section>
 

@@ -16,6 +16,7 @@ pub fn build_app(config: &Config) -> Router {
 
     let router = Router::new()
         .route("/", get(handlers::homepage))
+        .route("/docs", get(handlers::docs))
         .route("/blog", get(handlers::blog_list))
         .route("/blog/{slug}", get(handlers::blog_post))
         .route("/sitemap.xml", get(handlers::sitemap))
@@ -24,7 +25,7 @@ pub fn build_app(config: &Config) -> Router {
         .nest_service("/static", static_service)
         .fallback(handlers::not_found);
 
-    info!("Router configured with {} routes", 6);
+    info!("Router configured with {} routes", 7);
     router
 }
 

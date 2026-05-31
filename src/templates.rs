@@ -17,6 +17,7 @@ impl TemplateEngine {
             "base.html",
             "homepage.html",
             "lamina_homepage.html",
+            "docs.html",
             "blog_list.html",
             "blog_post.html",
             "404.html",

@@ -92,6 +92,14 @@ impl SitemapGenerator {
             priority: 0.8,
         });
 
+        // Official documentation
+        entries.push(SitemapEntry {
+            url: format!("{}/docs", self.base_url),
+            last_modified: now,
+            change_frequency: ChangeFrequency::Weekly,
+            priority: 0.9,
+        });
+
         // RSS feed
         entries.push(SitemapEntry {
             url: format!("{}/rss.xml", self.base_url),

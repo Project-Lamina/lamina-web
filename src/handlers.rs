@@ -68,6 +68,32 @@ pub async fn homepage() -> Html<String> {
     }
 }
 
+/// Official Lamina documentation handler
+pub async fn docs() -> Html<String> {
+    info!("Serving Lamina documentation");
+    debug!("Documentation route accessed");
+
+    let template_engine = get_template_engine();
+    match template_engine.render("docs.html", &HashMap::new()) {
+        Ok(content) => match template_engine.render_base_with_meta_and_css(
+            "Lamina Documentation",
+            &content,
+            "Official Lamina documentation for the compiler pipeline, AOT and JIT modes, IRBuilder integration, targets, and C bindings.",
+            Some("/static/css/lamina.css?v=1"),
+        ) {
+            Ok(html) => Html(html),
+            Err(e) => {
+                error!("Failed to render documentation base template: {e}");
+                Html(format!("<h1>Error</h1><p>Failed to render page: {e}</p>"))
+            }
+        },
+        Err(e) => {
+            error!("Failed to render documentation template: {e}");
+            Html(format!("<h1>Error</h1><p>Failed to render page: {e}</p>"))
+        }
+    }
+}
+
 /// Blog list handler with server-side search and tag filtering
 pub async fn blog_list(
     Query(params): Query<HashMap<String, String>>,
