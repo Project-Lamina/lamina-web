@@ -28,15 +28,16 @@ let module = builder.build();</code></pre>
                 <p><strong>Memory</strong><code>alloc_stack alloc_heap store load dealloc</code><span>Allocate, access, and release stack or heap storage.</span></p>
                 <p><strong>Pointers</strong><code>getelementptr struct_gep ptrtoint inttoptr</code><span>Compute and convert addresses.</span></p>
                 <p><strong>Conversions</strong><code>zext trunc sext bitcast select</code><span>Convert scalar representations and select SSA values.</span></p>
-                <p><strong>I/O</strong><code>write read write_byte read_byte write_ptr print</code><span>Build raw I/O and debugging operations.</span></p>
+                <p><strong>I/O</strong><code>write read write_byte read_byte write_ptr print</code><span>Build raw I/O. <code>print</code> is a debug-only helper.</span></p>
                 <p><strong>Metadata</strong><code>inline export external hot cold cc_c target_triple ...</code><span>Attach visibility, ABI, optimization, and target annotations.</span></p>
                 <p><strong>Extended</strong><code>tuple extract_tuple simd_* atomic_*</code><span>Construct aggregates, SIMD operations, and feature-gated atomics.</span></p>
             </div>
+            <div class="lmn-manual-note"><strong>Do not ship <code>print</code></strong><p><code>IRBuilder::print()</code> is intended for compiler debugging and is not available in normal Lamina releases. Use <code>write_byte()</code> or the raw I/O methods for program output.</p></div>
             <h2 id="blocks">Functions and blocks</h2>
             <p><code>function()</code> creates an <code>entry</code> block and selects it as the active block. Call <code>block()</code> to add another block and make it active. Use <code>set_entry_block()</code> only when a different block should run first.</p>
             <h2 id="annotations">Annotations</h2>
             <p>Function helpers include <code>inline</code>, <code>export</code>, <code>external</code>, <code>no_return</code>, <code>hot</code>, <code>cold</code>, <code>pure</code>, <code>const_fn</code>, <code>internal</code>, visibility controls, alignment, section selection, and calling-convention helpers such as <code>cc_c</code>.</p>
-            <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings">Review the planned C wrapper</a></div>
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings">Review the C bindings preview</a></div>
         </article>
     </div>
 </main>

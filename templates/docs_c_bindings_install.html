@@ -1,0 +1,52 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><a href="/docs/c-bindings">C bindings</a><span>/</span><strong>Install</strong></nav>
+            <p class="lmn-section-tag">C bindings source preview</p>
+            <h1>Build the C bindings</h1>
+            <p class="lmn-manual-lead"><code>lamina-c</code> is implemented in the development checkout, but public archives and the generated <code>lamina.h</code> header are not published yet. Use this page to inspect or test the source preview.</p>
+            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Not a public install yet</strong><p>Do not depend on the current ABI from released software. The first public install will ship versioned archives, a reviewed header, checksums, and packaged smoke tests.</p></div>
+
+            <h2 id="progress">Current progress</h2>
+            <div class="lmn-doc-table">
+                <p><strong>Stable crate</strong><span><code>lamina-c</code> exists and builds as a static library and shared library.</span></p>
+                <p><strong>AOT API</strong><span>Owned builder handles, module serialization, assembly compilation, buffers, and status codes are implemented.</span></p>
+                <p><strong>Nightly JIT</strong><span>The optional JIT module builds behind <code>--features nightly</code>.</span></p>
+                <p><strong>Public header</strong><span><code>lamina.h</code> generation and review are still pending.</span></p>
+                <p><strong>Release bundles</strong><span>GitHub Release archives and checksums are planned but not published.</span></p>
+            </div>
+
+            <h2 id="source-build">Build from a source checkout</h2>
+            <p>The stable source-preview build exposes AOT assembly generation. These commands build the library for contributors; they do not install a finished public SDK.</p>
+            <pre><code class="language-shell">$ git clone https://github.com/SkuldNorniern/lamina.git
+$ cd lamina
+$ cargo build -p lamina-c --release</code></pre>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Platform</span><span>Shared library</span><span>Static library</span></div>
+                <p><strong>Linux</strong><code>target/release/liblamina_c.so</code><code>target/release/liblamina_c.a</code></p>
+                <p><strong>Windows</strong><code>target/release/lamina_c.dll</code><code>target/release/lamina_c.lib</code></p>
+                <p><strong>macOS</strong><code>target/release/liblamina_c.dylib</code><code>target/release/liblamina_c.a</code></p>
+            </div>
+            <div class="lmn-manual-note"><strong>Apple Silicon macOS</strong><p>The <code>aarch64_macos</code> compiler path has received partial testing. Treat macOS C binding builds as preview work until release coverage is broader.</p></div>
+
+            <h2 id="nightly">Build the nightly JIT extension</h2>
+            <p>JIT is not part of the stable C surface. Build with the nightly feature only when testing runtime compilation.</p>
+            <pre><code class="language-shell">$ cargo build -p lamina-c --release --features nightly</code></pre>
+            <p>The published SDK will keep JIT declarations in an additive <code>lamina_nightly.h</code> header. Stable programs should include only <code>lamina.h</code>.</p>
+
+            <h2 id="release-shape">Planned public downloads</h2>
+            <p>GitHub Releases will hold the archives. The official Lamina website will act as the download index and documentation entry point.</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Archive</span><span>Status</span><span>Contents</span></div>
+                <p><code>lamina-c-{version}-x86_64-linux.tar.gz</code><strong>Planned</strong><span><code>lamina.h</code>, libraries, examples, metadata, license, and checksum.</span></p>
+                <p><code>lamina-c-{version}-x86_64-windows.zip</code><strong>Planned</strong><span><code>lamina.h</code>, DLL, import library, static library, examples, license, and checksum.</span></p>
+                <p><code>lamina-c-{version}-nightly-{target}.tar.gz</code><strong>Planned</strong><span>Stable files plus additive <code>lamina_nightly.h</code> JIT declarations.</span></p>
+            </div>
+
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings/usage">Use the source-preview API</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}

@@ -23,7 +23,7 @@ pub async fn homepage() -> Html<String> {
             match template_engine.render_base_with_meta_and_css(
                 "Lamina - Typed SSA compiler backend",
                 &content,
-                "Lamina compiles a compact, typed SSA IR into machine code. Use it for native builds, JIT compilation, or as the backend for a language frontend.",
+                "Lamina compiles a compact, typed SSA IR into machine code. Use it for native builds, nightly JIT compilation, or as the backend for a language frontend.",
                 None,
             ) {
                 Ok(html) => Html(html),
@@ -61,7 +61,7 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
         "getting-started" => (
             "docs_getting_started.html",
             "Getting Started",
-            "Install Lamina, compile a small typed SSA IR module, and choose AOT, JIT, MIR, or assembly output.",
+            "Install Lamina, compile a small typed SSA IR module, and choose AOT, nightly JIT, MIR, or assembly output.",
             "getting_started",
         ),
         "ir" => (
@@ -79,7 +79,7 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
         "rust" => (
             "docs_rust.html",
             "Rust API Guide",
-            "Use Lamina from Rust with assembly helpers, target compilation, runtime compilation, the inline macro, and docs.rs.",
+            "Use Lamina from Rust with assembly helpers, target compilation, nightly runtime compilation, the inline macro, and docs.rs.",
             "rust",
         ),
         "irbuilder" => (
@@ -91,14 +91,37 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
         "targets" => (
             "docs_targets.html",
             "Targets and Backends",
-            "Lamina target identifiers and backend families for x86_64, AArch64, ARX64, RISC-V, WebAssembly, and ARM32.",
+            "Tested and experimental Lamina target identifiers for x86_64, AArch64, RISC-V, and WebAssembly.",
             "targets",
         ),
         "c-bindings" => (
             "docs_c_bindings.html",
-            "C Bindings Roadmap",
-            "Plan for Lamina C bindings: IRBuilder, modules, AOT compilation, JIT ownership, diagnostics, and handle lifetimes.",
+            "C Bindings Preview",
+            "Track the Lamina C bindings source preview: owned IRBuilder handles, AOT assembly compilation, release blockers, and the nightly JIT extension.",
             "c_bindings",
+        ),
+        _ => return Err(StatusCode::NOT_FOUND),
+    };
+
+    Ok(render_docs_template(template, title, description, active))
+}
+
+/// Focused pages for the C bindings source preview.
+pub async fn docs_c_bindings_page(Path(page): Path<String>) -> Result<Html<String>, StatusCode> {
+    info!("Serving Lamina C bindings documentation page: {page}");
+
+    let (template, title, description, active) = match page.as_str() {
+        "install" => (
+            "docs_c_bindings_install.html",
+            "Build the C Bindings",
+            "Build the Lamina C bindings source preview and review the planned GitHub Release archives, headers, and nightly JIT bundle.",
+            "c_bindings_install",
+        ),
+        "usage" => (
+            "docs_c_bindings_usage.html",
+            "Use Lamina from C",
+            "Use the Lamina C bindings source preview: owned IRBuilder handles, module serialization, AOT assembly output, buffers, and nightly JIT boundaries.",
+            "c_bindings_usage",
         ),
         _ => return Err(StatusCode::NOT_FOUND),
     };
@@ -123,6 +146,8 @@ fn render_docs_template(
         "rust",
         "irbuilder",
         "c_bindings",
+        "c_bindings_install",
+        "c_bindings_usage",
     ] {
         variables.insert(format!("docs_active_{page}"), String::new());
     }

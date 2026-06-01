@@ -18,12 +18,16 @@ pub fn build_app(config: &Config) -> Router {
         .route("/", get(handlers::homepage))
         .route("/docs", get(handlers::docs))
         .route("/docs/{page}", get(handlers::docs_page))
+        .route(
+            "/docs/c-bindings/{page}",
+            get(handlers::docs_c_bindings_page),
+        )
         .route("/sitemap.xml", get(handlers::sitemap))
         .route("/robots.txt", get(handlers::robots_txt))
         .nest_service("/static", static_service)
         .fallback(handlers::not_found);
 
-    info!("Router configured with {} routes", 5);
+    info!("Router configured with {} routes", 6);
     router
 }
 

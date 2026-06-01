@@ -4,69 +4,43 @@
         {{docs_sidebar}}
         <article class="lmn-manual-article">
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>C bindings</strong></nav>
-            <p class="lmn-section-tag">Roadmap</p>
-            <h1>C bindings roadmap</h1>
-            <p class="lmn-manual-lead">The C bindings will let frontends and embedders use Lamina without depending on Rust layouts or the Rust ABI.</p>
-            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Status: planned</strong><p>The stable <code>lamina.h</code> header is not shipped yet. This page records the contract we plan to implement.</p></div>
-            <h2 id="principles">Design principles</h2>
+            <p class="lmn-section-tag">Source preview</p>
+            <h1>C bindings progress</h1>
+            <p class="lmn-manual-lead">The development checkout now contains a real <code>lamina-c</code> crate. It wraps owned IRBuilder state, module serialization, AOT assembly output, explicit resource cleanup, and an optional nightly JIT module.</p>
+            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Status: source preview</strong><p>The crate builds, but it is not a public SDK yet. The reviewed <code>lamina.h</code> header, release archives, packaged smoke tests, and ABI hardening work are still pending.</p></div>
+
+            <h2 id="implemented">Implemented now</h2>
             <div class="lmn-doc-table">
-                <p><strong>Opaque handles</strong><span>C callers work with handles. Rust keeps ownership of builders, modules, JIT contexts, and diagnostics.</span></p>
-                <p><strong>Explicit lifetime</strong><span>Every owned handle has a matching destroy function.</span></p>
-                <p><strong>Panic containment</strong><span>No Rust panic crosses an FFI boundary.</span></p>
-                <p><strong>Stable errors</strong><span>Calls return status codes; copied thread-local diagnostics explain failures.</span></p>
+                <p><strong>Owned builder</strong><span><code>OwnedIRBuilder</code> removes Rust lifetime requirements from the FFI boundary.</span></p>
+                <p><strong>Stable-shaped AOT</strong><span>Raw IR text or a built module can be compiled into an assembly byte buffer.</span></p>
+                <p><strong>Explicit cleanup</strong><span>Builders, modules, temporary types, values, buffers, and nightly JIT handles have matching free functions.</span></p>
+                <p><strong>Nightly JIT</strong><span>Runtime compilation and typed <code>i64</code> call helpers are isolated behind the <code>nightly</code> feature.</span></p>
+                <p><strong>Build checks</strong><span>Stable and nightly <code>cargo check -p lamina-c</code> builds complete successfully in the development checkout.</span></p>
             </div>
-            <h2 id="surface">Planned API surface</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Area</span><span>Representative operations</span><span>Responsibility</span></div>
-                <p><strong>IRBuilder</strong><code>create destroy function block binary branch load store ret build</code><span>Wrap values, types, pointers, blocks, and control flow.</span></p>
-                <p><strong>Modules</strong><code>parse build destroy</code><span>Own parsed modules and modules produced by IRBuilder.</span></p>
-                <p><strong>AOT</strong><code>compile options target output</code><span>Compile IR text or a module handle into an artifact.</span></p>
-                <p><strong>JIT</strong><code>compile lookup destroy</code><span>Own executable memory for as long as symbols may be called.</span></p>
-                <p><strong>Errors</strong><code>last_error copy_message</code><span>Retrieve stable diagnostic text after a failed operation.</span></p>
-            </div>
-            <h2 id="owned-builder">Why the builder needs an owned wrapper</h2>
-            <p>The Rust <code>IRBuilder&lt;'a&gt;</code> stores borrowed names and string values. A C caller may pass a temporary <code>char *</code>, so the wrapper cannot retain that pointer. The C layer will copy incoming strings into an <code>OwnedIRBuilder</code>, then finalize an owned module before compilation.</p>
-            <pre><code class="language-c">lamina_builder_t *builder = lamina_builder_create();
-lamina_builder_function(builder, "main", NULL, 0, lamina_type_i64());
-lamina_builder_binary_i64(builder, LAMINA_BINARY_ADD, "answer", 40, 2);
-lamina_builder_return_var(builder, lamina_type_i64(), "answer");
 
-lamina_module_t *module = NULL;
-lamina_status_t status = lamina_builder_finish(builder, &amp;module);
-lamina_builder_free(builder);</code></pre>
-            <h2 id="header">Core header shape</h2>
-            <p>The public header will expose opaque handles and stable C data. It will not expose Rust enums, slices, vectors, strings, or struct layouts.</p>
-            <pre><code class="language-c">typedef struct lamina_builder lamina_builder_t;
-typedef struct lamina_module lamina_module_t;
-typedef struct lamina_jit lamina_jit_t;
-
-typedef enum {
-    LAMINA_OK = 0,
-    LAMINA_ERROR_INVALID_ARGUMENT,
-    LAMINA_ERROR_PARSE,
-    LAMINA_ERROR_VALIDATION,
-    LAMINA_ERROR_CODEGEN,
-    LAMINA_ERROR_JIT,
-    LAMINA_ERROR_IO,
-    LAMINA_ERROR_INTERNAL
-} lamina_status_t;</code></pre>
-            <h2 id="jit-lifetime">JIT lifetime rule</h2>
-            <p>A <code>lamina_jit_t</code> handle owns executable memory. A pointer returned by <code>lamina_jit_get_function()</code> stays valid only while that handle is alive. The first release will also include typed <code>i64</code> call helpers so common use cases do not require casting raw pointers.</p>
-            <h2 id="delivery">Delivery checklist</h2>
+            <h2 id="pending">Before the first public archive</h2>
             <ul>
-                <li><strong>Header</strong><span>Generate and review a stable <code>lamina.h</code>.</span></li>
-                <li><strong>Examples</strong><span>Ship textual AOT, builder AOT, and JIT examples in C.</span></li>
-                <li><strong>Tests</strong><span>Compile C smoke tests in CI and exercise ownership teardown.</span></li>
-                <li><strong>Docs</strong><span>Document nullability, ownership, thread behavior, and diagnostic lifetime.</span></li>
+                <li><strong>Header</strong><span>Generate, review, and commit the public <code>lamina.h</code> header.</span></li>
+                <li><strong>Error strings</strong><span>Harden <code>lamina_last_error()</code> so the returned pointer always references a NUL-terminated C string.</span></li>
+                <li><strong>Buffers</strong><span>Preserve allocation capacity correctly when returned byte buffers are freed.</span></li>
+                <li><strong>Tests</strong><span>Compile C smoke programs against packaged Linux and Windows archives.</span></li>
+                <li><strong>Distribution</strong><span>Publish versioned GitHub Release archives and SHA-256 checksums, then expose them through this website.</span></li>
             </ul>
-            <h2 id="phases">Implementation order</h2>
-            <ol class="lmn-doc-steps">
-                <li><strong>Owned IR</strong><span>Add owned values, types, modules, and an owned builder layer in <code>lamina-ir</code>.</span></li>
-                <li><strong>ABI crate</strong><span>Add <code>lamina-c</code>, opaque handles, status codes, diagnostics, and panic containment.</span></li>
-                <li><strong>AOT</strong><span>Expose textual and builder-based assembly compilation with explicit output buffers.</span></li>
-                <li><strong>JIT</strong><span>Wrap runtime compilation, executable-memory ownership, symbol lookup, and typed call helpers.</span></li>
-                <li><strong>Release</strong><span>Generate <code>lamina.h</code>, add C smoke tests, and publish examples.</span></li>
-            </ol>
+
+            <h2 id="published-shape">Planned release shape</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Surface</span><span>Header</span><span>Contract</span></div>
+                <p><strong>Stable C API</strong><code>lamina.h</code><span>Owned builders, modules, assembly output, status codes, and explicit cleanup.</span></p>
+                <p><strong>Nightly extension</strong><code>lamina_nightly.h</code><span>Additive JIT handles and call helpers. No stable ABI guarantee.</span></p>
+                <p><strong>Downloads</strong><code>GitHub Releases</code><span>Versioned Linux and Windows bundles first. Apple Silicon macOS follows after broader coverage.</span></p>
+            </div>
+
+            <h2 id="read-next">Read the C guides</h2>
+            <div class="lmn-doc-table">
+                <p><strong>Build</strong><span><a href="/docs/c-bindings/install">Build the source preview and review the planned archive layout.</a></span></p>
+                <p><strong>Use</strong><span><a href="/docs/c-bindings/usage">Read ownership rules and a complete AOT builder example.</a></span></p>
+            </div>
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings/install">Build the C bindings preview</a></div>
         </article>
     </div>
 </main>

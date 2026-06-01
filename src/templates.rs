@@ -24,6 +24,8 @@ impl TemplateEngine {
             "docs_irbuilder.html",
             "docs_targets.html",
             "docs_c_bindings.html",
+            "docs_c_bindings_install.html",
+            "docs_c_bindings_usage.html",
             "404.html",
             "components/footer.html",
             "components/docs_header.html",

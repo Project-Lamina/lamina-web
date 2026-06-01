@@ -25,7 +25,7 @@
             <h1>Follow the compiler <em>from IR to machine code.</em></h1>
             <p class="lmn-lede">
                 Lamina compiles a compact, typed SSA IR.
-                Use it to build native executables, compile functions at runtime, or give a new language frontend a backend.
+                Use it to build native executables, try nightly runtime compilation, or give a new language frontend a backend.
             </p>
             <div class="lmn-actions">
                 <a class="lmn-button lmn-button-primary" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
@@ -42,7 +42,7 @@
                 <li>Rust</li>
                 <li>Apache-2.0</li>
                 <li>IR / MIR split</li>
-                <li>AOT + JIT modes</li>
+                <li>AOT + nightly JIT</li>
             </ul>
         </div>
 
@@ -77,7 +77,7 @@
         <span></span>
         <p>Direct codegen</p>
         <span></span>
-        <p>AOT + JIT modes</p>
+        <p>AOT + nightly JIT</p>
         <span></span>
         <p>Cross-target ABIs</p>
     </section>
@@ -153,33 +153,33 @@
     <section class="lmn-section lmn-targets-section" id="targets">
         <div class="lmn-section-intro">
             <p class="lmn-section-tag">Target matrix</p>
-            <h2>Choose a target. Keep the same IR.</h2>
-            <p>The backend owns target ABIs, stack frames, and register allocation.</p>
+            <h2>Start with a tested target.</h2>
+            <p>Linux and Windows x86_64 are tested end to end. Other backend paths remain experimental.</p>
         </div>
         <div class="lmn-target-grid">
             <article>
                 <p class="lmn-target-mark">x64</p>
                 <h3>x86_64</h3>
-                <p>Linux, macOS, Windows, and generic ELF conventions.</p>
-                <span>native assembly</span>
+                <p>Linux and Windows paths are tested. Other x86_64 identifiers remain experimental.</p>
+                <span>tested: linux + windows</span>
             </article>
             <article>
                 <p class="lmn-target-mark">A64</p>
                 <h3>AArch64</h3>
-                <p>Linux, macOS, Windows, and generic ELF conventions.</p>
-                <span>native assembly</span>
+                <p>Apple Silicon macOS has received partial testing. AArch64 paths remain experimental.</p>
+                <span>experimental</span>
             </article>
             <article>
                 <p class="lmn-target-mark">RV</p>
                 <h3>RISC-V</h3>
-                <p>RISC-V 32-bit and 64-bit backend paths.</p>
-                <span>native assembly</span>
+                <p>32-bit and 64-bit backend paths are available for experiments.</p>
+                <span>experimental</span>
             </article>
             <article>
                 <p class="lmn-target-mark">W</p>
                 <h3>WebAssembly</h3>
-                <p>WASM 32-bit and 64-bit target variants.</p>
-                <span>text emission</span>
+                <p>32-bit and 64-bit text output paths are available for experiments.</p>
+                <span>experimental</span>
             </article>
         </div>
     </section>
@@ -188,7 +188,7 @@
         <div class="lmn-section-intro">
             <p class="lmn-section-tag">Execution modes</p>
             <h2>Build an executable or compile at runtime.</h2>
-            <p>AOT and JIT modes use the same IR and lowering path.</p>
+            <p>AOT is the standard path. JIT uses the same IR and lowering path behind the nightly feature.</p>
         </div>
         <div class="lmn-mode-grid">
             <article>
@@ -198,9 +198,9 @@
                 <code>lamina app.lamina</code>
             </article>
             <article>
-                <p class="lmn-mode-index">02 / JIT</p>
+                <p class="lmn-mode-index">02 / Nightly JIT</p>
                 <h3>Runtime compilation</h3>
-                <p>Lower IR into executable memory and run it on the host. Use the CLI, the Rust API, or the inline <code>lamina!</code> macro.</p>
+                <p>Enable the nightly feature to lower IR into executable memory and run it on the host through the CLI, Rust API, or inline <code>lamina!</code> macro.</p>
                 <code>lamina app.lamina --jit</code>
             </article>
         </div>
@@ -217,10 +217,10 @@
         </div>
         <div class="lmn-command-list">
             <p><code>lamina app.lamina</code><span>AOT executable</span></p>
-            <p><code>lamina app.lamina --jit</code><span>JIT execute</span></p>
+            <p><code>lamina app.lamina --jit</code><span>nightly JIT execute</span></p>
             <p><code>lamina app.lamina --emit-mir</code><span>inspect MIR</span></p>
             <p><code>lamina app.lamina --emit-asm</code><span>stop at assembly</span></p>
-            <p><code>lamina app.lamina --target aarch64_macos</code><span>cross-target</span></p>
+            <p><code>lamina app.lamina --assembler ras -c weld</code><span>ras + weld</span></p>
         </div>
     </section>
 
@@ -240,13 +240,13 @@
             <article>
                 <p class="lmn-doc-label">Rust reference</p>
                 <h3>Rust API docs</h3>
-                <p>Use IRBuilder, assembly helpers, the runtime compiler, and the inline <code>lamina!</code> macro.</p>
+                <p>Use IRBuilder and assembly helpers. The runtime compiler and inline <code>lamina!</code> macro require the nightly feature.</p>
                 <a href="https://docs.rs/lamina" target="_blank" rel="noopener">Open docs.rs <span>↗</span></a>
             </article>
             <article>
                 <p class="lmn-doc-label">C bindings</p>
                 <h3>C API guide</h3>
-                <p>Review the planned C handles for IRBuilder, AOT builds, JIT ownership, and diagnostics.</p>
+                <p>Track the source-preview C API for IRBuilder handles, AOT assembly output, diagnostics, and the nightly JIT extension.</p>
                 <a href="/docs/c-bindings">Read the C guide <span>→</span></a>
             </article>
         </div>

@@ -83,6 +83,8 @@ impl SitemapGenerator {
             "irbuilder",
             "targets",
             "c-bindings",
+            "c-bindings/install",
+            "c-bindings/usage",
         ] {
             entries.push(SitemapEntry {
                 url: format!("{}/docs/{}", self.base_url, page),

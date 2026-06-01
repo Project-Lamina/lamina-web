@@ -6,7 +6,7 @@
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Getting started</strong></nav>
             <p class="lmn-section-tag">Guide</p>
             <h1>Getting started</h1>
-            <p class="lmn-manual-lead">Install the driver and compile a small typed IR module. Then choose AOT, JIT, or an inspection output.</p>
+            <p class="lmn-manual-lead">Install the driver and compile a small typed IR module. Then choose an AOT build or an inspection output. Runtime compilation is available as a nightly feature.</p>
             <div class="lmn-manual-note"><strong>What Lamina is</strong><p>A frontend can emit Lamina IR text or build a module with <code>IRBuilder</code>. Lamina lowers the module, runs optimization passes, and generates target code.</p></div>
             <h2 id="install">Install the driver</h2>
             <pre><code class="language-shell">$ cargo install lamina
@@ -26,18 +26,20 @@ $ echo $?
             <h2 id="modes">Choose an output mode</h2>
             <div class="lmn-doc-table">
                 <p><strong>AOT</strong><span>The default path. Generate assembly and link a native executable.</span></p>
-                <p><strong>JIT</strong><span>Use <code>--jit</code> to compile and execute on the host at runtime.</span></p>
+                <p><strong>Nightly JIT</strong><span>Enable the nightly feature, then use <code>--jit</code> to compile and execute on the host at runtime.</span></p>
                 <p><strong>Inspect MIR</strong><span>Use <code>--emit-mir</code> to write a <code>.lumir</code> file and exit.</span></p>
                 <p><strong>Inspect assembly</strong><span>Use <code>--emit-asm</code> to stop before assembling and linking.</span></p>
             </div>
             <pre><code class="language-shell">$ lamina answer.lamina
-$ lamina answer.lamina --jit
 $ lamina answer.lamina --emit-mir --opt-level 2
-$ lamina answer.lamina --emit-asm --target aarch64_macos</code></pre>
+$ lamina answer.lamina --emit-asm --target x86_64_linux</code></pre>
+            <div class="lmn-manual-note"><strong>Nightly JIT</strong><p>JIT is not part of the normal release surface. Build Lamina with the <code>nightly</code> feature before using <code>--jit</code>.</p></div>
+            <pre><code class="language-shell">$ cargo install lamina --features nightly
+$ lamina answer.lamina --jit</code></pre>
             <h2 id="source-checkout">Work from a source checkout</h2>
             <p>Use <code>cargo run --</code> when testing a local checkout. Everything after <code>--</code> is passed to the Lamina driver.</p>
             <pre><code class="language-shell">$ cargo run -- answer.lamina --emit-mir
-$ cargo run -- answer.lamina --jit</code></pre>
+$ cargo run --features nightly -- answer.lamina --jit</code></pre>
             <div class="lmn-manual-next"><span>Next</span><a href="/docs/ir">Read the IR language reference</a></div>
         </article>
     </div>

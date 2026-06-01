@@ -33,7 +33,7 @@
                 <p><strong>Memory</strong><code>alloc load store dealloc memcpy memmove memset</code><span>Allocate, access, and release storage.</span></p>
                 <p><strong>Pointers</strong><code>getfieldptr getelementptr ptrtoint inttoptr</code><span>Compute and convert addresses.</span></p>
                 <p><strong>Control flow</strong><code>br jmp switch phi ret call</code><span>Build CFG edges, SSA merges, returns, and calls.</span></p>
-                <p><strong>I/O</strong><code>write read writebyte readbyte writeptr print</code><span>Perform low-level I/O and numeric debugging.</span></p>
+                <p><strong>I/O</strong><code>write read writebyte readbyte writeptr print</code><span>Perform low-level I/O. <code>print</code> is a debug-only helper.</span></p>
             </div>
             <h2 id="memory">Memory ownership</h2>
             <p><code>alloc.stack</code> creates function-scoped storage with automatic cleanup. <code>alloc.heap</code> creates persistent storage that must be released with <code>dealloc</code>.</p>
@@ -47,7 +47,8 @@
             <h2 id="cfg">Control-flow rules</h2>
             <p>A function contains named basic blocks. Execution starts at its entry block, and each path ends with a terminator such as <code>ret</code>, <code>br</code>, <code>jmp</code>, or <code>switch</code>. Use <code>phi</code> when a block needs one SSA value selected from multiple incoming edges.</p>
             <h2 id="output">Portable output</h2>
-            <p>Use <code>writebyte</code> for portable text output. <code>print</code> is for debugging, not string formatting.</p>
+            <p>Use <code>writebyte</code> for portable text output.</p>
+            <div class="lmn-manual-note"><strong>Debug-only helper</strong><p><code>print</code> is for compiler debugging. It is not available in normal Lamina releases and must not be used for application output. Use <code>writebyte</code> or the raw I/O instructions instead.</p></div>
             <div class="lmn-manual-next"><span>Next</span><a href="/docs/cli">Use the compiler driver</a></div>
         </article>
     </div>
