@@ -1,0 +1,43 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>IRBuilder</strong></nav>
+            <p class="lmn-section-tag">Rust embedding</p>
+            <h1>IRBuilder reference</h1>
+            <p class="lmn-manual-lead"><code>IRBuilder</code> constructs typed modules without writing IR text by hand. Start a function, append instructions to the active block, then call <code>build()</code>.</p>
+            <pre><code class="language-rust">use lamina::ir::{BinaryOp, IRBuilder, PrimitiveType, Type};
+use lamina::ir::builder::{i32, var};
+
+let mut builder = IRBuilder::new();
+builder
+    .function("add", Type::Primitive(PrimitiveType::I32))
+    .binary(BinaryOp::Add, "sum", PrimitiveType::I32, i32(20), i32(22))
+    .ret(Type::Primitive(PrimitiveType::I32), var("sum"));
+
+let module = builder.build();</code></pre>
+            <div class="lmn-manual-note"><strong>Borrowed names</strong><p><code>IRBuilder&lt;'a&gt;</code> stores borrowed names and string values. Keep the backing strings alive until the module is finished. The planned C API uses an owned builder wrapper so C callers do not need to manage Rust lifetimes.</p></div>
+            <h2 id="families">Method families</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Family</span><span>Methods</span><span>Purpose</span></div>
+                <p><strong>Lifecycle</strong><code>new build temp_var</code><span>Create a module, finish it, and generate temporary names.</span></p>
+                <p><strong>Functions</strong><code>function function_with_params param param_simple external_function</code><span>Define functions, parameters, and imports.</span></p>
+                <p><strong>Blocks and CFG</strong><code>block set_entry_block branch jump switch phi call ret ret_void</code><span>Build blocks, branches, SSA merges, calls, and returns.</span></p>
+                <p><strong>Arithmetic</strong><code>binary cmp</code><span>Add typed arithmetic and comparisons.</span></p>
+                <p><strong>Memory</strong><code>alloc_stack alloc_heap store load dealloc</code><span>Allocate, access, and release stack or heap storage.</span></p>
+                <p><strong>Pointers</strong><code>getelementptr struct_gep ptrtoint inttoptr</code><span>Compute and convert addresses.</span></p>
+                <p><strong>Conversions</strong><code>zext trunc sext bitcast select</code><span>Convert scalar representations and select SSA values.</span></p>
+                <p><strong>I/O</strong><code>write read write_byte read_byte write_ptr print</code><span>Build raw I/O and debugging operations.</span></p>
+                <p><strong>Metadata</strong><code>inline export external hot cold cc_c target_triple ...</code><span>Attach visibility, ABI, optimization, and target annotations.</span></p>
+                <p><strong>Extended</strong><code>tuple extract_tuple simd_* atomic_*</code><span>Construct aggregates, SIMD operations, and feature-gated atomics.</span></p>
+            </div>
+            <h2 id="blocks">Functions and blocks</h2>
+            <p><code>function()</code> creates an <code>entry</code> block and selects it as the active block. Call <code>block()</code> to add another block and make it active. Use <code>set_entry_block()</code> only when a different block should run first.</p>
+            <h2 id="annotations">Annotations</h2>
+            <p>Function helpers include <code>inline</code>, <code>export</code>, <code>external</code>, <code>no_return</code>, <code>hot</code>, <code>cold</code>, <code>pure</code>, <code>const_fn</code>, <code>internal</code>, visibility controls, alignment, section selection, and calling-convention helpers such as <code>cc_c</code>.</p>
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings">Review the planned C wrapper</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}

@@ -1,0 +1,25 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Targets</strong></nav>
+            <p class="lmn-section-tag">Backends</p>
+            <h1>Targets and backends</h1>
+            <p class="lmn-manual-lead">Target names use <code>architecture_os</code>. The driver checks the name first; the selected output mode then reports whether the backend supports it.</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Architecture</span><span>Identifiers</span><span>Notes</span></div>
+                <p><strong>x86_64</strong><code>x86_64_unknown x86_64_linux x86_64_windows x86_64_macos x86_64_android x86_64_ios x86_64_tvos x86_64_watchos</code><span>Generic, desktop, Android, and Apple-platform identifiers.</span></p>
+                <p><strong>AArch64</strong><code>aarch64_unknown aarch64_linux aarch64_windows aarch64_macos aarch64_android aarch64_ios aarch64_tvos aarch64_watchos aarch64_visionos aarch64_horizon</code><span>Generic, desktop, mobile, VisionOS, and Horizon identifiers.</span></p>
+                <p><strong>ARX64</strong><code>arx64_unknown</code><span>Custom architecture backend.</span></p>
+                <p><strong>RISC-V</strong><code>riscv32_unknown riscv64_unknown</code><span>The nightly feature adds <code>riscv128_unknown</code>.</span></p>
+                <p><strong>WebAssembly</strong><code>wasm32_unknown wasm64_unknown</code><span>WebAssembly output paths.</span></p>
+                <p><strong>ARM32</strong><code>arm32_android arm32_ios arm32_watchos arm32_vita</code><span>Accepted identifiers; verify backend support for the selected output mode.</span></p>
+            </div>
+            <h2 id="published">Published rustdoc platforms</h2>
+            <p>The docs.rs build for Lamina <code>0.0.8</code> includes Linux, Windows, and Apple platforms. Those rustdoc platforms are separate from the target names accepted by the compiler driver.</p>
+            <div class="lmn-manual-next"><span>Related</span><a href="/docs/cli">Select a target from the CLI</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}

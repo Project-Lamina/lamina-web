@@ -1,31 +1,13 @@
-mod rust;
-mod javascript;
-mod python;
-mod css;
 mod bash;
-mod html;
 mod c;
-mod cpp;
 mod lamina;
+mod rust;
 
-use html::HTMLLexer;
-use javascript::JavaScriptLexer;
-use python::PythonLexer;
-use rust::RustLexer;
-use css::CSSLexer;
 use bash::BashLexer;
 use c::CLexer;
-use cpp::CppLexer;
 use lamina::LaminaLexer;
-use log::debug;
+use rust::RustLexer;
 
-/// Code block component for syntax highlighting and HTML generation
-pub struct CodeBlock {
-    pub language: String,
-    pub content: String,
-}
-
-/// Token types for lexing
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     Keyword,
@@ -40,33 +22,26 @@ pub enum TokenType {
     Whitespace,
     Newline,
     Other,
-
-    // Bash
     Variable,
     Command,
     Shebang,
     Function,
 }
 
-/// Token structure
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub value: String,
-    pub start: usize,
-    pub end: usize,
 }
 
-/// Language-specific lexer trait for extensibility
 pub trait LanguageLexer {
     fn lex(&self, input: &str) -> Vec<Token>;
     fn get_keywords(&self) -> &[&str];
 }
 
-/// Base lexer with common functionality
 pub struct BaseLexer {
-    input: Vec<char>,
-    position: usize,
+    pub input: Vec<char>,
+    pub position: usize,
     tokens: Vec<Token>,
 }
 
@@ -87,39 +62,17 @@ impl BaseLexer {
         self.input.get(self.position + offset).copied()
     }
 
-    pub fn peek_multiple(&self, count: usize) -> Option<String> {
-        if self.position + count <= self.input.len() {
-            Some(self.input[self.position..self.position + count].iter().collect())
-        } else {
-            None
-        }
-    }
-
-    pub fn peek_multiple_back(&self, count: usize) -> Option<String> {
-        if self.position >= count {
-            Some(self.input[self.position - count + 1..=self.position].iter().collect())
-        } else {
-            None
-        }
-    }
-
     pub fn advance(&mut self) {
         self.position += 1;
     }
 
-    pub fn add_token(&mut self, token_type: TokenType, value: String, start: usize, end: usize) {
-        self.tokens.push(Token {
-            token_type,
-            value,
-            start,
-            end,
-        });
+    pub fn add_token(&mut self, token_type: TokenType, value: String, _start: usize, _end: usize) {
+        self.tokens.push(Token { token_type, value });
     }
 
-    pub fn consume_whitespace(&mut self) -> Option<String> {
+    pub fn consume_whitespace(&mut self) {
         let start = self.position;
         let mut value = String::new();
-
         while let Some(c) = self.current_char() {
             if c == ' ' || c == '\t' {
                 value.push(c);
@@ -128,19 +81,12 @@ impl BaseLexer {
                 break;
             }
         }
-
-        if !value.is_empty() {
-            self.add_token(TokenType::Whitespace, value.clone(), start, self.position);
-            Some(value)
-        } else {
-            None
-        }
+        self.add_token(TokenType::Whitespace, value, start, self.position);
     }
 
-    pub fn consume_newlines(&mut self) -> Option<String> {
+    pub fn consume_newlines(&mut self) {
         let start = self.position;
         let mut value = String::new();
-
         while let Some(c) = self.current_char() {
             if c == '\n' || c == '\r' {
                 value.push(c);
@@ -149,254 +95,50 @@ impl BaseLexer {
                 break;
             }
         }
-
-        if !value.is_empty() {
-            self.add_token(TokenType::Newline, value.clone(), start, self.position);
-            Some(value)
-        } else {
-            None
-        }
+        self.add_token(TokenType::Newline, value, start, self.position);
     }
 
-    pub fn consume_identifier(&mut self, keywords: &[&str]) -> Option<String> {
+    pub fn consume_number(&mut self) {
         let start = self.position;
         let mut value = String::new();
-
         while let Some(c) = self.current_char() {
-            if c.is_alphanumeric() || c == '_' {
+            if c.is_ascii_alphanumeric() || matches!(c, '.' | '_') {
                 value.push(c);
                 self.advance();
             } else {
                 break;
             }
         }
-
-        if !value.is_empty() {
-            let token_type = if keywords.contains(&value.as_str()) {
-                TokenType::Keyword
-            } else {
-                TokenType::Identifier
-            };
-
-            self.add_token(token_type, value.clone(), start, self.position);
-            Some(value)
-        } else {
-            None
-        }
+        self.add_token(TokenType::Number, value, start, self.position);
     }
 
-    pub fn consume_identifier_with_hyphens(&mut self, keywords: &[&str]) -> Option<String> {
+    pub fn consume_string(&mut self, quote: char) {
         let start = self.position;
         let mut value = String::new();
-
-        while let Some(c) = self.current_char() {
-            if c.is_alphanumeric() || c == '_' || c == '-' {
-                value.push(c);
-                self.advance();
-            } else {
-                break;
-            }
-        }
-
-        if !value.is_empty() {
-            let token_type = if keywords.contains(&value.as_str()) {
-                TokenType::Keyword
-            } else {
-                TokenType::Identifier
-            };
-
-            self.add_token(token_type, value.clone(), start, self.position);
-            Some(value)
-        } else {
-            None
-        }
-    }
-
-    pub fn consume_number(&mut self) -> Option<String> {
-        let start = self.position;
-        let mut value = String::new();
-        let mut has_dot = false;
-
-        // Check for hex, binary, or octal prefix
-        if let Some(c) = self.current_char() {
-            if c == '0' {
-                value.push(c);
-                self.advance();
-                
-                if let Some(next_c) = self.current_char() {
-                    match next_c {
-                        'x' | 'X' => {
-                            // Hex number
-                            value.push(next_c);
-                            self.advance();
-                            while let Some(c) = self.current_char() {
-                                if c.is_ascii_hexdigit() || c == '_' {
-                                    value.push(c);
-                                    self.advance();
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-                        'b' | 'B' => {
-                            // Binary number
-                            value.push(next_c);
-                            self.advance();
-                            while let Some(c) = self.current_char() {
-                                if c == '0' || c == '1' || c == '_' {
-                                    value.push(c);
-                                    self.advance();
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-                        'o' | 'O' => {
-                            // Octal number
-                            value.push(next_c);
-                            self.advance();
-                            while let Some(c) = self.current_char() {
-                                if (c >= '0' && c <= '7') || c == '_' {
-                                    value.push(c);
-                                    self.advance();
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-                        '0'..='9' | '.' => {
-                            // Decimal number
-                            while let Some(c) = self.current_char() {
-                                if c.is_ascii_digit() || c == '.' || c == '_' {
-                                    if c == '.' {
-                                        if has_dot {
-                                            break;
-                                        }
-                                        has_dot = true;
-                                    }
-                                    value.push(c);
-                                    self.advance();
-                                } else {
-                                    break;
-                                }
-                            }
-                            
-                            // Check for scientific notation
-                            if let Some(c) = self.current_char() {
-                                if c == 'e' || c == 'E' {
-                                    value.push(c);
-                                    self.advance();
-                                    
-                                    // Optional sign
-                                    if let Some(sign) = self.current_char() {
-                                        if sign == '+' || sign == '-' {
-                                            value.push(sign);
-                                            self.advance();
-                                        }
-                                    }
-                                    
-                                    // Exponent digits
-                                    while let Some(c) = self.current_char() {
-                                        if c.is_ascii_digit() || c == '_' {
-                                            value.push(c);
-                                            self.advance();
-                                        } else {
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        _ => {
-                            // Just a single 0
-                        }
-                    }
-                }
-            } else {
-                // Regular decimal number
-                while let Some(c) = self.current_char() {
-                    if c.is_ascii_digit() || c == '.' || c == '_' {
-                        if c == '.' {
-                            if has_dot {
-                                break;
-                            }
-                            has_dot = true;
-                        }
-                        value.push(c);
-                        self.advance();
-                    } else {
-                        break;
-                    }
-                }
-                
-                // Check for scientific notation
-                if let Some(c) = self.current_char() {
-                    if c == 'e' || c == 'E' {
-                        value.push(c);
-                        self.advance();
-                        
-                        // Optional sign
-                        if let Some(sign) = self.current_char() {
-                            if sign == '+' || sign == '-' {
-                                value.push(sign);
-                                self.advance();
-                            }
-                        }
-                        
-                        // Exponent digits
-                        while let Some(c) = self.current_char() {
-                            if c.is_ascii_digit() || c == '_' {
-                                value.push(c);
-                                self.advance();
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if !value.is_empty() {
-            self.add_token(TokenType::Number, value.clone(), start, self.position);
-            Some(value)
-        } else {
-            None
-        }
-    }
-
-    pub fn consume_string(&mut self, quote: char) -> Option<String> {
-        let start = self.position;
-        let mut value = String::from(quote);
-        self.advance();
-
         while let Some(c) = self.current_char() {
             value.push(c);
             self.advance();
-            
-            // Handle escape sequences
             if c == '\\' {
-                if let Some(escaped) = self.current_char() {
-                    value.push(escaped);
+                if let Some(next) = self.current_char() {
+                    value.push(next);
                     self.advance();
                 }
-            } else if c == quote {
+            } else if c == quote && self.position > start + 1 {
                 break;
             }
         }
-
-        self.add_token(TokenType::String, value.clone(), start, self.position);
-        Some(value)
+        self.add_token(TokenType::String, value, start, self.position);
     }
 
-    pub fn consume_single_line_comment(&mut self, prefix: &str) -> Option<String> {
+    pub fn consume_single_line_comment(&mut self, marker: &str) {
         let start = self.position;
-        let mut value = String::from(prefix);
-
-        for _ in 0..prefix.len() {
-            self.advance();
+        let mut value = String::new();
+        for _ in marker.chars() {
+            if let Some(c) = self.current_char() {
+                value.push(c);
+                self.advance();
+            }
         }
-
         while let Some(c) = self.current_char() {
             if c == '\n' || c == '\r' {
                 break;
@@ -404,65 +146,51 @@ impl BaseLexer {
             value.push(c);
             self.advance();
         }
-
-        self.add_token(TokenType::Comment, value.clone(), start, self.position);
-        Some(value)
+        self.add_token(TokenType::Comment, value, start, self.position);
     }
 
-    pub fn consume_multi_line_comment(
-        &mut self,
-        start_prefix: &str,
-        end_suffix: &str,
-    ) -> Option<String> {
+    pub fn consume_multi_line_comment(&mut self, start_marker: &str, end_marker: &str) {
         let start = self.position;
-        let mut value = String::from(start_prefix);
-
-        for _ in 0..start_prefix.len() {
-            self.advance();
-        }
-
-        let mut depth = 1; // Track nested comment depth
-
-        while let Some(c) = self.current_char() {
-            value.push(c);
-            self.advance();
-
-            // Check for nested comment start
-            if start_prefix.len() > 0 && c == start_prefix.chars().next().unwrap() {
-                if let Some(next_chars) = self.peek_multiple(start_prefix.len()) {
-                    if next_chars == start_prefix {
-                        depth += 1;
+        let mut value = String::new();
+        while self.position < self.input.len() {
+            if self.starts_with(end_marker) {
+                for _ in end_marker.chars() {
+                    if let Some(c) = self.current_char() {
+                        value.push(c);
+                        self.advance();
                     }
                 }
+                break;
             }
-
-            // Check for end suffix
-            if c == end_suffix.chars().last().unwrap() {
-                if let Some(prev_chars) = self.peek_multiple_back(end_suffix.len()) {
-                    if prev_chars == end_suffix {
-                        depth -= 1;
-                        if depth == 0 {
-                            break;
-                        }
-                    }
-                }
+            if let Some(c) = self.current_char() {
+                value.push(c);
+                self.advance();
             }
         }
+        if value.is_empty() {
+            value.push_str(start_marker);
+        }
+        self.add_token(TokenType::Comment, value, start, self.position);
+    }
 
-        self.add_token(TokenType::Comment, value.clone(), start, self.position);
-        Some(value)
+    fn starts_with(&self, value: &str) -> bool {
+        self.input[self.position..]
+            .iter()
+            .zip(value.chars())
+            .all(|(left, right)| *left == right)
+            && self.input.len() - self.position >= value.chars().count()
     }
 
     pub fn add_operator(&mut self, value: String) {
         let start = self.position;
-        self.add_token(TokenType::Operator, value, start, self.position + 1);
         self.advance();
+        self.add_token(TokenType::Operator, value, start, self.position);
     }
 
     pub fn add_other(&mut self, value: String) {
         let start = self.position;
-        self.add_token(TokenType::Other, value, start, self.position + 1);
         self.advance();
+        self.add_token(TokenType::Other, value, start, self.position);
     }
 
     pub fn get_tokens(self) -> Vec<Token> {
@@ -470,411 +198,184 @@ impl BaseLexer {
     }
 }
 
-pub struct LexerFactory;
+pub fn highlight_html_code_blocks(html: &str) -> String {
+    let mut result = String::with_capacity(html.len());
+    let mut rest = html;
+    const OPEN: &str = "<pre><code class=\"language-";
+    const CLOSE: &str = "</code></pre>";
 
-impl LexerFactory {
-    pub fn create_lexer(language: &str) -> Box<dyn LanguageLexer> {
-        match language.to_lowercase().as_str() {
-            "rust" | "rs" => Box::new(RustLexer),
-            "javascript" | "js" => Box::new(JavaScriptLexer),
-            "c" => Box::new(CLexer),
-            "cpp" | "c++" => Box::new(CppLexer),
-            "python" | "py" => Box::new(PythonLexer),
-            "css" => Box::new(CSSLexer),
-            "bash" | "shell" | "sh" => Box::new(BashLexer),
-            "html" => Box::new(HTMLLexer),
-            "lamina" | "lamina-ir" => Box::new(LaminaLexer),
-            _ => Box::new(JavaScriptLexer), // Default fallback
-        }
-    }
-}
-
-impl CodeBlock {
-    /// Create a new code block
-    pub fn new(language: String, content: String) -> Self {
-        Self { language, content }
-    }
-
-    /// Apply syntax highlighting to the code content using lexing
-    pub fn highlight(&self) -> String {
-        debug!(
-            "Starting highlight for language: '{}', content length: {}",
-            self.language,
-            self.content.len()
-        );
-
-        // Decode HTML entities first, but be careful not to double-decode
-        let decoded_content = self
-            .content
-            .replace("&lt;", "<")
-            .replace("&gt;", ">")
-            .replace("&amp;", "&")
-            .replace("&nbsp;", " ");
-        // Note: We don't decode &quot; and &#39; here as they might be intentional in code examples
-
-        // Create language-specific lexer
-        let lexer = LexerFactory::create_lexer(&self.language);
-        let tokens = lexer.lex(&decoded_content);
-
-        // Convert tokens to HTML with proper escaping
-        let mut result = String::new();
-        for token in tokens {
-            let html_class = match token.token_type {
-                TokenType::Keyword => "keyword",
-                TokenType::String => "string",
-                TokenType::Comment => "comment",
-                TokenType::Number => "number",
-                TokenType::Operator => "operator",
-                TokenType::Identifier => "identifier",
-                TokenType::Type => "type",
-                TokenType::Macro => "macro",
-                TokenType::Lifetime => "lifetime",
-                TokenType::Whitespace => "",
-                TokenType::Newline => "",
-                TokenType::Other => "",
-                TokenType::Variable => "variable",
-                TokenType::Command => "command",
-                TokenType::Shebang => "shebang",
-                TokenType::Function => "function",
-            };
-
-            if html_class.is_empty() {
-                // Escape HTML entities in the output, but preserve existing entities
-                let escaped_value = escape_html_entities(&token.value);
-                result.push_str(&escaped_value);
-            } else {
-                // Escape HTML entities in the output, but preserve existing entities
-                let escaped_value = escape_html_entities(&token.value);
-                result.push_str(&format!(
-                    "<span class=\"{}\">{}</span>",
-                    html_class, escaped_value
-                ));
-            }
-        }
-
-        debug!("After highlighting: {:?}", result);
-        result
-    }
-}
-
-/// Escape HTML entities while preserving existing ones
-fn escape_html_entities(input: &str) -> String {
-    let mut result = String::new();
-    let mut i = 0;
-    let chars: Vec<char> = input.chars().collect();
-
-    while i < chars.len() {
-        let ch = chars[i];
-        match ch {
-            '&' => {
-                // Check if this is already an HTML entity
-                if i + 1 < chars.len() && chars[i + 1] == '#' {
-                    // Already an HTML entity, preserve it
-                    result.push(ch);
-                } else if i + 3 < chars.len()
-                    && chars[i + 1] == 'l'
-                    && chars[i + 2] == 't'
-                    && chars[i + 3] == ';'
-                {
-                    // Already &lt;
-                    result.push(ch);
-                } else if i + 3 < chars.len()
-                    && chars[i + 1] == 'g'
-                    && chars[i + 2] == 't'
-                    && chars[i + 3] == ';'
-                {
-                    // Already &gt;
-                    result.push(ch);
-                } else if i + 4 < chars.len()
-                    && chars[i + 1] == 'a'
-                    && chars[i + 2] == 'm'
-                    && chars[i + 3] == 'p'
-                    && chars[i + 4] == ';'
-                {
-                    // Already &amp;
-                    result.push(ch);
-                } else if i + 5 < chars.len()
-                    && chars[i + 1] == 'q'
-                    && chars[i + 2] == 'u'
-                    && chars[i + 3] == 'o'
-                    && chars[i + 4] == 't'
-                    && chars[i + 5] == ';'
-                {
-                    // Already &quot;
-                    result.push(ch);
-                } else if i + 4 < chars.len()
-                    && chars[i + 1] == '#'
-                    && chars[i + 2] == '3'
-                    && chars[i + 3] == '9'
-                    && chars[i + 4] == ';'
-                {
-                    // Already &#39;
-                    result.push(ch);
-                } else {
-                    // Regular &, escape it
-                    result.push_str("&amp;");
-                }
-            }
-            '<' => result.push_str("&lt;"),
-            '>' => result.push_str("&gt;"),
-            _ => result.push(ch),
-        }
-        i += 1;
+    while let Some(block_offset) = rest.find(OPEN) {
+        result.push_str(&rest[..block_offset]);
+        let block = &rest[block_offset..];
+        let Some(language_end) = block[OPEN.len()..].find("\">") else {
+            result.push_str(block);
+            return result;
+        };
+        let language = &block[OPEN.len()..OPEN.len() + language_end];
+        let content_start = OPEN.len() + language_end + 2;
+        let Some(content_end) = block[content_start..].find(CLOSE) else {
+            result.push_str(block);
+            return result;
+        };
+        let content = &block[content_start..content_start + content_end];
+        let highlighted = highlight(language, content);
+        result.push_str(&format!(
+            "<pre data-language=\"{}\" class=\"code-block-container\"><code class=\"language-{}\">{}</code></pre>",
+            escape_html(language),
+            escape_html(language),
+            highlighted
+        ));
+        rest = &block[content_start + content_end + CLOSE.len()..];
     }
 
+    result.push_str(rest);
     result
 }
 
+fn highlight(language: &str, content: &str) -> String {
+    let decoded = decode_html(content);
+    let lexer: Box<dyn LanguageLexer> = match language {
+        "bash" | "shell" | "sh" => Box::new(BashLexer),
+        "c" => Box::new(CLexer),
+        "lamina" | "lamina-ir" => Box::new(LaminaLexer),
+        "rust" | "rs" => Box::new(RustLexer),
+        _ => return escape_html(&decoded),
+    };
 
-/// Simple HTML parser for code block extraction without regex
-pub struct HTMLParser {
-    content: Vec<char>,
-    position: usize,
+    lexer
+        .lex(&decoded)
+        .into_iter()
+        .map(|token| render_token(language, token))
+        .collect()
 }
 
-impl HTMLParser {
-    pub fn new(content: &str) -> Self {
-        Self {
-            content: content.chars().collect(),
-            position: 0,
+fn render_token(language: &str, token: Token) -> String {
+    let class = match token.token_type {
+        TokenType::Whitespace | TokenType::Newline | TokenType::Other => None,
+        TokenType::Keyword if language == "lamina" && is_lamina_type(&token.value) => {
+            Some("syntax-type")
         }
-    }
-
-    pub fn current_char(&self) -> Option<char> {
-        self.content.get(self.position).copied()
-    }
-
-    pub fn peek_char(&self, offset: usize) -> Option<char> {
-        self.content.get(self.position + offset).copied()
-    }
-
-    pub fn advance(&mut self) {
-        self.position += 1;
-    }
-
-    pub fn extract_code_blocks(&mut self) -> Vec<(String, String)> {
-        let mut code_blocks = Vec::new();
-
-        while self.position < self.content.len() {
-            // Look for <pre><code
-            if self.current_char() == Some('<')
-                && self.peek_char(1) == Some('p')
-                && self.peek_char(2) == Some('r')
-                && self.peek_char(3) == Some('e')
-                && self.peek_char(4) == Some('>')
-            {
-                // Skip <pre>
-                for _ in 0..5 {
-                    self.advance();
-                }
-
-                // Look for <code
-                if self.current_char() == Some('<')
-                    && self.peek_char(1) == Some('c')
-                    && self.peek_char(2) == Some('o')
-                    && self.peek_char(3) == Some('d')
-                    && self.peek_char(4) == Some('e')
-                {
-                    // Skip <code
-                    for _ in 0..5 {
-                        self.advance();
-                    }
-
-                    // Extract language from class attribute
-                    let mut language = "text".to_string();
-                    if self.current_char() == Some(' ')
-                        && self.peek_char(1) == Some('c')
-                        && self.peek_char(2) == Some('l')
-                        && self.peek_char(3) == Some('a')
-                        && self.peek_char(4) == Some('s')
-                        && self.peek_char(5) == Some('s')
-                        && self.peek_char(6) == Some('=')
-                        && self.peek_char(7) == Some('"')
-                    {
-                        // Skip class="
-                        for _ in 0..8 {
-                            self.advance();
-                        }
-
-                        // Extract language
-                        let mut lang = String::new();
-                        while let Some(c) = self.current_char() {
-                            if c == '"' {
-                                self.advance();
-                                break;
-                            }
-                            lang.push(c);
-                            self.advance();
-                        }
-
-                        if let Some(stripped) = lang.strip_prefix("language-") {
-                            language = stripped.to_string();
-                        }
-                    }
-
-                    // Skip to >
-                    while let Some(c) = self.current_char() {
-                        if c == '>' {
-                            self.advance();
-                            break;
-                        }
-                        self.advance();
-                    }
-
-                    // Extract code content until </code></pre>
-                    let mut code_content = String::new();
-
-                    while self.position < self.content.len() {
-                        if self.current_char() == Some('<')
-                            && self.peek_char(1) == Some('/')
-                            && self.peek_char(2) == Some('c')
-                            && self.peek_char(3) == Some('o')
-                            && self.peek_char(4) == Some('d')
-                            && self.peek_char(5) == Some('e')
-                            && self.peek_char(6) == Some('>')
-                        {
-                            // Found </code>
-                            for _ in 0..7 {
-                                self.advance();
-                            }
-
-                            // Look for </pre>
-                            if self.current_char() == Some('<')
-                                && self.peek_char(1) == Some('/')
-                                && self.peek_char(2) == Some('p')
-                                && self.peek_char(3) == Some('r')
-                                && self.peek_char(4) == Some('e')
-                                && self.peek_char(5) == Some('>')
-                            {
-                                // Found </pre>
-                                for _ in 0..6 {
-                                    self.advance();
-                                }
-                                break;
-                            }
-                        } else {
-                            if let Some(c) = self.current_char() {
-                                code_content.push(c);
-                            }
-                            self.advance();
-                        }
-                    }
-
-                    code_blocks.push((language, code_content));
-                }
-            } else {
-                self.advance();
-            }
+        TokenType::Keyword => Some("syntax-keyword"),
+        TokenType::String => Some("syntax-string"),
+        TokenType::Comment => Some("syntax-comment"),
+        TokenType::Number => Some("syntax-number"),
+        TokenType::Operator => Some("syntax-operator"),
+        TokenType::Identifier if language == "lamina" && token.value.starts_with('@') => {
+            Some("syntax-symbol")
         }
-
-        code_blocks
+        TokenType::Identifier if language == "lamina" && is_lamina_instruction(&token.value) => {
+            Some("syntax-keyword")
+        }
+        TokenType::Identifier if language == "c" && token.value.ends_with("_t") => {
+            Some("syntax-type")
+        }
+        TokenType::Identifier if token.value.starts_with('-') => Some("syntax-flag"),
+        TokenType::Identifier => Some("syntax-identifier"),
+        TokenType::Type => Some("syntax-type"),
+        TokenType::Macro => Some("syntax-macro"),
+        TokenType::Lifetime => Some("syntax-lifetime"),
+        TokenType::Variable if language == "shell" && token.value == "$" => Some("syntax-prompt"),
+        TokenType::Variable => Some("syntax-variable"),
+        TokenType::Command if token.value.starts_with('-') => Some("syntax-flag"),
+        TokenType::Command => Some("syntax-command"),
+        TokenType::Shebang => Some("syntax-comment"),
+        TokenType::Function => Some("syntax-function"),
+    };
+    let escaped = escape_html(&token.value);
+    match class {
+        Some(class) => format!("<span class=\"{class}\">{escaped}</span>"),
+        None => escaped,
     }
 }
 
-/// Process markdown content and enhance code blocks
-pub fn process_markdown_content(content: &str) -> String {
-    debug!(
-        "Starting markdown processing, content length: {}",
-        content.len()
-    );
-
-    // First, process the markdown content with pulldown-cmark
-    let parser = pulldown_cmark::Parser::new_ext(content, pulldown_cmark::Options::all());
-    let mut html_output = String::new();
-    pulldown_cmark::html::push_html(&mut html_output, parser);
-
-    debug!("Markdown processed, HTML length: {}", html_output.len());
-
-    // Now enhance the HTML code blocks with syntax highlighting
-    let enhanced_html = enhance_html_code_blocks(&html_output);
-
-    debug!(
-        "HTML code blocks enhanced, final length: {}",
-        enhanced_html.len()
-    );
-    enhanced_html
+fn is_lamina_type(value: &str) -> bool {
+    matches!(
+        value,
+        "i8" | "i16"
+            | "i32"
+            | "i64"
+            | "i128"
+            | "u8"
+            | "u16"
+            | "u32"
+            | "u64"
+            | "u128"
+            | "f32"
+            | "f64"
+            | "bool"
+            | "ptr"
+    )
 }
 
-/// Enhance HTML code blocks with syntax highlighting
-fn enhance_html_code_blocks(html: &str) -> String {
-    debug!("Enhancing HTML code blocks, input length: {}", html.len());
+fn is_lamina_instruction(value: &str) -> bool {
+    matches!(
+        value.split('.').next().unwrap_or(value),
+        "add"
+            | "alloc"
+            | "br"
+            | "call"
+            | "dealloc"
+            | "div"
+            | "eq"
+            | "ge"
+            | "getelementptr"
+            | "getfieldptr"
+            | "gt"
+            | "jmp"
+            | "le"
+            | "load"
+            | "lt"
+            | "mod"
+            | "mul"
+            | "ne"
+            | "phi"
+            | "print"
+            | "read"
+            | "readbyte"
+            | "ret"
+            | "shl"
+            | "shr"
+            | "store"
+            | "sub"
+            | "switch"
+            | "write"
+            | "writebyte"
+            | "writeptr"
+    )
+}
 
-    let mut parser = HTMLParser::new(html);
-    let code_blocks = parser.extract_code_blocks();
+fn decode_html(value: &str) -> String {
+    value
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&amp;", "&")
+}
 
-    debug!("Extracted {} HTML code blocks", code_blocks.len());
+fn escape_html(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
 
-    // Replace code blocks with enhanced versions
-    let mut result = html.to_string();
-    let mut offset = 0;
+#[cfg(test)]
+mod tests {
+    use super::highlight_html_code_blocks;
 
-    for (language, code_content) in code_blocks {
-        debug!(
-            "Found HTML code block - Language: '{}', Content length: {}",
-            language,
-            code_content.len()
-        );
-        debug!(
-            "Code block content preview: {}",
-            &code_content[..code_content.len().min(100)]
-        );
-
-        // Try different search patterns for different language scenarios
-        let search_patterns = vec![
-            format!(
-                "<pre><code class=\"language-{}\">{}</code></pre>",
-                language, code_content
-            ),
-            format!("<pre><code>{}</code></pre>", code_content), // For plain text without class
-            format!(
-                "<pre><code class=\"{}\">{}</code></pre>",
-                language, code_content
-            ), // Without language- prefix
-        ];
-
-        let mut found_pattern = None;
-        let mut actual_start = 0;
-        let mut end_pos = 0;
-
-        for pattern in &search_patterns {
-            if let Some(start_pos) = result[offset..].find(pattern) {
-                actual_start = offset + start_pos;
-                end_pos = actual_start + pattern.len();
-                found_pattern = Some(pattern);
-                debug!("Found pattern: {}", pattern);
-                break;
-            }
-        }
-
-        if let Some(_pattern) = found_pattern {
-            // Use fallback text for unspecified languages
-            debug!("Language: {}", language);
-            let display_language = if language.is_empty() || language == "text" {
-                "TEXT"
-            } else {
-                &language
-            };
-
-            // For text language, don't apply syntax highlighting
-            let final_content = if language == "text" {
-                // Just escape HTML entities for plain text
-                escape_html_entities(&code_content)
-            } else {
-                // Apply syntax highlighting for other languages
-                let code_block = CodeBlock::new(language.clone(), code_content.clone());
-                code_block.highlight()
-            };
-
-            let enhanced_html = format!(
-                r#"<pre data-language="{}" class="code-block-container"><code class="language-{}">{}</code></pre>"#,
-                display_language, language, final_content
-            );
-
-            // Replace the original with enhanced version
-            result.replace_range(actual_start..end_pos, &enhanced_html);
-            offset = actual_start + enhanced_html.len();
-        }
+    #[test]
+    fn highlights_lamina_blocks_as_static_html() {
+        let html = r#"<pre><code class="language-lamina">fn @main() -&gt; i64 {
+  ret.i64 42
+}</code></pre>"#;
+        let highlighted = highlight_html_code_blocks(html);
+        assert!(highlighted.contains(r#"class="syntax-keyword">fn</span>"#));
+        assert!(highlighted.contains(r#"class="syntax-symbol">@main</span>"#));
+        assert!(highlighted.contains(r#"class="syntax-keyword">ret.i64</span>"#));
+        assert!(highlighted.contains(r#"class="syntax-number">42</span>"#));
+        assert!(!highlighted.contains("<script"));
     }
-
-    result
 }

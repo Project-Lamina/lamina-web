@@ -1,14 +1,11 @@
 mod app;
-mod blog;
 mod components;
 mod config;
 mod handlers;
 mod logger;
 mod routes;
 mod server;
-mod template_helpers;
 mod templates;
-mod watcher;
 
 use log::{debug, error, info, warn};
 use logger::Logger;

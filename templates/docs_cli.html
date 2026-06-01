@@ -1,0 +1,41 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Compiler driver</strong></nav>
+            <p class="lmn-section-tag">CLI reference</p>
+            <h1>Compiler driver</h1>
+            <p class="lmn-manual-lead">The <code>lamina</code> binary builds executables, runs code through the JIT, emits MIR or assembly, and selects targets and tools.</p>
+            <pre><code class="language-shell">$ lamina &lt;input.lamina&gt; [options]</code></pre>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Option</span><span>Argument</span><span>Behavior</span></div>
+                <p><strong><code>-o, --output</code></strong><code>&lt;file&gt;</code><span>Choose the output artifact name.</span></p>
+                <p><strong><code>-v, --verbose</code></strong><code>-</code><span>Print additional compiler-driver output.</span></p>
+                <p><strong><code>--target</code></strong><code>&lt;arch_os&gt;</code><span>Select a target such as <code>x86_64_linux</code>.</span></p>
+                <p><strong><code>--opt-level</code></strong><code>&lt;0-3&gt;</code><span>Choose the experimental MIR optimization level. Default: <code>1</code>.</span></p>
+                <p><strong><code>--emit-mir</code></strong><code>-</code><span>Write <code>.lumir</code> MIR and exit.</span></p>
+                <p><strong><code>--emit-mir-asm</code></strong><code>-</code><span>Experimental: emit assembly from MIR, using <code>--target</code> for architecture and OS.</span></p>
+                <p><strong><code>--emit-asm</code></strong><code>-</code><span>Emit an assembly file without assembling or linking it.</span></p>
+                <p><strong><code>--jit</code></strong><code>-</code><span>Compile and execute through the runtime compiler.</span></p>
+                <p><strong><code>--sandbox</code></strong><code>-</code><span>Enable sandboxed JIT execution. Requires <code>--jit</code>.</span></p>
+                <p><strong><code>-c, --compiler</code></strong><code>&lt;name&gt;</code><span>Select <code>gnu</code>, <code>clang</code>, <code>msvc</code>, <code>lamina</code>, or a linker-only backend.</span></p>
+                <p><strong><code>--assembler</code></strong><code>&lt;name&gt;</code><span>Select <code>ras</code>, <code>gas</code>, or <code>clang</code>.</span></p>
+                <p><strong><code>-Wl,&lt;flag&gt;</code></strong><code>-</code><span>Pass comma-separated flags to the linker.</span></p>
+                <p><strong><code>-Wa,&lt;flag&gt;</code></strong><code>-</code><span>Pass comma-separated flags to the assembler.</span></p>
+                <p><strong><code>-j, --jobs</code></strong><code>&lt;n&gt;</code><span>Set parallel code-generation threads. Default: available cores minus two.</span></p>
+                <p><strong><code>--regalloc</code></strong><code>&lt;method&gt;</code><span>Select <code>incremental</code>, <code>linear</code>, or <code>graph</code>.</span></p>
+                <p><strong><code>-g</code></strong><code>-</code><span>Emit assembler debug lines and minimal ELF DWARF with <code>ras</code>.</span></p>
+                <p><strong><code>-h, --help</code></strong><code>-</code><span>Print the built-in command reference.</span></p>
+                <p><strong><code>--version</code></strong><code>-</code><span>Print the compiler version.</span></p>
+            </div>
+            <h2 id="toolchains">Toolchain selection</h2>
+            <p>The <code>--compiler</code> option accepts complete toolchains and linker-only choices. Complete choices are <code>gnu</code>, <code>clang</code>, <code>msvc</code>, and <code>lamina</code>. Linker-only choices are <code>ld</code>, <code>lld</code>, <code>mold</code>, <code>weld</code>, <code>link</code>, and <code>cl</code>.</p>
+            <pre><code class="language-shell">$ lamina app.lamina --compiler lamina --assembler ras
+$ lamina app.lamina --compiler clang -Wl,-dead_strip
+$ lamina app.lamina --emit-mir --opt-level 3 --regalloc graph</code></pre>
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/rust">Embed Lamina from Rust</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}

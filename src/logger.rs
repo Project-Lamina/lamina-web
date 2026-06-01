@@ -6,7 +6,6 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 pub enum LogOutput {
-    Stdout,
     Stderr,
 }
 
@@ -30,20 +29,20 @@ impl Logger {
         if path.is_none() {
             path = Some(PathBuf::from(
                 #[cfg(target_os = "linux")]
-                "/var/log/nornity/nornity.log",
+                "/var/log/lamina-web/lamina-web.log",
                 #[cfg(target_os = "windows")]
-                "C:\\Program Files\\nornity\\nornity.log",
+                "C:\\Program Files\\lamina-web\\lamina-web.log",
                 #[cfg(target_os = "macos")]
-                "/Library/Logs/nornity/nornity.log",
+                "/Library/Logs/lamina-web/lamina-web.log",
                 #[cfg(target_os = "freebsd")]
-                "/var/log/nornity/nornity.log",
+                "/var/log/lamina-web/lamina-web.log",
                 #[cfg(not(any(
                     target_os = "linux",
                     target_os = "windows",
                     target_os = "macos",
                     target_os = "freebsd"
                 )))]
-                "/var/log/nornity/nornity.log",
+                "/var/log/lamina-web/lamina-web.log",
             ));
         }
         let mut file = None;
@@ -88,14 +87,14 @@ impl Logger {
 
     /// Initialize logger with environment variables
     pub fn init() -> Result<(), log::SetLoggerError> {
-        let severity = std::env::var("NORNITY_LOG")
+        let severity = std::env::var("LAMINA_WEB_LOG")
             .or_else(|_| std::env::var("RUST_LOG"))
             .unwrap_or_else(|_| "info".to_string())
             .parse::<Level>()
             .unwrap_or(Level::Info);
 
         let write_to_std = Some(LogOutput::Stderr);
-        let write_to_file = std::env::var("NORNITY_LOG_FILE").is_ok();
+        let write_to_file = std::env::var("LAMINA_WEB_LOG_FILE").is_ok();
         let enable_colors = std::env::var("NO_COLOR").is_err();
 
         let logger = Logger::new(
@@ -131,15 +130,12 @@ impl Log for Logger {
             let reset = Self::get_reset();
             format!("{color}[{timestamp}] {level_str}{reset} {args}\n")
         } else {
-            format!("[{timestamp}] {level_str} {args}\n") // for Later debugging use {target} too 
+            format!("[{timestamp}] {level_str} {args}\n") // for Later debugging use {target} too
         };
 
         // Write to stdout/stderr
         if let Some(write_to_std) = &self.write_to_std {
             match write_to_std {
-                LogOutput::Stdout => {
-                    let _ = std::io::stdout().write_all(formatted_message.as_bytes());
-                }
                 LogOutput::Stderr => {
                     let _ = std::io::stderr().write_all(formatted_message.as_bytes());
                 }

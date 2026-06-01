@@ -1,10 +1,24 @@
-<div class="error-page">
+<main class="lamina-home lmn-error-page">
+    <header class="lmn-header">
+        <a class="lmn-brand" href="/" aria-label="Lamina home">
+            <img src="/static/assets/image/projects/lamina_logo.webp" alt="" width="42" height="42">
+            <span>Lamina</span>
+        </a>
+        <nav class="lmn-nav" aria-label="Error page navigation">
+            <a href="/docs">Docs</a>
+            <a href="/#pipeline">Pipeline</a>
+        </nav>
+        <a class="lmn-header-link" href="https://docs.rs/lamina" target="_blank" rel="noopener">Rust API</a>
+    </header>
+
+    <div class="error-page">
     <div class="error-container">
         <div class="error-header">
             <h1 class="error-code">404</h1>
-            <h2 class="error-title">Page Not Found</h2>
+            <h2 class="error-title">We could not find that page.</h2>
             <p class="error-description">
-                The page you're looking for doesn't exist or has been moved.
+                The URL may be old or mistyped. Return to the homepage,
+                or open the docs to find the compiler reference you need.
             </p>
         </div>
         
@@ -13,9 +27,9 @@
                 <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                 </svg>
-                Back to Home
+                Lamina Home
             </a>
-            <a href="/blog" class="btn btn-secondary">
+            <a href="/docs" class="btn btn-secondary">
                 <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                     <polyline points="14,2 14,8 20,8"/>
@@ -23,19 +37,19 @@
                     <line x1="16" y1="17" x2="8" y2="17"/>
                     <polyline points="10,9 9,9 8,9"/>
                 </svg>
-                Browse Blog
+                Open Docs
             </a>
         </div>
         
         <div class="error-help">
-            <h3>Looking for something specific?</h3>
-            <p>Try searching our blog or check out some recent posts:</p>
-            <div class="search-suggestion">
-                <p class="search-hint">💡 <strong>Pro tip:</strong> Use the search bar on our <a href="/blog" class="inline-link">blog page</a> to find what you're looking for!</p>
-            </div>
-            <div class="recent-posts-suggestion">
-                {{recent_posts_suggestion}}
+            <h3>Start with the docs</h3>
+            <p>The guide covers the first compile. The references describe the IR language, the CLI, embedding APIs, and targets.</p>
+            <div class="error-links">
+                <a href="/docs/getting-started">Getting started</a>
+                <a href="/docs/ir">IR reference</a>
+                <a href="/docs/cli">CLI reference</a>
             </div>
         </div>
     </div>
-</div>
+    </div>
+</main>

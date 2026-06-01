@@ -1,4 +1,3 @@
-{{fab}}
 
 <main class="lamina-home">
     <header class="lmn-header">
@@ -11,7 +10,6 @@
             <a href="#targets">Targets</a>
             <a href="#modes">Modes</a>
             <a href="/docs">Docs</a>
-            <a href="/blog">Blog</a>
         </nav>
         <a class="lmn-header-link" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
             GitHub
@@ -23,18 +21,18 @@
 
     <section class="lmn-hero" id="home">
         <div class="lmn-hero-copy">
-            <p class="lmn-kicker"><span></span> High-performance compiler backend</p>
-            <h1>A compiler chain you can see <em>end to end.</em></h1>
+            <p class="lmn-kicker"><span></span> Typed SSA compiler backend</p>
+            <h1>Follow the compiler <em>from IR to machine code.</em></h1>
             <p class="lmn-lede">
-                Lamina turns a compact, typed SSA IR into optimized machine code.
-                Build ahead of time, compile at runtime, or use it as the backend for your own language.
+                Lamina compiles a compact, typed SSA IR.
+                Use it to build native executables, compile functions at runtime, or give a new language frontend a backend.
             </p>
             <div class="lmn-actions">
                 <a class="lmn-button lmn-button-primary" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
-                    Explore the source
+                    Browse the source
                     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 3.5 13 8l-4.5 4.5"/></svg>
                 </a>
-                <a class="lmn-button lmn-button-quiet" href="#pipeline">Walk the pipeline</a>
+                <a class="lmn-button lmn-button-quiet" href="#pipeline">See the pipeline</a>
             </div>
             <div class="lmn-install" aria-label="Install Lamina with Cargo">
                 <span>$</span>
@@ -57,11 +55,11 @@
             <div class="lmn-console-body">
                 <p><b>$</b> lamina vector.lamina <i>\</i></p>
                 <p class="lmn-indent">--target x86_64_linux <i>\</i></p>
-                <p class="lmn-indent">--opt-level 2 --regalloc graph</p>
+                <p class="lmn-indent">--regalloc graph</p>
                 <div class="lmn-console-rule"></div>
                 <p><small>01</small><strong>parse</strong><span>typed SSA module</span></p>
                 <p><small>02</small><strong>lower</strong><span>machine IR</span></p>
-                <p><small>03</small><strong>opt</strong><span>O2 transform pipeline</span></p>
+                <p><small>03</small><strong>prepare</strong><span>register allocation</span></p>
                 <p><small>04</small><strong>emit</strong><span>x86_64 assembly</span></p>
                 <p><small>05</small><strong>link</strong><span>vector</span></p>
                 <div class="lmn-console-result">
@@ -87,8 +85,8 @@
     <section class="lmn-section lmn-pipeline-section" id="pipeline">
         <div class="lmn-section-intro">
             <p class="lmn-section-tag">Compiler pipeline</p>
-            <h2>From SSA IR to a linked binary.</h2>
-            <p>Each stage is explicit, inspectable, and small enough to reason about.</p>
+            <h2>See where the code goes.</h2>
+            <p>The driver can stop after MIR or assembly, which makes each stage easier to inspect while you work.</p>
         </div>
 
         <div class="lmn-pipeline">
@@ -96,13 +94,13 @@
                 <span>01</span>
                 <p class="lmn-stage-file">program.lamina</p>
                 <h3>Parse Lamina IR</h3>
-                <p>Read a typed, block-based SSA representation with functions, globals, tuples, pointers, and explicit memory operations.</p>
+                <p>Read typed, block-based SSA with functions, globals, pointers, and explicit memory operations.</p>
             </article>
             <article class="lmn-stage">
                 <span>02</span>
                 <p class="lmn-stage-file">module.lumir</p>
                 <h3>Lower to MIR</h3>
-                <p>Move architecture-neutral intent into a machine-oriented representation ready for transformation and register work.</p>
+                <p>Lower target-independent operations into the machine-oriented IR used by later passes.</p>
             </article>
             <article class="lmn-stage">
                 <span>03</span>
@@ -114,13 +112,13 @@
                 <span>04</span>
                 <p class="lmn-stage-file">target.s / target.wat</p>
                 <h3>Generate target code</h3>
-                <p>Select instructions, allocate registers, build frames, and honor the selected target ABI without an external backend.</p>
+                <p>Select instructions, allocate registers, build stack frames, and apply the selected target ABI.</p>
             </article>
             <article class="lmn-stage">
                 <span>05</span>
                 <p class="lmn-stage-file">native executable</p>
                 <h3>Assemble and link</h3>
-                <p>Produce a native executable in AOT mode, or stop at MIR and assembly when you need to inspect the build.</p>
+                <p>Create a native executable in AOT mode. When debugging a build, stop after MIR or assembly.</p>
             </article>
         </div>
     </section>
@@ -131,23 +129,23 @@
                 <p><span></span> add.lamina</p>
                 <small>Lamina IR</small>
             </div>
-            <pre><code><b>fn</b> <i>@add</i>(i32 <em>%a</em>, i32 <em>%b</em>) -&gt; i32 {
+            <pre><code class="language-lamina">fn @add(i32 %a, i32 %b) -&gt; i32 {
   entry:
-    <em>%sum</em> = <b>add.i32</b> <em>%a</em>, <em>%b</em>
-    <b>ret.i32</b> <em>%sum</em>
+    %sum = add.i32 %a, %b
+    ret.i32 %sum
 }</code></pre>
         </div>
         <div class="lmn-ir-copy">
-            <p class="lmn-section-tag">A frontend-friendly IR</p>
-            <h2>Small surface. Serious backend.</h2>
+            <p class="lmn-section-tag">IR for language frontends</p>
+            <h2>Readable IR for compiler work.</h2>
             <p>
-                Lamina IR is human-readable on purpose. Generate it from your language frontend,
-                inspect it during development, or build it programmatically with the Rust IRBuilder API.
+                Emit Lamina IR from a frontend, inspect it while debugging,
+                or construct it directly with the Rust IRBuilder API.
             </p>
             <div class="lmn-ir-notes">
-                <p><strong>SSA values</strong><span>Explicit data flow for analysis and transforms.</span></p>
-                <p><strong>Typed operations</strong><span>Primitive and composite types, pointers, stack and heap.</span></p>
-                <p><strong>Clear control flow</strong><span>Basic blocks, branches, loops, and function calls.</span></p>
+                <p><strong>SSA values</strong><span>Values keep data flow visible to analysis passes.</span></p>
+                <p><strong>Typed operations</strong><span>Primitive types, structs, tuples, pointers, and explicit memory.</span></p>
+                <p><strong>Control flow</strong><span>Basic blocks and branches keep the CFG readable.</span></p>
             </div>
         </div>
     </section>
@@ -155,8 +153,8 @@
     <section class="lmn-section lmn-targets-section" id="targets">
         <div class="lmn-section-intro">
             <p class="lmn-section-tag">Target matrix</p>
-            <h2>One IR. Multiple machines.</h2>
-            <p>Target-specific ABI, frame, and register-allocation logic stays behind the backend boundary.</p>
+            <h2>Choose a target. Keep the same IR.</h2>
+            <p>The backend owns target ABIs, stack frames, and register allocation.</p>
         </div>
         <div class="lmn-target-grid">
             <article>
@@ -189,20 +187,20 @@
     <section class="lmn-section lmn-modes-section" id="modes">
         <div class="lmn-section-intro">
             <p class="lmn-section-tag">Execution modes</p>
-            <h2>Compile for delivery. Compile at runtime.</h2>
-            <p>Use the same IR and lowering path for native builds or runtime-generated functions.</p>
+            <h2>Build an executable or compile at runtime.</h2>
+            <p>AOT and JIT modes use the same IR and lowering path.</p>
         </div>
         <div class="lmn-mode-grid">
             <article>
                 <p class="lmn-mode-index">01 / AOT</p>
                 <h3>Ahead-of-time builds</h3>
-                <p>Compile Lamina IR into target assembly and a linked native executable. Select a target, optimization level, and register allocator from the driver.</p>
-                <code>lamina app.lamina --opt-level 2</code>
+                <p>Compile Lamina IR into target assembly and link a native executable. The driver lets you choose the target, optimization level, and register allocator.</p>
+                <code>lamina app.lamina</code>
             </article>
             <article>
                 <p class="lmn-mode-index">02 / JIT</p>
                 <h3>Runtime compilation</h3>
-                <p>Lower IR into executable memory and run it on the host. Use the CLI, the Rust runtime API, or the inline <code>lamina!</code> macro.</p>
+                <p>Lower IR into executable memory and run it on the host. Use the CLI, the Rust API, or the inline <code>lamina!</code> macro.</p>
                 <code>lamina app.lamina --jit</code>
             </article>
         </div>
@@ -211,15 +209,14 @@
     <section class="lmn-section lmn-toolchain-section" id="toolchain">
         <div class="lmn-toolchain-copy">
             <p class="lmn-section-tag">Compiler driver</p>
-            <h2>Use the full chain or inspect a single stage.</h2>
+            <h2>Run the full build or stop after one stage.</h2>
             <p>
-                The CLI keeps the common path short while exposing the layers needed for compiler work:
-                MIR emission, assembly-only output, target selection, optimization levels, runtime compilation,
-                and selectable register allocators.
+                The common case stays short. For debugging, the CLI can emit MIR or assembly,
+                change targets, tune optimization, and choose a register allocator.
             </p>
         </div>
         <div class="lmn-command-list">
-            <p><code>lamina app.lamina --opt-level 2</code><span>AOT executable</span></p>
+            <p><code>lamina app.lamina</code><span>AOT executable</span></p>
             <p><code>lamina app.lamina --jit</code><span>JIT execute</span></p>
             <p><code>lamina app.lamina --emit-mir</code><span>inspect MIR</span></p>
             <p><code>lamina app.lamina --emit-asm</code><span>stop at assembly</span></p>
@@ -230,27 +227,27 @@
     <section class="lmn-section lmn-docs-section" id="docs">
         <div class="lmn-section-intro">
             <p class="lmn-section-tag">Documentation</p>
-            <h2>Choose the integration surface.</h2>
-            <p>Start from the command line, embed Lamina from Rust, or follow the C-compatible runtime boundary.</p>
+            <h2>Pick the interface you need.</h2>
+            <p>Use the command line, embed Lamina from Rust, or read the planned C API contract.</p>
         </div>
         <div class="lmn-doc-grid">
             <article>
                 <p class="lmn-doc-label">Official guides</p>
                 <h3>Lamina documentation</h3>
-                <p>Start with the compiler pipeline, AOT and JIT modes, target selection, and IRBuilder integration.</p>
+                <p>Start with a first compile, then read the IR, CLI, target, and IRBuilder guides.</p>
                 <a href="/docs">Read the docs <span>→</span></a>
             </article>
             <article>
                 <p class="lmn-doc-label">Rust reference</p>
                 <h3>Rust API docs</h3>
-                <p>Use the IRBuilder, direct assembly helpers, runtime compiler, and inline <code>lamina!</code> macro from Rust.</p>
+                <p>Use IRBuilder, assembly helpers, the runtime compiler, and the inline <code>lamina!</code> macro.</p>
                 <a href="https://docs.rs/lamina" target="_blank" rel="noopener">Open docs.rs <span>↗</span></a>
             </article>
             <article>
                 <p class="lmn-doc-label">C bindings</p>
                 <h3>C API guide</h3>
-                <p>Track the C builder, AOT, and JIT integration surface as the stable binding layer is introduced.</p>
-                <a href="/docs#c-bindings">Read the C guide <span>→</span></a>
+                <p>Review the planned C handles for IRBuilder, AOT builds, JIT ownership, and diagnostics.</p>
+                <a href="/docs/c-bindings">Read the C guide <span>→</span></a>
             </article>
         </div>
     </section>
@@ -258,7 +255,7 @@
     <section class="lmn-cta">
         <div>
             <p class="lmn-section-tag">Build a frontend</p>
-            <h2>Bring your language. Lamina handles the backend.</h2>
+            <h2>Bring a frontend. Use Lamina for the backend.</h2>
         </div>
         <a class="lmn-button lmn-button-light" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
             Start with the source

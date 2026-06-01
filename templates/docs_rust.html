@@ -1,0 +1,57 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Rust API</strong></nav>
+            <p class="lmn-section-tag">Embedding</p>
+            <h1>Rust API guide</h1>
+            <p class="lmn-manual-lead">Use the library helpers to compile IR from Rust. For exact types and item signatures, open the generated docs on docs.rs.</p>
+            <div class="lmn-manual-note"><strong>Published reference</strong><p>The generated API reference for Lamina <code>0.0.8</code> is on <a href="https://docs.rs/lamina/latest/lamina/" target="_blank" rel="noopener">docs.rs</a>. This guide covers common tasks; docs.rs lists every public Rust item.</p></div>
+            <h2 id="assembly">Compile IR to host assembly</h2>
+            <pre><code class="language-rust">use lamina::compile_lamina_ir_to_assembly;
+
+let ir = r#"
+fn @main() -&gt; i64 {
+  entry:
+    %answer = add.i64 40, 2
+    ret.i64 %answer
+}
+"#;
+
+let mut assembly = Vec::new();
+compile_lamina_ir_to_assembly(ir, &amp;mut assembly, 1)?;</code></pre>
+            <h2 id="target">Compile for a target</h2>
+            <p>Use <code>compile_lamina_ir_to_target_assembly</code> when your frontend needs assembly for a specific <code>architecture_os</code> target.</p>
+            <pre><code class="language-rust">use lamina::compile_lamina_ir_to_target_assembly;
+
+let mut assembly = Vec::new();
+compile_lamina_ir_to_target_assembly(
+    ir,
+    &amp;mut assembly,
+    "aarch64_macos",
+    1,
+)?;</code></pre>
+            <div class="lmn-manual-note"><strong>Assembly helpers</strong><p>Both helper functions parse IR text and write assembly into any <code>std::io::Write</code> destination. The host helper detects the current target. The target helper validates an explicit <code>architecture_os</code> string.</p></div>
+            <h2 id="jit">Inline runtime compilation</h2>
+            <pre><code class="language-rust">use lamina::lamina;
+
+let add = lamina!(r#"
+fn @add(i64 %left, i64 %right) -&gt; i64 {
+  entry:
+    %sum = add.i64 %left, %right
+    ret.i64 %sum
+}
+"#);
+
+assert_eq!(add(&amp;[20, 22]), Some(42));</code></pre>
+            <div class="lmn-manual-note"><strong>Current macro limits</strong><p>The inline macro requires the <code>encoder</code> feature, compiles at runtime, and currently uses <code>i64</code> parameters and return values.</p></div>
+            <h2 id="runtime">Own executable memory</h2>
+            <p>The lower-level runtime API returns executable memory and a function pointer. Keep the memory alive for every call through that pointer. Treat the pointer as unsafe: its Rust or C signature must match the compiled function.</p>
+            <h2 id="generated-docs">Use docs.rs for item details</h2>
+            <p>The generated reference lists modules, re-exports, functions, feature flags, and source links. Use it when you need exact Rust types.</p>
+            <div class="lmn-actions"><a class="lmn-button lmn-button-primary" href="https://docs.rs/lamina/latest/lamina/" target="_blank" rel="noopener">Open docs.rs</a><a class="lmn-button lmn-button-quiet" href="/docs/irbuilder">Read IRBuilder guide</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}

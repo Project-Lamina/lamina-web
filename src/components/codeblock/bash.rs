@@ -1,6 +1,6 @@
-use super::LanguageLexer;
-use super::{TokenType, Token};
 use super::BaseLexer;
+use super::LanguageLexer;
+use super::{Token, TokenType};
 
 pub struct BashLexer;
 

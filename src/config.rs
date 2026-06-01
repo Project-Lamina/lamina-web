@@ -1,7 +1,6 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::net::SocketAddr;
-use std::path::PathBuf;
 
 /// Application configuration
 ///
@@ -10,8 +9,7 @@ use std::path::PathBuf;
 /// host = "127.0.0.1"   # or "0.0.0.0"
 /// port = 5002
 /// static_dir = "static"
-/// content_dir = "content"
-/// base_url = "https://nornity.com"
+/// base_url = "https://lamina.sh"
 ///
 /// Comments (# or //) and blank lines are ignored.
 #[derive(Debug, Clone)]
@@ -19,7 +17,6 @@ pub struct Config {
     pub host: [u8; 4],
     pub port: u16,
     pub static_dir: String,
-    pub content_dir: PathBuf,
     pub base_url: String,
 }
 
@@ -29,8 +26,7 @@ impl Default for Config {
             host: [0, 0, 0, 0], // Bind to all interfaces
             port: 5000,
             static_dir: "static".to_string(),
-            content_dir: PathBuf::from("content"),
-            base_url: "https://nornity.com".to_string(),
+            base_url: "https://lamina.sh".to_string(),
         }
     }
 }
@@ -66,9 +62,6 @@ impl Config {
                             "static_dir" => {
                                 config.static_dir = value.to_string();
                             }
-                            "content_dir" => {
-                                config.content_dir = PathBuf::from(value);
-                            }
                             "base_url" => {
                                 config.base_url = value.to_string();
                             }
@@ -93,9 +86,6 @@ impl Config {
         if let Ok(static_dir) = std::env::var("STATIC_DIR") {
             config.static_dir = static_dir;
         }
-        if let Ok(content_dir) = std::env::var("CONTENT_DIR") {
-            config.content_dir = PathBuf::from(content_dir);
-        }
         if let Ok(base_url) = std::env::var("BASE_URL") {
             config.base_url = base_url;
         }
@@ -105,11 +95,6 @@ impl Config {
     /// Get the socket address for the server
     pub fn socket_addr(&self) -> SocketAddr {
         SocketAddr::from((self.host, self.port))
-    }
-
-    /// Check if content directory exists
-    pub fn content_dir_exists(&self) -> bool {
-        self.content_dir.exists()
     }
 }
 

@@ -15,20 +15,27 @@ impl TemplateEngine {
         // Load all template files
         let template_files = [
             "base.html",
-            "homepage.html",
             "lamina_homepage.html",
-            "docs.html",
-            "blog_list.html",
-            "blog_post.html",
+            "docs_index.html",
+            "docs_getting_started.html",
+            "docs_ir.html",
+            "docs_cli.html",
+            "docs_rust.html",
+            "docs_irbuilder.html",
+            "docs_targets.html",
+            "docs_c_bindings.html",
             "404.html",
-            "components/fab.html",
             "components/footer.html",
+            "components/docs_header.html",
+            "components/docs_sidebar.html",
         ];
 
         for template_name in template_files.iter() {
             let template_path = format!("templates/{template_name}");
             match fs::read_to_string(&template_path) {
                 Ok(content) => {
+                    let content =
+                        crate::components::codeblock::highlight_html_code_blocks(&content);
                     templates.insert(template_name.to_string(), content);
                     debug!("Loaded template: {template_name}");
                 }
@@ -61,7 +68,7 @@ impl TemplateEngine {
             result = result.replace(&placeholder, value);
         }
 
-        // Handle component includes like {{fab}} and {{footer}}
+        // Handle shared components after variable substitution.
         result = self.process_includes(&result, variables)?;
 
         Ok(result)
@@ -71,25 +78,24 @@ impl TemplateEngine {
     fn process_includes(
         &self,
         content: &str,
-        _variables: &HashMap<String, String>,
+        variables: &HashMap<String, String>,
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         let mut result = content.to_string();
-
-        // Replace {{fab}} with FAB component
-        if result.contains("{{fab}}") {
-            let fab_vars = {
-                let mut vars = HashMap::new();
-                vars.insert("homepage_anchor".to_string(), "#".to_string());
-                vars
-            };
-            let fab_content = self.render_component("fab", &fab_vars)?;
-            result = result.replace("{{fab}}", &fab_content);
-        }
 
         // Replace {{footer}} with footer component
         if result.contains("{{footer}}") {
             let footer_content = self.render_component("footer", &HashMap::new())?;
             result = result.replace("{{footer}}", &footer_content);
+        }
+
+        if result.contains("{{docs_header}}") {
+            let header_content = self.render_component("docs_header", variables)?;
+            result = result.replace("{{docs_header}}", &header_content);
+        }
+
+        if result.contains("{{docs_sidebar}}") {
+            let sidebar_content = self.render_component("docs_sidebar", variables)?;
+            result = result.replace("{{docs_sidebar}}", &sidebar_content);
         }
 
         Ok(result)
@@ -103,16 +109,6 @@ impl TemplateEngine {
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         let template_name = format!("components/{component_name}.html");
         self.render(&template_name, variables)
-    }
-
-    /// Render the base template with content and meta description
-    pub fn render_base_with_meta(
-        &self,
-        title: &str,
-        content: &str,
-        meta_description: &str,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        self.render_base_with_meta_and_css(title, content, meta_description, None)
     }
 
     /// Render the base template with content, meta description, and optional additional CSS
@@ -133,33 +129,6 @@ impl TemplateEngine {
             .map(|css| format!("<link rel=\"stylesheet\" href=\"{css}\">"))
             .unwrap_or_default();
         variables.insert("additional_css".to_string(), css_link);
-
-        self.render("base.html", &variables)
-    }
-
-    /// Render the base template with content, meta description, and multiple additional CSS files
-    pub fn render_base_with_meta_and_css_list(
-        &self,
-        title: &str,
-        content: &str,
-        meta_description: &str,
-        additional_css: &[&str],
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        let mut variables = HashMap::new();
-        variables.insert("title".to_string(), title.to_string());
-        variables.insert("content".to_string(), content.to_string());
-        variables.insert("meta_description".to_string(), meta_description.to_string());
-
-        let css_links = if additional_css.is_empty() {
-            String::new()
-        } else {
-            additional_css
-                .iter()
-                .map(|css| format!("<link rel=\"stylesheet\" href=\"{}\">", css))
-                .collect::<Vec<_>>()
-                .join("\n")
-        };
-        variables.insert("additional_css".to_string(), css_links);
 
         self.render("base.html", &variables)
     }

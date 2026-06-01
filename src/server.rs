@@ -17,15 +17,13 @@ pub fn build_app(config: &Config) -> Router {
     let router = Router::new()
         .route("/", get(handlers::homepage))
         .route("/docs", get(handlers::docs))
-        .route("/blog", get(handlers::blog_list))
-        .route("/blog/{slug}", get(handlers::blog_post))
+        .route("/docs/{page}", get(handlers::docs_page))
         .route("/sitemap.xml", get(handlers::sitemap))
         .route("/robots.txt", get(handlers::robots_txt))
-        .route("/rss.xml", get(handlers::rss_feed))
         .nest_service("/static", static_service)
         .fallback(handlers::not_found);
 
-    info!("Router configured with {} routes", 7);
+    info!("Router configured with {} routes", 5);
     router
 }
 
