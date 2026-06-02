@@ -16,7 +16,11 @@ pub async fn homepage() -> Html<String> {
     info!("Homepage served successfully");
 
     let template_engine = get_template_engine();
-    let variables = HashMap::new();
+    let mut variables = HashMap::new();
+    variables.insert(
+        "homepage_release_summary".to_string(),
+        crate::releases::homepage_release_summary().await,
+    );
 
     match template_engine.render("lamina_homepage.html", &variables) {
         Ok(content) => {
