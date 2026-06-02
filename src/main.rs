@@ -3,6 +3,7 @@ mod components;
 mod config;
 mod handlers;
 mod logger;
+mod releases;
 mod routes;
 mod server;
 mod templates;

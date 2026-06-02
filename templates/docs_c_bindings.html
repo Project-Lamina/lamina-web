@@ -7,22 +7,22 @@
             <p class="lmn-section-tag">Source preview</p>
             <h1>C bindings progress</h1>
             <p class="lmn-manual-lead">The development checkout now contains a real <code>lamina-c</code> crate. It wraps owned IRBuilder state, module serialization, AOT assembly output, explicit resource cleanup, and an optional nightly JIT module.</p>
-            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Status: source preview</strong><p>The crate builds, but it is not a public SDK yet. The reviewed <code>lamina.h</code> header, release archives, packaged smoke tests, and ABI hardening work are still pending.</p></div>
+            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Status: source preview</strong><p>The crate builds and includes hand-maintained stable and nightly headers, but it is not a published SDK yet. Packaged smoke tests, release archives, checksums, and the final ABI review remain open.</p></div>
 
             <h2 id="implemented">Implemented now</h2>
             <div class="lmn-doc-table">
                 <p><strong>Owned builder</strong><span><code>OwnedIRBuilder</code> removes Rust lifetime requirements from the FFI boundary.</span></p>
                 <p><strong>Stable-shaped AOT</strong><span>Raw IR text or a built module can be compiled into an assembly byte buffer.</span></p>
                 <p><strong>Explicit cleanup</strong><span>Builders, modules, temporary types, values, buffers, and nightly JIT handles have matching free functions.</span></p>
+                <p><strong>C headers</strong><span><code>lamina.h</code> and additive <code>lamina_nightly.h</code> headers exist in the development checkout. They are maintained by hand while cbindgen lacks Rust 2024 support.</span></p>
                 <p><strong>Nightly JIT</strong><span>Runtime compilation and typed <code>i64</code> call helpers are isolated behind the <code>nightly</code> feature.</span></p>
-                <p><strong>Build checks</strong><span>Stable and nightly <code>cargo check -p lamina-c</code> builds complete successfully in the development checkout.</span></p>
+                <p><strong>Example checks</strong><span><code>make test</code> and <code>make test-nightly</code> build and run the stable AOT, raw IR, and nightly JIT examples.</span></p>
             </div>
 
             <h2 id="pending">Before the first public archive</h2>
             <ul>
-                <li><strong>Header</strong><span>Generate, review, and commit the public <code>lamina.h</code> header.</span></li>
-                <li><strong>Error strings</strong><span>Harden <code>lamina_last_error()</code> so the returned pointer always references a NUL-terminated C string.</span></li>
-                <li><strong>Buffers</strong><span>Preserve allocation capacity correctly when returned byte buffers are freed.</span></li>
+                <li><strong>Header automation</strong><span>Track cbindgen support for Rust 2024 <code>#[unsafe(no_mangle)]</code>. Until then, review the hand-maintained headers with each ABI change.</span></li>
+                <li><strong>Clean CI rebuild</strong><span>Rebuild the C examples from scratch in CI so the <code>lia_*</code> exports, headers, and examples cannot drift apart.</span></li>
                 <li><strong>Tests</strong><span>Compile C smoke programs against packaged Linux and Windows archives.</span></li>
                 <li><strong>Distribution</strong><span>Publish versioned GitHub Release archives and SHA-256 checksums, then expose them through this website.</span></li>
             </ul>
