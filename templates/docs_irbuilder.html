@@ -17,7 +17,7 @@ builder
     .ret(Type::Primitive(PrimitiveType::I32), var("sum"));
 
 let module = builder.build();</code></pre>
-            <div class="lmn-manual-note"><strong>Borrowed names</strong><p><code>IRBuilder&lt;'a&gt;</code> stores borrowed names and string values. Keep the backing strings alive until the module is finished. The planned C API uses an owned builder wrapper so C callers do not need to manage Rust lifetimes.</p></div>
+            <div class="lmn-manual-note"><strong>Borrowed names</strong><p><code>IRBuilder&lt;'a&gt;</code> stores borrowed names and string values. Keep the backing strings alive until the module is finished. The C API uses an owned builder wrapper so C callers do not need to manage Rust lifetimes.</p></div>
             <h2 id="families">Method families</h2>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Family</span><span>Methods</span><span>Purpose</span></div>

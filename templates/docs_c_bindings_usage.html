@@ -4,12 +4,12 @@
         {{docs_sidebar}}
         <article class="lmn-manual-article">
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><a href="/docs/c-bindings">C bindings</a><span>/</span><strong>Usage</strong></nav>
-            <p class="lmn-section-tag">C bindings source preview</p>
+            <p class="lmn-section-tag">C bindings development SDK</p>
             <h1>Use Lamina from C</h1>
-            <p class="lmn-manual-lead">The development crate already exposes a stable-shaped AOT API: create owned handles, build or provide Lamina IR, emit assembly, then release every returned resource explicitly.</p>
-            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Source-preview ABI</strong><p>The examples use the current hand-maintained <code>lamina.h</code>. Review the header from your checkout before integrating it: symbol names and typedefs may still change before the first archive is published.</p></div>
+            <p class="lmn-manual-lead">The AOT API uses owned handles: create a builder, construct or provide Lamina IR, emit assembly, then release every returned resource explicitly.</p>
+            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Development ABI</strong><p>The examples use the hand-maintained <code>lamina.h</code> shipped in the rolling Linux SDK archive. Review the header before integrating it because symbol names and typedefs may still change before the stable SDK release.</p></div>
 
-            <h2 id="stable-surface">Implemented stable surface</h2>
+            <h2 id="stable-surface">Implemented AOT surface</h2>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Area</span><span>Functions</span><span>Purpose</span></div>
                 <p><strong>Information</strong><code>lia_version lia_host_target</code><span>Read the C crate version and detected host target.</span></p>
@@ -30,7 +30,7 @@
             </div>
 
             <h2 id="builder-example">Build and inspect an IR module</h2>
-            <p>This source-preview example creates <code>@main</code>, computes <code>40 + 2</code>, serializes the module, and releases every handle.</p>
+            <p>This example creates <code>@main</code>, computes <code>40 + 2</code>, serializes the module, and releases every handle.</p>
             <pre><code class="language-c">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;lamina.h&gt;
@@ -75,7 +75,7 @@ int main(void) {
 }</code></pre>
 
             <h2 id="aot-example">Compile a module to assembly</h2>
-            <p>Use a null target to compile for the host, or pass an explicit tested target such as <code>x86_64_linux</code> or <code>x86_64_windows</code>. The current source preview accepts only <code>opt_level = 0</code>.</p>
+            <p>Use a null target to compile for the host, or pass an explicit tested target such as <code>x86_64_linux</code> or <code>x86_64_windows</code>. The current C API accepts only <code>opt_level = 0</code>.</p>
             <pre><code class="language-c">lia_compile_options_t options = {
     .target = "x86_64_linux",
     .codegen_units = 1,
@@ -86,13 +86,13 @@ lia_buffer_t assembly = {0};
 require_ok(lia_module_compile_to_assembly(module, &amp;options, &amp;assembly));
 fwrite(assembly.data, 1, assembly.len, stdout);
 lia_buffer_free(&amp;assembly);</code></pre>
-            <div class="lmn-manual-note"><strong>Assembly output only</strong><p>The current stable-shaped C API emits assembly bytes. Object-file generation, executable linking helpers, and packaged compiler-driver integration remain follow-up work.</p></div>
+            <div class="lmn-manual-note"><strong>Assembly output only</strong><p>The current C API emits assembly bytes. Object-file generation, executable linking helpers, and packaged compiler-driver integration remain follow-up work.</p></div>
 
             <h2 id="nightly-jit">Nightly JIT extension</h2>
             <p>Runtime compilation is an optional nightly API. The source crate gates these symbols behind <code>--features nightly</code>: <code>lia_jit_compile_ir</code>, <code>lia_module_compile_jit</code>, <code>lia_jit_get_function</code>, <code>lia_jit_call_i64_0</code>, <code>lia_jit_call_i64_1</code>, <code>lia_jit_call_i64_2</code>, and <code>lia_jit_free</code>.</p>
             <div class="lmn-manual-note lmn-manual-note-planned"><strong>No stable JIT ABI</strong><p>These declarations live in <code>lamina_nightly.h</code>, not <code>lamina.h</code>. Nightly users should expect changes.</p></div>
 
-            <div class="lmn-manual-next"><span>Related</span><a href="/docs/c-bindings/install">Build the source preview</a></div>
+            <div class="lmn-manual-next"><span>Related</span><a href="/docs/c-bindings/install">Install the C SDK</a></div>
         </article>
     </div>
 </main>

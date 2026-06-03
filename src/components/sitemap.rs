@@ -34,7 +34,9 @@ pub struct SitemapGenerator {
 impl SitemapGenerator {
     /// Create a new sitemap generator with the given base URL
     pub fn new(base_url: String) -> Self {
-        Self { base_url }
+        Self {
+            base_url: base_url.trim_end_matches('/').to_string(),
+        }
     }
 
     /// Generate the complete sitemap XML.
@@ -134,4 +136,25 @@ pub fn generate_sitemap_xml(
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let generator = SitemapGenerator::new(base_url.to_string());
     generator.generate_sitemap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generates_minimal_canonical_sitemap() {
+        let xml = generate_sitemap_xml("https://lamina.sh/").expect("sitemap generation");
+
+        assert!(xml.starts_with("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
+        assert!(xml.contains("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">"));
+        assert!(xml.contains("<loc>https://lamina.sh/</loc>"));
+        assert!(xml.contains("<loc>https://lamina.sh/docs/c-bindings/install</loc>"));
+        assert!(!xml.contains("lamina.sh//"));
+        assert!(xml.contains("<lastmod>"));
+        assert!(xml.contains("<changefreq>daily</changefreq>"));
+        assert!(xml.contains("<changefreq>weekly</changefreq>"));
+        assert!(xml.contains("<priority>1.0</priority>"));
+        assert!(xml.contains("<priority>0.8</priority>"));
+    }
 }
