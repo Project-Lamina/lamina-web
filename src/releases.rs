@@ -6,6 +6,8 @@ use std::time::{Duration, Instant};
 const LATEST_RELEASE_API: &str =
     "https://api.github.com/repos/SkuldNorniern/lamina/releases/latest";
 const LATEST_RELEASE_URL: &str = "https://github.com/SkuldNorniern/lamina/releases/latest";
+const SDK_RELEASE_API: &str =
+    "https://api.github.com/repos/SkuldNorniern/lamina/releases/tags/latest";
 const CACHE_LIFETIME: Duration = Duration::from_secs(60 * 60);
 
 static RELEASE_CACHE: OnceLock<Mutex<Option<CachedRelease>>> = OnceLock::new();
@@ -13,7 +15,13 @@ static RELEASE_CACHE: OnceLock<Mutex<Option<CachedRelease>>> = OnceLock::new();
 #[derive(Clone, Debug)]
 struct CachedRelease {
     fetched_at: Instant,
-    release: GithubRelease,
+    releases: HomepageReleases,
+}
+
+#[derive(Clone, Debug)]
+struct HomepageReleases {
+    compiler: GithubRelease,
+    sdk: Option<GithubRelease>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -38,27 +46,27 @@ struct GithubAsset {
 /// keeps the page honest without delaying or breaking the homepage.
 pub async fn homepage_release_summary() -> String {
     match latest_release().await {
-        Some(release) => render_release_summary(&release),
+        Some(releases) => render_release_summary(&releases),
         None => render_unavailable_summary(),
     }
 }
 
-async fn latest_release() -> Option<GithubRelease> {
-    if let Some(release) = cached_release(false) {
-        return Some(release);
+async fn latest_release() -> Option<HomepageReleases> {
+    if let Some(releases) = cached_release(false) {
+        return Some(releases);
     }
 
-    match fetch_latest_release().await {
-        Ok(release) => {
+    match fetch_homepage_releases().await {
+        Ok(releases) => {
             let cache = RELEASE_CACHE.get_or_init(|| Mutex::new(None));
             let mut cache = cache
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
             *cache = Some(CachedRelease {
                 fetched_at: Instant::now(),
-                release: release.clone(),
+                releases: releases.clone(),
             });
-            Some(release)
+            Some(releases)
         }
         Err(error) => {
             warn!("Unable to refresh latest Lamina release: {error}");
@@ -67,7 +75,7 @@ async fn latest_release() -> Option<GithubRelease> {
     }
 }
 
-fn cached_release(allow_stale: bool) -> Option<GithubRelease> {
+fn cached_release(allow_stale: bool) -> Option<HomepageReleases> {
     let cache = RELEASE_CACHE.get_or_init(|| Mutex::new(None));
     let cache = cache
         .lock()
@@ -75,17 +83,34 @@ fn cached_release(allow_stale: bool) -> Option<GithubRelease> {
     let cached = cache.as_ref()?;
 
     if allow_stale || cached.fetched_at.elapsed() < CACHE_LIFETIME {
-        Some(cached.release.clone())
+        Some(cached.releases.clone())
     } else {
         None
     }
 }
 
-async fn fetch_latest_release() -> Result<GithubRelease, reqwest::Error> {
+async fn fetch_homepage_releases() -> Result<HomepageReleases, reqwest::Error> {
     debug!("Refreshing latest Lamina GitHub Release");
 
-    reqwest::Client::new()
-        .get(LATEST_RELEASE_API)
+    let client = reqwest::Client::new();
+    let compiler = fetch_release(&client, LATEST_RELEASE_API).await?;
+    let sdk = match fetch_release(&client, SDK_RELEASE_API).await {
+        Ok(release) => Some(release),
+        Err(error) => {
+            warn!("Unable to refresh rolling Lamina C SDK release: {error}");
+            None
+        }
+    };
+
+    Ok(HomepageReleases { compiler, sdk })
+}
+
+async fn fetch_release(
+    client: &reqwest::Client,
+    endpoint: &str,
+) -> Result<GithubRelease, reqwest::Error> {
+    client
+        .get(endpoint)
         .header(reqwest::header::ACCEPT, "application/vnd.github+json")
         .header(reqwest::header::USER_AGENT, "lamina-web")
         .timeout(Duration::from_secs(3))
@@ -96,9 +121,11 @@ async fn fetch_latest_release() -> Result<GithubRelease, reqwest::Error> {
         .await
 }
 
-fn render_release_summary(release: &GithubRelease) -> String {
+fn render_release_summary(releases: &HomepageReleases) -> String {
+    let compiler = &releases.compiler;
+    let sdk_release = releases.sdk.as_ref().unwrap_or(compiler);
     let mut sdk_links = String::new();
-    for asset in release
+    for asset in sdk_release
         .assets
         .iter()
         .filter(|asset| stable_c_sdk_label(&asset.name).is_some())
@@ -118,19 +145,20 @@ fn render_release_summary(release: &GithubRelease) -> String {
                 <a href=\"{}\">Source .tar.gz</a>\
                 <a href=\"{}\">Source .zip</a>\
                 {}\
+                <a href=\"/docs/c-bindings/install\">C SDK docs</a>\
             </div>\
         </div>",
-        escape_html(&release.html_url),
-        escape_html(&release.tag_name),
-        escape_html(&release.tarball_url),
-        escape_html(&release.zipball_url),
+        escape_html(&compiler.html_url),
+        escape_html(&compiler.tag_name),
+        escape_html(&compiler.tarball_url),
+        escape_html(&compiler.zipball_url),
         sdk_links_or_preview(&sdk_links),
     )
 }
 
 fn sdk_links_or_preview(sdk_links: &str) -> String {
     if sdk_links.is_empty() {
-        "<a href=\"/docs/c-bindings/install\">C SDK: source preview</a>".to_string()
+        "<a href=\"/docs/c-bindings/install\">C SDK: development docs</a>".to_string()
     } else {
         sdk_links.to_string()
     }
@@ -141,7 +169,7 @@ fn render_unavailable_summary() -> String {
         "<div class=\"lmn-hero-release\" aria-label=\"Lamina releases\">\
             <p><span>Release</span><a href=\"{LATEST_RELEASE_URL}\" target=\"_blank\" rel=\"noopener\">Check GitHub</a></p>\
             <div class=\"lmn-hero-release-links\">\
-                <a href=\"/docs/c-bindings/install\">C SDK: source preview</a>\
+                <a href=\"/docs/c-bindings/install\">C SDK docs</a>\
             </div>\
         </div>",
     )
@@ -182,11 +210,11 @@ mod tests {
     #[test]
     fn recognizes_tested_stable_archives_only() {
         assert_eq!(
-            stable_c_sdk_label("lamina-c-0.1.0-x86_64-linux.tar.gz"),
+            stable_c_sdk_label("lamina-c-0.1.0-stable-x86_64-linux.tar.gz"),
             Some("Linux x86_64")
         );
         assert_eq!(
-            stable_c_sdk_label("lamina-c-0.1.0-x86_64-windows.zip"),
+            stable_c_sdk_label("lamina-c-0.1.0-stable-x86_64-windows.zip"),
             Some("Windows x86_64")
         );
         assert_eq!(
@@ -200,19 +228,33 @@ mod tests {
     }
 
     #[test]
-    fn source_preview_release_does_not_render_fake_downloads() {
-        let release = GithubRelease {
+    fn rolling_sdk_release_renders_download_without_replacing_compiler_version() {
+        let compiler = GithubRelease {
             tag_name: "v0.0.10".to_string(),
             html_url: "https://example.com/releases/v0.0.10".to_string(),
             tarball_url: "https://example.com/releases/v0.0.10.tar.gz".to_string(),
             zipball_url: "https://example.com/releases/v0.0.10.zip".to_string(),
             assets: Vec::new(),
         };
+        let sdk = GithubRelease {
+            tag_name: "latest".to_string(),
+            html_url: "https://example.com/releases/latest".to_string(),
+            tarball_url: "https://example.com/releases/latest.tar.gz".to_string(),
+            zipball_url: "https://example.com/releases/latest.zip".to_string(),
+            assets: vec![GithubAsset {
+                name: "lamina-c-0.1.0-stable-x86_64-linux.tar.gz".to_string(),
+                browser_download_url: "https://example.com/lamina-c-linux.tar.gz".to_string(),
+            }],
+        };
 
-        let rendered = render_release_summary(&release);
+        let rendered = render_release_summary(&HomepageReleases {
+            compiler,
+            sdk: Some(sdk),
+        });
 
         assert!(rendered.contains("v0.0.10"));
-        assert!(rendered.contains("C SDK: source preview"));
-        assert!(!rendered.contains("C SDK: Linux x86_64"));
+        assert!(rendered.contains("C SDK: Linux x86_64"));
+        assert!(rendered.contains("https://example.com/lamina-c-linux.tar.gz"));
+        assert!(!rendered.contains("C SDK: development docs"));
     }
 }

@@ -4,10 +4,10 @@
         {{docs_sidebar}}
         <article class="lmn-manual-article">
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><a href="/docs/c-bindings">C bindings</a><span>/</span><strong>Install</strong></nav>
-            <p class="lmn-section-tag">C bindings source preview</p>
-            <h1>Build the C bindings</h1>
-            <p class="lmn-manual-lead"><code>lamina-c</code> is implemented in the development checkout and includes stable and nightly headers. Public SDK archives are not published yet. Use this page to inspect or test the source preview.</p>
-            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Not a public install yet</strong><p>Do not depend on the current ABI from released software. The first public install will ship versioned archives, reviewed headers, checksums, and packaged smoke tests.</p></div>
+            <p class="lmn-section-tag">C bindings development SDK</p>
+            <h1>Install the C bindings</h1>
+            <p class="lmn-manual-lead">The rolling development release publishes Linux x86_64 SDK archives for the AOT API and the optional nightly JIT extension. Each archive contains headers, static and shared libraries, examples, pkg-config metadata, and a license.</p>
+            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Development ABI</strong><p>The archives are ready for evaluation and integration testing. The C ABI may still change before the first stable SDK release.</p></div>
 
             <h2 id="progress">Current progress</h2>
             <div class="lmn-doc-table">
@@ -15,38 +15,53 @@
                 <p><strong>AOT API</strong><span>Owned builder handles, module serialization, assembly compilation, buffers, and status codes are implemented.</span></p>
                 <p><strong>Nightly JIT</strong><span>The optional JIT module builds behind <code>--features nightly</code>.</span></p>
                 <p><strong>Public headers</strong><span><code>lamina.h</code> and <code>lamina_nightly.h</code> exist. They are maintained by hand until cbindgen supports Rust 2024 <code>#[unsafe(no_mangle)]</code>.</span></p>
-                <p><strong>Example checks</strong><span><code>make test</code> and <code>make test-nightly</code> build and run the stable AOT, raw IR, and nightly JIT examples.</span></p>
-                <p><strong>Release bundles</strong><span>GitHub Release archives and checksums are planned but not published.</span></p>
+                <p><strong>Example checks</strong><span>The stable AOT, raw IR, and nightly JIT examples build and run against the published Linux archives.</span></p>
+                <p><strong>Release bundles</strong><span>AOT and nightly JIT Linux x86_64 tarballs are published on the rolling GitHub prerelease.</span></p>
             </div>
 
+            <h2 id="download">Download the Linux SDK</h2>
+            <p>Choose the AOT archive for non-JIT integration. Download the nightly archive only when you need the experimental JIT API.</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Channel</span><span>Archive</span><span>Use it for</span></div>
+                <p><strong>AOT</strong><a href="https://github.com/SkuldNorniern/lamina/releases/download/latest/lamina-c-0.1.0-stable-x86_64-linux.tar.gz"><code>lamina-c-0.1.0-stable-x86_64-linux.tar.gz</code></a><span><code>lamina.h</code>, shared and static libraries, AOT builder example, and raw IR example.</span></p>
+                <p><strong>Nightly JIT</strong><a href="https://github.com/SkuldNorniern/lamina/releases/download/latest/lamina-c-0.1.0-nightly-x86_64-linux.tar.gz"><code>lamina-c-0.1.0-nightly-x86_64-linux.tar.gz</code></a><span>Stable files plus <code>lamina_nightly.h</code> and the JIT example.</span></p>
+            </div>
+            <pre><code class="language-shell">$ curl -LO https://github.com/SkuldNorniern/lamina/releases/download/latest/lamina-c-0.1.0-stable-x86_64-linux.tar.gz
+$ tar -xzf lamina-c-0.1.0-stable-x86_64-linux.tar.gz
+$ cd lamina-c-0.1.0-stable-x86_64-linux
+$ cc examples/builder_aot.c -I include -L lib -llamina_c \
+    -Wl,-rpath,'$ORIGIN/lib' -o builder_aot
+$ ./builder_aot</code></pre>
+            <div class="lmn-manual-note"><strong>Checksum note</strong><p>The current <code>.sha256</code> companion files contain correct digests but include CI-runner paths, so <code>sha256sum -c</code> is not portable yet. This is tracked as a packaging fix for the next rolling build.</p></div>
+
             <h2 id="source-build">Build from a source checkout</h2>
-            <p>The stable source-preview build exposes AOT assembly generation. These commands build the library for contributors; they do not install a finished public SDK.</p>
+            <p>A source build is useful when testing current development changes. Build the standalone <code>lamina-c</code> crate through its manifest.</p>
             <pre><code class="language-shell">$ git clone https://github.com/SkuldNorniern/lamina.git
 $ cd lamina
-$ cargo build -p lamina-c --release</code></pre>
+$ cargo build --manifest-path lamina-c/Cargo.toml --release</code></pre>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Platform</span><span>Shared library</span><span>Static library</span></div>
-                <p><strong>Linux</strong><code>target/release/liblamina_c.so</code><code>target/release/liblamina_c.a</code></p>
-                <p><strong>Windows</strong><code>target/release/lamina_c.dll</code><code>target/release/lamina_c.lib</code></p>
-                <p><strong>macOS</strong><code>target/release/liblamina_c.dylib</code><code>target/release/liblamina_c.a</code></p>
+                <p><strong>Linux</strong><code>lamina-c/target/release/liblamina_c.so</code><code>lamina-c/target/release/liblamina_c.a</code></p>
+                <p><strong>Windows</strong><code>lamina-c/target/release/lamina_c.dll</code><code>lamina-c/target/release/lamina_c.lib</code></p>
+                <p><strong>macOS</strong><code>lamina-c/target/release/liblamina_c.dylib</code><code>lamina-c/target/release/liblamina_c.a</code></p>
             </div>
             <div class="lmn-manual-note"><strong>Apple Silicon macOS</strong><p>The <code>aarch64_macos</code> compiler path has received partial testing. Treat macOS C binding builds as preview work until release coverage is broader.</p></div>
 
             <h2 id="nightly">Build the nightly JIT extension</h2>
             <p>JIT is not part of the stable C surface. Build with the nightly feature only when testing runtime compilation.</p>
-            <pre><code class="language-shell">$ cargo build -p lamina-c --release --features nightly</code></pre>
+            <pre><code class="language-shell">$ cargo build --manifest-path lamina-c/Cargo.toml --release --features nightly</code></pre>
             <p>JIT declarations live in the additive <code>lamina_nightly.h</code> header. Stable programs should include only <code>lamina.h</code>.</p>
 
-            <h2 id="release-shape">Planned public downloads</h2>
-            <p>GitHub Releases will hold the archives. The official Lamina website will act as the download index and documentation entry point.</p>
+            <h2 id="release-shape">Archive availability</h2>
+            <p>GitHub Releases hold the SDK archives. This website documents the supported surface and links to the current rolling downloads.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Archive</span><span>Status</span><span>Contents</span></div>
-                <p><code>lamina-c-{version}-x86_64-linux.tar.gz</code><strong>Planned</strong><span><code>lamina.h</code>, libraries, examples, metadata, license, and checksum.</span></p>
-                <p><code>lamina-c-{version}-x86_64-windows.zip</code><strong>Planned</strong><span><code>lamina.h</code>, DLL, import library, static library, examples, license, and checksum.</span></p>
-                <p><code>lamina-c-{version}-nightly-{target}.tar.gz</code><strong>Planned</strong><span>Stable files plus additive <code>lamina_nightly.h</code> JIT declarations.</span></p>
+                <p><code>lamina-c-0.1.0-stable-x86_64-linux.tar.gz</code><strong>Available</strong><span><code>lamina.h</code>, Linux libraries, examples, metadata, license, and checksum companion.</span></p>
+                <p><code>lamina-c-0.1.0-nightly-x86_64-linux.tar.gz</code><strong>Available</strong><span>Stable files plus additive <code>lamina_nightly.h</code> JIT declarations and example.</span></p>
+                <p><code>lamina-c-{version}-{channel}-{target}</code><strong>Planned</strong><span>Windows and Apple Silicon macOS archives follow after packaged smoke coverage.</span></p>
             </div>
 
-            <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings/usage">Use the source-preview API</a></div>
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings/usage">Use the C API</a></div>
         </article>
     </div>
 </main>

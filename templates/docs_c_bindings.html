@@ -4,43 +4,45 @@
         {{docs_sidebar}}
         <article class="lmn-manual-article">
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>C bindings</strong></nav>
-            <p class="lmn-section-tag">Source preview</p>
+            <p class="lmn-section-tag">Development SDK</p>
             <h1>C bindings progress</h1>
-            <p class="lmn-manual-lead">The development checkout now contains a real <code>lamina-c</code> crate. It wraps owned IRBuilder state, module serialization, AOT assembly output, explicit resource cleanup, and an optional nightly JIT module.</p>
-            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Status: source preview</strong><p>The crate builds and includes hand-maintained stable and nightly headers, but it is not a published SDK yet. Packaged smoke tests, release archives, checksums, and the final ABI review remain open.</p></div>
+            <p class="lmn-manual-lead"><code>lamina-c</code> wraps Lamina's IRBuilder, module serialization, AOT assembly output, diagnostics, and cleanup rules for C programs. A separate nightly header adds the experimental JIT interface.</p>
+            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Status: development archives</strong><p>Linux x86_64 SDK archives are available from the rolling development release. The ABI is still under review, so use the current headers as a development interface rather than a long-term compatibility promise.</p></div>
 
             <h2 id="implemented">Implemented now</h2>
             <div class="lmn-doc-table">
                 <p><strong>Owned builder</strong><span><code>OwnedIRBuilder</code> removes Rust lifetime requirements from the FFI boundary.</span></p>
-                <p><strong>Stable-shaped AOT</strong><span>Raw IR text or a built module can be compiled into an assembly byte buffer.</span></p>
+                <p><strong>AOT surface</strong><span>Raw IR text or a built module can be compiled into an assembly byte buffer.</span></p>
                 <p><strong>Explicit cleanup</strong><span>Builders, modules, temporary types, values, buffers, and nightly JIT handles have matching free functions.</span></p>
-                <p><strong>C headers</strong><span><code>lamina.h</code> and additive <code>lamina_nightly.h</code> headers exist in the development checkout. They are maintained by hand while cbindgen lacks Rust 2024 support.</span></p>
+                <p><strong>C headers</strong><span><code>lamina.h</code> defines the AOT surface. The additive <code>lamina_nightly.h</code> header contains the experimental JIT API. Both are maintained by hand while cbindgen lacks Rust 2024 support.</span></p>
                 <p><strong>Nightly JIT</strong><span>Runtime compilation and typed <code>i64</code> call helpers are isolated behind the <code>nightly</code> feature.</span></p>
-                <p><strong>Example checks</strong><span><code>make test</code> and <code>make test-nightly</code> build and run the stable AOT, raw IR, and nightly JIT examples.</span></p>
+                <p><strong>Linux archives</strong><span>The rolling development release includes stable and nightly Linux x86_64 tarballs with headers, libraries, examples, metadata, and a license.</span></p>
+                <p><strong>Example checks</strong><span>The stable AOT, raw IR, and nightly JIT examples build and run against the published Linux archives.</span></p>
             </div>
 
-            <h2 id="pending">Before the first public archive</h2>
+            <h2 id="pending">Before a stable SDK release</h2>
             <ul>
                 <li><strong>Header automation</strong><span>Track cbindgen support for Rust 2024 <code>#[unsafe(no_mangle)]</code>. Until then, review the hand-maintained headers with each ABI change.</span></li>
                 <li><strong>Clean CI rebuild</strong><span>Rebuild the C examples from scratch in CI so the <code>lia_*</code> exports, headers, and examples cannot drift apart.</span></li>
-                <li><strong>Tests</strong><span>Compile C smoke programs against packaged Linux and Windows archives.</span></li>
-                <li><strong>Distribution</strong><span>Publish versioned GitHub Release archives and SHA-256 checksums, then expose them through this website.</span></li>
+                <li><strong>Checksums</strong><span>Generate portable checksum files. The current rolling release records the correct digest but writes a CI-runner path into each <code>.sha256</code> file.</span></li>
+                <li><strong>More platforms</strong><span>Add packaged smoke tests before publishing Windows or Apple Silicon macOS archives.</span></li>
+                <li><strong>ABI review</strong><span>Finish naming, ownership, and error-contract review before promising compatibility across releases.</span></li>
             </ul>
 
-            <h2 id="published-shape">Planned release shape</h2>
+            <h2 id="published-shape">Published archive shape</h2>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Surface</span><span>Header</span><span>Contract</span></div>
-                <p><strong>Stable C API</strong><code>lamina.h</code><span>Owned builders, modules, assembly output, status codes, and explicit cleanup.</span></p>
+                <p><strong>AOT C API</strong><code>lamina.h</code><span>Owned builders, modules, assembly output, status codes, and explicit cleanup.</span></p>
                 <p><strong>Nightly extension</strong><code>lamina_nightly.h</code><span>Additive JIT handles and call helpers. No stable ABI guarantee.</span></p>
-                <p><strong>Downloads</strong><code>GitHub Releases</code><span>Versioned Linux and Windows bundles first. Apple Silicon macOS follows after broader coverage.</span></p>
+                <p><strong>Downloads</strong><code>GitHub Releases</code><span>Linux x86_64 development bundles are available now. Additional platforms follow after packaged smoke coverage.</span></p>
             </div>
 
             <h2 id="read-next">Read the C guides</h2>
             <div class="lmn-doc-table">
-                <p><strong>Build</strong><span><a href="/docs/c-bindings/install">Build the source preview and review the planned archive layout.</a></span></p>
+                <p><strong>Install</strong><span><a href="/docs/c-bindings/install">Download the Linux SDK archive or build the crate from source.</a></span></p>
                 <p><strong>Use</strong><span><a href="/docs/c-bindings/usage">Read ownership rules and a complete AOT builder example.</a></span></p>
             </div>
-            <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings/install">Build the C bindings preview</a></div>
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings/install">Install the C SDK</a></div>
         </article>
     </div>
 </main>

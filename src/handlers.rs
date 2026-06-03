@@ -52,7 +52,7 @@ pub async fn docs() -> Html<String> {
     render_docs_template(
         "docs_index.html",
         "Lamina Documentation",
-        "Documentation for Lamina IR, the compiler driver, Rust embedding, IRBuilder, target backends, and the planned C bindings.",
+        "Documentation for Lamina IR, the compiler driver, Rust embedding, IRBuilder, target backends, and the C bindings development SDK.",
         "home",
     )
 }
@@ -100,8 +100,8 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
         ),
         "c-bindings" => (
             "docs_c_bindings.html",
-            "C Bindings Preview",
-            "Track the Lamina C bindings source preview: owned IRBuilder handles, AOT assembly compilation, release blockers, and the nightly JIT extension.",
+            "C Bindings Development SDK",
+            "Use the Lamina C bindings development SDK: owned IRBuilder handles, AOT assembly compilation, release status, and the nightly JIT extension.",
             "c_bindings",
         ),
         _ => return Err(StatusCode::NOT_FOUND),
@@ -110,21 +110,21 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
     Ok(render_docs_template(template, title, description, active))
 }
 
-/// Focused pages for the C bindings source preview.
+/// Focused pages for the C bindings development SDK.
 pub async fn docs_c_bindings_page(Path(page): Path<String>) -> Result<Html<String>, StatusCode> {
     info!("Serving Lamina C bindings documentation page: {page}");
 
     let (template, title, description, active) = match page.as_str() {
         "install" => (
             "docs_c_bindings_install.html",
-            "Build the C Bindings",
-            "Build the Lamina C bindings source preview and review the planned GitHub Release archives, headers, and nightly JIT bundle.",
+            "Install the C Bindings",
+            "Download the Lamina C bindings development SDK or build it from source. Review the headers, Linux release archives, and nightly JIT bundle.",
             "c_bindings_install",
         ),
         "usage" => (
             "docs_c_bindings_usage.html",
             "Use Lamina from C",
-            "Use the Lamina C bindings source preview: owned IRBuilder handles, module serialization, AOT assembly output, buffers, and nightly JIT boundaries.",
+            "Use the Lamina C bindings development SDK: owned IRBuilder handles, module serialization, AOT assembly output, buffers, and nightly JIT boundaries.",
             "c_bindings_usage",
         ),
         _ => return Err(StatusCode::NOT_FOUND),
