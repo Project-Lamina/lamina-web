@@ -1,4 +1,6 @@
 use crate::components::sitemap::generate_sitemap_xml;
+use crate::config::Config;
+use crate::releases::homepage_release_summary;
 use crate::templates::TemplateEngine;
 use axum::{
     extract::Path,
@@ -19,7 +21,7 @@ pub async fn homepage() -> Html<String> {
     let mut variables = HashMap::new();
     variables.insert(
         "homepage_release_summary".to_string(),
-        crate::releases::homepage_release_summary().await,
+        homepage_release_summary().await,
     );
 
     match template_engine.render("lamina_homepage.html", &variables) {
@@ -264,6 +266,6 @@ fn get_template_engine() -> &'static TemplateEngine {
     crate::routes::get_template_engine()
 }
 
-fn get_config() -> &'static crate::config::Config {
+fn get_config() -> &'static Config {
     crate::routes::get_config()
 }

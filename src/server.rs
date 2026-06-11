@@ -1,8 +1,8 @@
-use std::error;
 use crate::config::Config;
 use crate::handlers;
 use axum::{Router, routing::get};
 use log::{debug, error, info};
+use std::error;
 use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
 

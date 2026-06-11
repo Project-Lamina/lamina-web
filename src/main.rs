@@ -8,9 +8,9 @@ mod routes;
 mod server;
 mod templates;
 
-use std::error;
 use log::{debug, error, info, warn};
 use logger::Logger;
+use std::error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn error::Error>> {

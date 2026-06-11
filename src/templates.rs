@@ -1,6 +1,7 @@
-use std::error;
+use crate::components::codeblock::highlight_html_code_blocks;
 use log::{debug, error};
 use std::collections::HashMap;
+use std::error;
 use std::fs;
 
 /// Simple template engine for HTML templates
@@ -37,8 +38,7 @@ impl TemplateEngine {
             let template_path = format!("templates/{template_name}");
             match fs::read_to_string(&template_path) {
                 Ok(content) => {
-                    let content =
-                        crate::components::codeblock::highlight_html_code_blocks(&content);
+                    let content = highlight_html_code_blocks(&content);
                     templates.insert(template_name.to_string(), content);
                     debug!("Loaded template: {template_name}");
                 }
