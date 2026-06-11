@@ -5,15 +5,6 @@ use super::{Token, TokenType};
 pub struct RustLexer;
 
 impl LanguageLexer for RustLexer {
-    fn get_keywords(&self) -> &[&str] {
-        &[
-            "fn", "let", "mut", "pub", "impl", "struct", "enum", "use", "mod", "async", "await",
-            "match", "if", "else", "for", "while", "loop", "return", "break", "continue", "const",
-            "static", "trait", "where", "as", "in", "ref", "move", "unsafe", "extern", "Self",
-            "super", "crate", "self",
-        ]
-    }
-
     fn lex(&self, input: &str) -> Vec<Token> {
         let keywords = self.get_keywords();
         let types = [
@@ -148,5 +139,14 @@ impl LanguageLexer for RustLexer {
             }
         }
         lexer.get_tokens()
+    }
+
+    fn get_keywords(&self) -> &[&str] {
+        &[
+            "fn", "let", "mut", "pub", "impl", "struct", "enum", "use", "mod", "async", "await",
+            "match", "if", "else", "for", "while", "loop", "return", "break", "continue", "const",
+            "static", "trait", "where", "as", "in", "ref", "move", "unsafe", "extern", "Self",
+            "super", "crate", "self",
+        ]
     }
 }

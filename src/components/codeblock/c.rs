@@ -5,52 +5,6 @@ use super::{Token, TokenType};
 pub struct CLexer;
 
 impl LanguageLexer for CLexer {
-    fn get_keywords(&self) -> &[&str] {
-        &[
-            // Control flow
-            "if",
-            "else",
-            "for",
-            "while",
-            "do",
-            "switch",
-            "case",
-            "default",
-            "break",
-            "continue",
-            "return",
-            "goto",
-            // Data types
-            "int",
-            "char",
-            "float",
-            "double",
-            "long",
-            "short",
-            "unsigned",
-            "signed",
-            "void",
-            "const",
-            "volatile",
-            // Storage classes
-            "auto",
-            "register",
-            "static",
-            "extern",
-            "typedef",
-            // Other keywords
-            "sizeof",
-            "struct",
-            "union",
-            "enum",
-            "inline",
-            "restrict",
-            "_Bool",
-            "_Complex",
-            "_Imaginary",
-        ]
-    }
-
     fn lex(&self, input: &str) -> Vec<Token> {
         let keywords = self.get_keywords();
         let types = [
@@ -197,5 +151,51 @@ impl LanguageLexer for CLexer {
         }
 
         lexer.get_tokens()
+    }
+
+    fn get_keywords(&self) -> &[&str] {
+        &[
+            // Control flow
+            "if",
+            "else",
+            "for",
+            "while",
+            "do",
+            "switch",
+            "case",
+            "default",
+            "break",
+            "continue",
+            "return",
+            "goto",
+            // Data types
+            "int",
+            "char",
+            "float",
+            "double",
+            "long",
+            "short",
+            "unsigned",
+            "signed",
+            "void",
+            "const",
+            "volatile",
+            // Storage classes
+            "auto",
+            "register",
+            "static",
+            "extern",
+            "typedef",
+            // Other keywords
+            "sizeof",
+            "struct",
+            "union",
+            "enum",
+            "inline",
+            "restrict",
+            "_Bool",
+            "_Complex",
+            "_Imaginary",
+        ]
     }
 }
