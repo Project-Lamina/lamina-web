@@ -1,3 +1,4 @@
+use std::error;
 use crate::config::Config;
 use crate::handlers;
 use axum::{Router, routing::get};
@@ -32,7 +33,7 @@ pub fn build_app(config: &Config) -> Router {
 }
 
 /// Run the server
-pub async fn run_server(config: Config) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run_server(config: Config) -> Result<(), Box<dyn error::Error>> {
     info!("Starting server initialization");
 
     let app = build_app(&config);

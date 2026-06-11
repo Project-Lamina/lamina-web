@@ -1,3 +1,4 @@
+use std::error;
 use log::{debug, error};
 use std::collections::HashMap;
 use std::fs;
@@ -9,7 +10,7 @@ pub struct TemplateEngine {
 
 impl TemplateEngine {
     /// Create a new template engine and load all templates
-    pub fn new() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn new() -> Result<Self, Box<dyn error::Error + Send + Sync>> {
         let mut templates = HashMap::new();
 
         // Load all template files
@@ -56,7 +57,7 @@ impl TemplateEngine {
         &self,
         template_name: &str,
         variables: &HashMap<String, String>,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         let template = self
             .templates
             .get(template_name)
@@ -81,7 +82,7 @@ impl TemplateEngine {
         &self,
         content: &str,
         variables: &HashMap<String, String>,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         let mut result = content.to_string();
 
         // Replace {{footer}} with footer component
@@ -108,7 +109,7 @@ impl TemplateEngine {
         &self,
         component_name: &str,
         variables: &HashMap<String, String>,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         let template_name = format!("components/{component_name}.html");
         self.render(&template_name, variables)
     }
@@ -120,7 +121,7 @@ impl TemplateEngine {
         content: &str,
         meta_description: &str,
         additional_css: Option<&str>,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         let mut variables = HashMap::new();
         variables.insert("title".to_string(), title.to_string());
         variables.insert("content".to_string(), content.to_string());
