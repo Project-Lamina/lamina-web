@@ -69,6 +69,14 @@ impl SitemapGenerator {
             priority: 1.0,
         });
 
+        // Roadmap
+        entries.push(SitemapEntry {
+            url: format!("{}/roadmap", self.base_url),
+            last_modified: now,
+            change_frequency: ChangeFrequency::Weekly,
+            priority: 0.9,
+        });
+
         // Official documentation
         entries.push(SitemapEntry {
             url: format!("{}/docs", self.base_url),

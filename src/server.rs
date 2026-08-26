@@ -18,6 +18,7 @@ pub fn build_app(config: &Config) -> Router {
 
     let router = Router::new()
         .route("/", get(handlers::homepage))
+        .route("/roadmap", get(handlers::roadmap))
         .route("/docs", get(handlers::docs))
         .route("/docs/{page}", get(handlers::docs_page))
         .route(
@@ -32,7 +33,7 @@ pub fn build_app(config: &Config) -> Router {
         // connection and leaving the client with a reset and no explanation.
         .layer(CatchPanicLayer::new());
 
-    info!("Router configured with {} routes", 6);
+    info!("Router configured with {} routes", 7);
     router
 }
 

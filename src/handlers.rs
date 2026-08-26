@@ -46,6 +46,35 @@ pub async fn homepage() -> Html<String> {
     }
 }
 
+/// Roadmap handler
+pub async fn roadmap() -> Html<String> {
+    info!("Serving roadmap request");
+
+    let template_engine = get_template_engine();
+    let variables = HashMap::new();
+
+    match template_engine.render("roadmap.html", &variables) {
+        Ok(content) => {
+            match template_engine.render_base_with_meta_and_css(
+                "Lamina Roadmap",
+                &content,
+                "Lamina toolchain roadmap: current target support, milestones from 0.1 to 1.0, and the plan for supporting the Artery kernel as a freestanding target.",
+                None,
+            ) {
+                Ok(html) => Html(html),
+                Err(e) => {
+                    error!("Failed to render base template: {e}");
+                    Html(format!("<h1>Error</h1><p>Failed to render page: {e}</p>"))
+                }
+            }
+        }
+        Err(e) => {
+            error!("Failed to render roadmap template: {e}");
+            Html(format!("<h1>Error</h1><p>Failed to render page: {e}</p>"))
+        }
+    }
+}
+
 /// Official Lamina documentation handler
 pub async fn docs() -> Html<String> {
     info!("Serving Lamina documentation");

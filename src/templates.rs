@@ -21,6 +21,7 @@ impl TemplateEngine {
         let template_files = [
             "base.html",
             "lamina_homepage.html",
+            "roadmap.html",
             "docs_index.html",
             "docs_getting_started.html",
             "docs_ir.html",
