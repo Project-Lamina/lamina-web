@@ -30,6 +30,15 @@
                 Milestones are sets of outcomes, not dates. Versions give the ordering, not a schedule.
             </p>
 
+            <nav class="lmn-roadmap-toc" aria-label="On this page">
+                <a href="#state">Status</a>
+                <a href="#milestones">Milestones</a>
+                <a href="#testing">Testing and CI</a>
+                <a href="#design">Decisions</a>
+                <a href="#artery">Artery</a>
+                <a href="#non-goals">Non-goals</a>
+            </nav>
+
             <h2 id="state">The toolchain today</h2>
             <p>Four repositories make up the toolchain. The C bindings ship from the compiler repository with their own ABI version, deliberately independent of the crate version.</p>
             <div class="lmn-reference-table">
@@ -69,17 +78,37 @@
             </div>
 
             <h3>0.1 — Correct on the targets we claim</h3>
-            <p>Every target in the tested row is honestly tested, and the default path works without the system assembler and linker.</p>
+            <p>Right now the target table makes claims nothing verifies. This milestone closes that gap and makes the self-built toolchain the default path.</p>
+
+            <h4>Correctness</h4>
             <div class="lmn-doc-table">
-                <p><strong>Fix Windows output end to end</strong><span>Three defects behind one symptom. The <code>writebyte</code> intrinsic falls through to a Linux <code>syscall</code> on every non-macOS target. The PE emitter imports every undefined symbol from <code>kernel32.dll</code>, but <code>printf</code> lives in the C runtime, so the loader cannot resolve it and the process dies before <code>main</code>. And no CRT library is requested for Windows links at all.</span></p>
-                <p><strong>Move driver work out of weld</strong><span>weld stops supplying CRT objects and stops inventing an interpreter path. The Lamina driver supplies <code>crt1.o</code>, <code>-lc</code>, <code>--dynamic-linker</code>, and the search paths, derived from the target, the way <code>gcc</code> does before invoking <code>ld</code>.</span></p>
-                <p><strong>RISC-V emits valid RV64G</strong><span>Register use, division, and the calling convention need a pass before RISC-V leaves experimental.</span></p>
-                <p><strong>External function declarations</strong><span>A first-class way to declare an outside function with its ABI. Required for libc, and for WebAssembly to do anything useful.</span></p>
-                <p><strong>ras and weld by default</strong><span>Already selectable with <code>--assembler ras -c weld</code>. Becomes the default on x86_64 Linux, with the system toolchain as fallback.</span></p>
-                <p><strong>First C bindings release</strong><span>Versioned archives with checksums, a C example rebuild in CI so headers cannot drift, and an install page.</span></p>
-                <p><strong>Run the golden suite in CI, on all three platforms</strong><span>Add <code>windows-latest</code> and <code>macos-latest</code> runners and call the test runner from CI, so the 70 recorded programs are compiled, executed, and diffed on every platform the target table calls tested. See <a href="#testing">Testing and CI</a>. Also switch the rustfmt job to <code>--check</code> so it reports instead of rewriting, and give ras, weld, and lamina-web workflows of their own.</span></p>
-                <p><strong>Deterministic output everywhere</strong><span>Fixed on x86_64. The other backends need the same audit, since hash-ordered emission is invisible to tests that only compare program output.</span></p>
-                <p><strong>Split the toolchain flags</strong><span><code>--assembler</code> and <code>--linker</code> as separate choices, <code>--compiler</code> kept as a toolchain alias, unknown values rejected rather than silently ignored.</span></p>
+                <p><strong>Fix Windows output</strong><span>Three defects behind one symptom. <code>writebyte</code> falls through to a Linux <code>syscall</code> on every non-macOS target. The PE emitter imports every undefined symbol from <code>kernel32.dll</code>, but <code>printf</code> lives in the C runtime, so the loader cannot resolve it and the process dies before <code>main</code>. And no CRT library is requested for Windows links at all.</span></p>
+                <p><strong>Valid RV64G from the RISC-V backend</strong><span>Register use ignores the ABI's caller and callee split, <code>x30</code> and <code>x31</code> are taken as scratch, and division and the call sequence are wrong. The emitter should also state which extensions it assumes.</span></p>
+                <p><strong>Deterministic output on every backend</strong><span>Fixed on x86_64 by ordering register sets. The others need the same audit, because hash-ordered emission is invisible to a test that only compares program output.</span></p>
+            </div>
+
+            <h4>Language</h4>
+            <div class="lmn-doc-table">
+                <p><strong>External function declarations</strong><span>A way to declare a function the module does not define, with its ABI and attributes. This unblocks more of the rest than anything else here: it lets the I/O builtins stop being per-backend intrinsics with a Linux-shaped fallback, it is what WebAssembly needs before it can do anything observable, and it is how an Artery program will reach the kernel.</span></p>
+            </div>
+
+            <h4>Toolchain</h4>
+            <div class="lmn-doc-table">
+                <p><strong>Move driver work out of weld</strong><span>weld stops supplying CRT objects and stops inventing an interpreter path. The Lamina driver supplies <code>crt1.o</code>, <code>-lc</code>, <code>--dynamic-linker</code>, and the search paths, derived from the target, the way <code>gcc</code> does before invoking <code>ld</code>. See <a href="#design">the reasoning</a>.</span></p>
+                <p><strong>ras and weld as the default on x86_64 Linux</strong><span>Both already work under <code>--assembler ras -c weld</code>. Making them the default is the point of having written them.</span></p>
+                <p><strong>Split the toolchain flags</strong><span><code>--assembler</code> and <code>--linker</code> as separate choices, <code>--compiler</code> kept as a toolchain alias. A named tool beats an alias, an alias beats detection, and an unknown value is an error rather than a silent fallback.</span></p>
+            </div>
+
+            <h4>Testing</h4>
+            <div class="lmn-doc-table">
+                <p><strong>Golden suite in CI on three platforms</strong><span>Add <code>windows-latest</code> and <code>macos-latest</code>, and call the test runner so the 70 recorded programs are compiled, run, and diffed on every platform the table calls tested. See <a href="#testing">Testing and CI</a>.</span></p>
+                <p><strong>CI for ras, weld, and lamina-web</strong><span>None of the three has any today. Plus <code>cargo fmt --check</code>, since the current job runs <code>cargo fmt</code> and commits, which hides what it should report.</span></p>
+            </div>
+
+            <h4>Release and docs</h4>
+            <div class="lmn-doc-table">
+                <p><strong>First C bindings release</strong><span>The source layer is done. What is missing is publication: archives with checksums, a C example rebuild in CI so exports and headers cannot drift, and the install page.</span></p>
+                <p><strong>One story everywhere</strong><span>The README sells four architectures as flat capabilities while the website separates tested from experimental. The website is right. Same for the nightly line: <code>--jit</code> and <code>--sandbox</code> are parsed unconditionally while the docs call the JIT nightly-only.</span></p>
             </div>
 
             <h3>0.2 — A backend you can add a target to</h3>
