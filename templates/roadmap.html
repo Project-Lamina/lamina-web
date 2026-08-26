@@ -208,36 +208,11 @@
             <h3>Where do the I/O builtins go?</h3>
             <p><code>print</code> and <code>writebyte</code> are intrinsics that each backend expands inline, with a per-OS match and a fallback arm. That design is the direct cause of the Windows defect below, and it cannot express a target like Artery at all. The destination is an IR with no built-in I/O: a program declares what it calls, the target decides what that resolves to, and the backend emits an ordinary call. That one change unblocks the Windows fix, WebAssembly, and Artery together.</p>
 
-            <h2 id="artery">Artery as a target</h2>
-            <p class="lmn-manual-lead">Artery is a from-scratch Rust kernel developed alongside Lamina. Its architecture treats Lamina as a backend and an LLVM alternative: an external, versioned dependency the OS is never required to use. It works in the other direction too. Artery is the hardest freestanding target on the list, so getting it working is a good check on whether the backend functions outside a hosted environment at all.</p>
-            <p><code>TargetOperatingSystem::Artery</code> exists behind the nightly feature. The driver parses <code>artery</code> as an OS name and prints it back. That is the entire integration today. No code generation, no object emission, no linking path. Everything below is planned.</p>
-
-            <h3>What the target requires</h3>
-            <div class="lmn-doc-table">
-                <p><strong>Freestanding</strong><span>No libc, no CRT startup objects, no dynamic loader. The entry point is whatever the linker script says it is.</span></p>
-                <p><strong>Soft float</strong><span>x86_64 disables MMX, SSE, and AVX; AArch64 disables NEON and requires strict alignment. Correct code without touching the vector units.</span></p>
-                <p><strong>No red zone</strong><span>Interrupt handling makes it unusable, so the backend must not allocate below the stack pointer.</span></p>
-                <p><strong>Abort on panic</strong><span>No unwinding, so no unwind tables are needed and none should be required.</span></p>
-                <p><strong>Linker script layout</strong><span>Section placement comes from a script, not from linker defaults.</span></p>
-            </div>
-
-            <h3>Binary format and system calls</h3>
-            <p>Artery loads a container format of its own rather than parsing ELF in the kernel. An ELF parser on the untrusted-input path in ring 0 is a security cost the project declined to pay. Compatibility is a converter: a packing tool turns an ELF file into the container. <strong>So Lamina does not need to emit that container.</strong> A correct freestanding ELF is enough. Two consequences follow for code generation: a writable-and-executable segment is unrepresentable in the target format, so nothing Lamina emits may require one, and the capability requests a program declares are added by the packer, not by the compiler.</p>
-            <p>System calls go through declared external functions against Artery's ABI crate, not through backend-emitted syscall instructions for a hard-coded convention. That is the same underlying fix as the Windows defect in 0.1, since both are the fallback arm of an I/O intrinsic assuming Linux, and both depend on the same external-declaration work. Getting it right once serves both.</p>
-
-            <h3>Work items</h3>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>ID</span><span>Item</span><span>Depends on</span></div>
-                <p><code>A1</code><strong>Wire the triples</strong><span>Target parsing, codegen support tables, and ELF object selection for <code>x86_64_artery</code> and <code>aarch64_artery</code>. Needs the 0.2 codegen trait.</span></p>
-                <p><code>A2</code><strong>Soft-float codegen and ABI</strong><span>x86_64 and AArch64. Milestone 0.4.</span></p>
-                <p><code>A3</code><strong>Red zone and alignment</strong><span>Red-zone-free and strict-alignment code generation. Milestone 0.4.</span></p>
-                <p><code>A4</code><strong>Freestanding link</strong><span><code>-T</code> and <code>-static</code> in weld, a driver profile that adds no CRT and no interpreter, no writable-executable segments. Depends on the 0.2 parity work.</span></p>
-                <p><code>A5</code><strong>Syscalls by declaration</strong><span>External function declarations against the Artery ABI. Depends on the 0.1 declaration work.</span></p>
-                <p><code>A6</code><strong>Packing in the driver</strong><span>So that compiling for an Artery target produces a loadable container directly. Depends on A1 through A4.</span></p>
-            </div>
-
-            <h3>Acceptance</h3>
-            <p>The Artery target is done when a program compiled by Lamina, packed into the container format, loads and runs on an Artery kernel booted under QEMU. Not when it builds, and not when a test passes. A green build of an artifact that never executes measures the parts and not the whole.</p>
+            <h2 id="artery">Artery</h2>
+            <p>Artery is a from-scratch Rust kernel built alongside Lamina, and the reason milestone 0.4 exists. Supporting it means compiling for an environment with no libc, no startup objects, and no host underneath.</p>
+            <p><code>TargetOperatingSystem::Artery</code> exists behind the nightly feature. The driver reads <code>artery</code> as an OS name and prints it back. That is all of it so far.</p>
+            <p>The constraints it imposes, the binary format, how system calls are reached, and the work items to get there are on their own page.</p>
+            <div class="lmn-manual-next"><span>Read on</span><a href="/roadmap/artery">The Artery target</a></div>
 
             <h2 id="non-goals">Non-goals</h2>
             <div class="lmn-doc-table">

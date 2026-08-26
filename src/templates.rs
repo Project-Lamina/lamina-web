@@ -22,6 +22,7 @@ impl TemplateEngine {
             "base.html",
             "lamina_homepage.html",
             "roadmap.html",
+            "roadmap_artery.html",
             "docs_index.html",
             "docs_getting_started.html",
             "docs_ir.html",

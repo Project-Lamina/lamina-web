@@ -49,30 +49,59 @@ pub async fn homepage() -> Html<String> {
 /// Roadmap handler
 pub async fn roadmap() -> Html<String> {
     info!("Serving roadmap request");
+    render_simple_page(
+        "roadmap.html",
+        "Lamina Roadmap",
+        "Lamina toolchain roadmap: current target support, milestones from 0.1 to 1.0, and the testing that backs them.",
+    )
+}
 
+/// Render a template that takes no variables inside the base layout.
+fn render_simple_page(template: &str, title: &str, description: &str) -> Html<String> {
     let template_engine = get_template_engine();
     let variables = HashMap::new();
 
-    match template_engine.render("roadmap.html", &variables) {
-        Ok(content) => {
-            match template_engine.render_base_with_meta_and_css(
-                "Lamina Roadmap",
-                &content,
-                "Lamina toolchain roadmap: current target support, milestones from 0.1 to 1.0, and the plan for supporting the Artery kernel as a freestanding target.",
-                None,
-            ) {
-                Ok(html) => Html(html),
-                Err(e) => {
-                    error!("Failed to render base template: {e}");
-                    Html(format!("<h1>Error</h1><p>Failed to render page: {e}</p>"))
-                }
-            }
-        }
+    let content = match template_engine.render(template, &variables) {
+        Ok(content) => content,
         Err(e) => {
-            error!("Failed to render roadmap template: {e}");
-            Html(format!("<h1>Error</h1><p>Failed to render page: {e}</p>"))
+            error!("Failed to render {template}: {e}");
+            return Html(render_error_page(&e.to_string()));
+        }
+    };
+
+    match template_engine.render_base_with_meta_and_css(title, &content, description, None) {
+        Ok(html) => Html(html),
+        Err(e) => {
+            error!("Failed to render base template for {template}: {e}");
+            Html(render_error_page(&e.to_string()))
         }
     }
+}
+
+/// Minimal standalone error page, used when even the base template will not render.
+///
+/// The message is escaped because it can carry a filesystem path.
+fn render_error_page(message: &str) -> String {
+    let escaped = message
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;");
+    format!(
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">\
+         <title>Lamina</title></head><body>\
+         <h1>This page could not be rendered</h1><p>{escaped}</p>\
+         <p><a href=\"/\">Return to the homepage</a></p></body></html>"
+    )
+}
+
+/// Artery target page, split out of the roadmap because it stands on its own.
+pub async fn roadmap_artery() -> Html<String> {
+    info!("Serving roadmap artery request");
+    render_simple_page(
+        "roadmap_artery.html",
+        "Lamina on the Artery Kernel",
+        "Plan for supporting the Artery kernel as a freestanding Lamina target: the constraints it imposes on code generation, the binary format, system calls, and the work items.",
+    )
 }
 
 /// Official Lamina documentation handler

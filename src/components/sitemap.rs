@@ -77,6 +77,13 @@ impl SitemapGenerator {
             priority: 0.9,
         });
 
+        entries.push(SitemapEntry {
+            url: format!("{}/roadmap/artery", self.base_url),
+            last_modified: now,
+            change_frequency: ChangeFrequency::Weekly,
+            priority: 0.7,
+        });
+
         // Official documentation
         entries.push(SitemapEntry {
             url: format!("{}/docs", self.base_url),
