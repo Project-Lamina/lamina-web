@@ -27,6 +27,7 @@ pub fn build_app(config: &Config) -> Router {
 
     let router = Router::new()
         .route("/", get(handlers::homepage))
+        .route("/healthz", get(handlers::health))
         .route("/roadmap", get(handlers::roadmap))
         .route("/roadmap/artery", get(handlers::roadmap_artery))
         .route("/docs", get(handlers::docs))
@@ -59,7 +60,7 @@ pub fn build_app(config: &Config) -> Router {
                 .layer(CompressionLayer::new()),
         );
 
-    info!("Router configured with {} routes", 8);
+    info!("Router configured with {} routes", 9);
     router
 }
 

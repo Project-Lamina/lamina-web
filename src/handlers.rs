@@ -46,6 +46,16 @@ pub async fn homepage() -> Html<String> {
     }
 }
 
+/// Liveness check.
+///
+/// Deliberately renders nothing: it answers whether the process is up and serving,
+/// without depending on templates, disk, or the network. A monitor hitting the
+/// homepage instead cannot tell "process died" apart from "a template broke", and
+/// pays for a full render every time it asks.
+pub async fn health() -> (StatusCode, &'static str) {
+    (StatusCode::OK, "ok")
+}
+
 /// Roadmap handler
 pub async fn roadmap() -> Html<String> {
     info!("Serving roadmap request");
