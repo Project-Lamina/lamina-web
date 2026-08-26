@@ -38,6 +38,41 @@ pub fn build_app(config: &Config) -> Router {
     router
 }
 
+/// Resolve when the process is asked to stop.
+///
+/// Without this, a deploy or a container stop kills the process mid-response. Waiting
+/// on both signals lets in-flight requests finish before the listener closes. SIGTERM
+/// is the one an orchestrator sends; Ctrl-C is the one a developer sends.
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        if let Err(e) = tokio::signal::ctrl_c().await {
+            error!("Failed to install Ctrl-C handler: {e}");
+        }
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+            Ok(mut signal) => {
+                signal.recv().await;
+            }
+            Err(e) => {
+                error!("Failed to install SIGTERM handler: {e}");
+                // Nothing to wait on, so leave Ctrl-C as the only shutdown path.
+                std::future::pending::<()>().await;
+            }
+        }
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => info!("Received Ctrl-C, shutting down"),
+        _ = terminate => info!("Received SIGTERM, shutting down"),
+    }
+}
+
 /// Run the server
 pub async fn run_server(config: Config) -> Result<(), Box<dyn error::Error>> {
     info!("Starting server initialization");
@@ -63,7 +98,10 @@ pub async fn run_server(config: Config) -> Result<(), Box<dyn error::Error>> {
     info!("Starting HTTP server...");
     info!("Server is ready to accept connections on {addr}");
 
-    match axum::serve(listener, app).await {
+    match axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+    {
         Ok(_) => {
             info!("Server shutdown gracefully");
             Ok(())
