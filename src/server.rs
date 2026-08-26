@@ -4,6 +4,7 @@ use axum::{Router, routing::get};
 use log::{debug, error, info};
 use std::error;
 use tokio::net::TcpListener;
+use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::services::ServeDir;
 
 /// Build the application router
@@ -26,7 +27,10 @@ pub fn build_app(config: &Config) -> Router {
         .route("/sitemap.xml", get(handlers::sitemap))
         .route("/robots.txt", get(handlers::robots_txt))
         .nest_service("/static", static_service)
-        .fallback(handlers::not_found);
+        .fallback(handlers::not_found)
+        // A panic in one handler returns 500 for that request instead of killing the
+        // connection and leaving the client with a reset and no explanation.
+        .layer(CatchPanicLayer::new());
 
     info!("Router configured with {} routes", 6);
     router
