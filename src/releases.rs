@@ -44,18 +44,34 @@ struct GithubAsset {
 /// The server refreshes this at most once per hour. If GitHub is temporarily
 /// unavailable, a previously fetched release remains usable. The final fallback
 /// keeps the page honest without delaying or breaking the homepage.
-pub async fn homepage_release_summary() -> String {
-    match latest_release().await {
+pub fn homepage_release_summary() -> String {
+    match cached_release(true) {
         Some(releases) => render_release_summary(&releases),
         None => render_unavailable_summary(),
     }
 }
 
-async fn latest_release() -> Option<HomepageReleases> {
-    if let Some(releases) = cached_release(false) {
-        return Some(releases);
-    }
+/// Refresh the release cache in the background, forever.
+///
+/// The homepage used to fetch from GitHub inside whichever request found the cache
+/// expired. That put a network round trip on the request path, and every concurrent
+/// request raced to make the same two calls. Refreshing on a timer instead means a
+/// request only reads memory, and GitHub sees one refresh per interval no matter how
+/// much traffic arrives.
+pub fn spawn_refresh_task() {
+    tokio::spawn(async move {
+        loop {
+            refresh_release_cache().await;
+            tokio::time::sleep(CACHE_LIFETIME).await;
+        }
+    });
+}
 
+/// Fetch once and store the result.
+///
+/// A failure leaves the previous entry in place, so the homepage keeps showing the last
+/// known release rather than dropping to "unavailable" because GitHub had a bad minute.
+async fn refresh_release_cache() {
     match fetch_homepage_releases().await {
         Ok(releases) => {
             let cache = RELEASE_CACHE.get_or_init(|| Mutex::new(None));
@@ -64,13 +80,12 @@ async fn latest_release() -> Option<HomepageReleases> {
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
             *cache = Some(CachedRelease {
                 fetched_at: Instant::now(),
-                releases: releases.clone(),
+                releases,
             });
-            Some(releases)
+            debug!("Release cache refreshed");
         }
         Err(error) => {
             warn!("Unable to refresh latest Lamina release: {error}");
-            cached_release(true)
         }
     }
 }

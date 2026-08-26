@@ -21,7 +21,7 @@ pub async fn homepage() -> Html<String> {
     let mut variables = HashMap::new();
     variables.insert(
         "homepage_release_summary".to_string(),
-        homepage_release_summary().await,
+        homepage_release_summary(),
     );
 
     match template_engine.render("lamina_homepage.html", &variables) {

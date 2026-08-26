@@ -17,6 +17,9 @@ pub async fn init_app(config: &Config) -> Result<(), Box<dyn std::error::Error>>
         .map_err(|e| -> Box<dyn std::error::Error> { e.to_string().into() })?;
     info!("Templates loaded from {}", config.template_dir);
 
+    // Warm the release cache and keep it warm off the request path.
+    crate::releases::spawn_refresh_task();
+
     info!("Application initialization completed successfully");
     Ok(())
 }
