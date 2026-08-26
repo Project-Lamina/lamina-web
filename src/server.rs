@@ -1,15 +1,22 @@
 use crate::config::Config;
 use crate::handlers;
+use axum::http::{HeaderValue, header};
+use axum::serve::ListenerExt;
 use axum::{Router, routing::get};
 use log::{debug, error, info};
 use std::error;
 use tokio::net::TcpListener;
+use tower::ServiceBuilder;
 use tower_http::catch_panic::CatchPanicLayer;
+use tower_http::compression::CompressionLayer;
 use tower_http::services::ServeDir;
+use tower_http::set_header::SetResponseHeaderLayer;
 
 /// Build the application router
 pub fn build_app(config: &Config) -> Router {
     info!("Building application router");
+    // Assets are content-addressed by the ?v= query on the stylesheet link, so they can
+    // be cached for a day rather than revalidated on every page load.
     let static_service = ServeDir::new(&config.static_dir);
     debug!(
         "Static file service configured for directory: {}",
@@ -28,11 +35,25 @@ pub fn build_app(config: &Config) -> Router {
         )
         .route("/sitemap.xml", get(handlers::sitemap))
         .route("/robots.txt", get(handlers::robots_txt))
-        .nest_service("/static", static_service)
+        .nest_service(
+            "/static",
+            ServiceBuilder::new()
+                .layer(SetResponseHeaderLayer::if_not_present(
+                    header::CACHE_CONTROL,
+                    HeaderValue::from_static("public, max-age=86400"),
+                ))
+                .service(static_service),
+        )
         .fallback(handlers::not_found)
-        // A panic in one handler returns 500 for that request instead of killing the
-        // connection and leaving the client with a reset and no explanation.
-        .layer(CatchPanicLayer::new());
+        .layer(
+            ServiceBuilder::new()
+                // A panic in one handler returns 500 for that request instead of
+                // killing the connection and leaving the client with a reset.
+                .layer(CatchPanicLayer::new())
+                // Pages are 25-50 KB of markup and CSS. The default predicate skips
+                // already-compressed types and bodies too small to be worth it.
+                .layer(CompressionLayer::new()),
+        );
 
     info!("Router configured with {} routes", 8);
     router
@@ -87,7 +108,14 @@ pub async fn run_server(config: Config) -> Result<(), Box<dyn error::Error>> {
     let listener = match TcpListener::bind(addr).await {
         Ok(l) => {
             info!("TCP listener bound successfully to {addr}");
-            l
+            // Without this, a compressed response is written as several small chunks
+            // and Nagle holds the last one until the client's delayed ACK arrives,
+            // adding ~40 ms to every keep-alive request.
+            l.tap_io(|stream| {
+                if let Err(e) = stream.set_nodelay(true) {
+                    error!("Failed to set TCP_NODELAY: {e}");
+                }
+            })
         }
         Err(e) => {
             error!("Failed to bind TCP listener to {addr}: {e}");
