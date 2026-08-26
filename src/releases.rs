@@ -1,4 +1,4 @@
-use log::{debug, warn};
+use log::{debug, error, warn};
 use serde::Deserialize;
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -61,7 +61,13 @@ pub fn homepage_release_summary() -> String {
 pub fn spawn_refresh_task() {
     tokio::spawn(async move {
         loop {
-            refresh_release_cache().await;
+            // Run each refresh as its own task. A panic would otherwise end this loop
+            // and leave the homepage serving whatever was last cached for the rest of
+            // the process's life, with nothing saying so. Joining the child reports
+            // the panic and keeps the loop alive.
+            if let Err(e) = tokio::spawn(refresh_release_cache()).await {
+                error!("Release refresh failed: {e}. Retrying after the usual interval");
+            }
             tokio::time::sleep(CACHE_LIFETIME).await;
         }
     });
