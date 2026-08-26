@@ -1,0 +1,30 @@
+[Unit]
+Description=Lamina web service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+# Your working dir (optional, but handy for relative paths)
+WorkingDirectory=%h/hosting/lamina-web
+
+# Start the app (use %h instead of ~; systemd doesn’t expand ~)
+ExecStart=%h/hosting/lamina-web/target/release/lamina-web
+
+# Auto-restart on crash or non-zero exit
+Restart=on-failure
+RestartSec=1s
+
+# Harden a bit (tweak as needed)
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+ReadWritePaths=%h/hosting/lamina-web
+
+# Optional env
+# Environment=RUST_LOG=info
+Environment=PORT=5001
+
+[Install]
+WantedBy=default.target
+
