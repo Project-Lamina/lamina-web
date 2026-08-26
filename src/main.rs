@@ -10,9 +10,10 @@ mod templates;
 
 use log::{debug, error, info, warn};
 use logger::Logger;
+use std::error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn error::Error>> {
     // Initialize logger FIRST, before any other code
     match Logger::init() {
         Ok(_) => {

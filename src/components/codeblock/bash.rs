@@ -5,16 +5,6 @@ use super::{Token, TokenType};
 pub struct BashLexer;
 
 impl LanguageLexer for BashLexer {
-    fn get_keywords(&self) -> &[&str] {
-        &[
-            // Shell syntax keywords
-            "while", "do", "done", "if", "then", "fi", "for", "in", "case", "esac", "elif",
-            "echo", // kept for backward compatibility but will be classified as command when appropriate
-            "grep", "ls", "cd", "mkdir", "rm", "cp", "mv", "cat", "head", "tail", "cut", "local",
-            "read", "function", "return", "exit",
-        ]
-    }
-
     fn lex(&self, input: &str) -> Vec<Token> {
         let mut lexer = BaseLexer::new(input);
         let keywords = self.get_keywords();
@@ -196,5 +186,15 @@ impl LanguageLexer for BashLexer {
         }
 
         lexer.get_tokens()
+    }
+
+    fn get_keywords(&self) -> &[&str] {
+        &[
+            // Shell syntax keywords
+            "while", "do", "done", "if", "then", "fi", "for", "in", "case", "esac", "elif",
+            "echo", // kept for backward compatibility but will be classified as command when appropriate
+            "grep", "ls", "cd", "mkdir", "rm", "cp", "mv", "cat", "head", "tail", "cut", "local",
+            "read", "function", "return", "exit",
+        ]
     }
 }

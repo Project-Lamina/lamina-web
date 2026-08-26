@@ -364,7 +364,7 @@ fn escape_html(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::highlight_html_code_blocks;
+    use super::*;
 
     #[test]
     fn highlights_lamina_blocks_as_static_html() {

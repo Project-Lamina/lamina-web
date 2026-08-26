@@ -1,5 +1,7 @@
+use crate::components::codeblock::highlight_html_code_blocks;
 use log::{debug, error};
 use std::collections::HashMap;
+use std::error;
 use std::fs;
 
 /// Simple template engine for HTML templates
@@ -8,14 +10,19 @@ pub struct TemplateEngine {
 }
 
 impl TemplateEngine {
-    /// Create a new template engine and load all templates
-    pub fn new() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    /// Create a new template engine and load every template from `template_dir`.
+    ///
+    /// Called once at startup so a missing or malformed template fails the boot with
+    /// a clear message, rather than panicking inside the first request that needs it.
+    pub fn new(template_dir: &str) -> Result<Self, Box<dyn error::Error + Send + Sync>> {
         let mut templates = HashMap::new();
 
         // Load all template files
         let template_files = [
             "base.html",
             "lamina_homepage.html",
+            "roadmap.html",
+            "roadmap_artery.html",
             "docs_index.html",
             "docs_getting_started.html",
             "docs_ir.html",
@@ -33,17 +40,24 @@ impl TemplateEngine {
         ];
 
         for template_name in template_files.iter() {
-            let template_path = format!("templates/{template_name}");
+            let template_path = format!("{template_dir}/{template_name}");
             match fs::read_to_string(&template_path) {
                 Ok(content) => {
-                    let content =
-                        crate::components::codeblock::highlight_html_code_blocks(&content);
+                    let content = highlight_html_code_blocks(&content);
                     templates.insert(template_name.to_string(), content);
                     debug!("Loaded template: {template_name}");
                 }
                 Err(e) => {
-                    error!("Failed to load template {template_name}: {e}");
-                    return Err(format!("Failed to load template {template_name}: {e}").into());
+                    error!("Failed to load template {template_path}: {e}");
+                    let cwd = std::env::current_dir()
+                        .map(|p| p.display().to_string())
+                        .unwrap_or_else(|_| "<unknown>".to_string());
+                    return Err(format!(
+                        "Failed to load template {template_path}: {e} \
+                         (working directory: {cwd}; set template_dir or TEMPLATE_DIR \
+                         to point at the templates directory)"
+                    )
+                    .into());
                 }
             }
         }
@@ -56,7 +70,7 @@ impl TemplateEngine {
         &self,
         template_name: &str,
         variables: &HashMap<String, String>,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         let template = self
             .templates
             .get(template_name)
@@ -81,7 +95,7 @@ impl TemplateEngine {
         &self,
         content: &str,
         variables: &HashMap<String, String>,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         let mut result = content.to_string();
 
         // Replace {{footer}} with footer component
@@ -108,7 +122,7 @@ impl TemplateEngine {
         &self,
         component_name: &str,
         variables: &HashMap<String, String>,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         let template_name = format!("components/{component_name}.html");
         self.render(&template_name, variables)
     }
@@ -120,7 +134,7 @@ impl TemplateEngine {
         content: &str,
         meta_description: &str,
         additional_css: Option<&str>,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         let mut variables = HashMap::new();
         variables.insert("title".to_string(), title.to_string());
         variables.insert("content".to_string(), content.to_string());

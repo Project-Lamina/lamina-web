@@ -158,6 +158,12 @@ body {
     align-items: start;
 }
 
+/* Sidebar-less manual layout, used by the roadmap page. */
+.lmn-roadmap-layout {
+    grid-template-columns: minmax(0, 870px);
+    justify-content: center;
+}
+
 .lmn-manual-sidebar {
     position: sticky;
     top: 1.2rem;
@@ -235,6 +241,49 @@ body {
     font-weight: 400;
     letter-spacing: -0.045em;
     line-height: 1.08;
+}
+
+.lmn-manual-article h3 {
+    margin-top: 2.4rem;
+    color: var(--lmn-ink);
+    font-family: var(--lmn-serif);
+    font-size: 1.42rem;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+}
+
+.lmn-manual-article h4 {
+    margin-top: 1.9rem;
+    color: var(--lmn-green);
+    font-family: var(--lmn-mono);
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+/* "On this page" strip at the top of the roadmap. */
+.lmn-roadmap-toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.3rem;
+    margin-top: 1.6rem;
+    padding: 0.9rem 0;
+    border-top: 1px solid var(--lmn-line);
+    border-bottom: 1px solid var(--lmn-line);
+}
+
+.lmn-roadmap-toc a {
+    color: var(--lmn-muted);
+    font-family: var(--lmn-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+}
+
+.lmn-roadmap-toc a:hover {
+    color: var(--lmn-green);
 }
 
 .lmn-manual-article p:not(.lmn-section-tag):not(.lmn-manual-lead) {

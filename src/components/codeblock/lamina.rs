@@ -5,24 +5,6 @@ use super::{Token, TokenType};
 pub struct LaminaLexer;
 
 impl LanguageLexer for LaminaLexer {
-    fn get_keywords(&self) -> &[&str] {
-        &[
-            // Function and control flow keywords
-            "fn", "ret", "br", "call", "if", "else", "loop", "while", "for",
-            // Memory operations
-            "alloc", "dealloc", "load", "store", "stack", "heap",
-            // Type operations
-            "getfield", "getelem", "ptr", // Binary operators
-            "add", "sub", "mul", "div", "mod", "and", "or", "xor", "shl", "shr", "eq", "ne", "lt",
-            "le", "gt", "ge", // Unary operators
-            "not", "neg", // Type keywords
-            "i8", "i16", "i32", "i64", "i128", "u8", "u16", "u32", "u64", "u128", "f32", "f64",
-            "bool", "ptr", "struct", "array", // Annotations
-            "export", "import", // Special operations
-            "print", "global", "type",
-        ]
-    }
-
     fn lex(&self, input: &str) -> Vec<Token> {
         let keywords = self.get_keywords();
         let mut lexer = BaseLexer::new(input);
@@ -117,6 +99,24 @@ impl LanguageLexer for LaminaLexer {
         }
 
         lexer.get_tokens()
+    }
+
+    fn get_keywords(&self) -> &[&str] {
+        &[
+            // Function and control flow keywords
+            "fn", "ret", "br", "call", "if", "else", "loop", "while", "for",
+            // Memory operations
+            "alloc", "dealloc", "load", "store", "stack", "heap",
+            // Type operations
+            "getfield", "getelem", "ptr", // Binary operators
+            "add", "sub", "mul", "div", "mod", "and", "or", "xor", "shl", "shr", "eq", "ne", "lt",
+            "le", "gt", "ge", // Unary operators
+            "not", "neg", // Type keywords
+            "i8", "i16", "i32", "i64", "i128", "u8", "u16", "u32", "u64", "u128", "f32", "f64",
+            "bool", "ptr", "struct", "array", // Annotations
+            "export", "import", // Special operations
+            "print", "global", "type",
+        ]
     }
 }
 
