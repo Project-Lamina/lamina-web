@@ -9,6 +9,7 @@ use std::net::SocketAddr;
 /// host = "127.0.0.1"   # or "0.0.0.0"
 /// port = 5002
 /// static_dir = "static"
+/// template_dir = "templates"
 /// base_url = "https://lamina.sh"
 ///
 /// Comments (# or //) and blank lines are ignored.
@@ -17,6 +18,7 @@ pub struct Config {
     pub host: [u8; 4],
     pub port: u16,
     pub static_dir: String,
+    pub template_dir: String,
     pub base_url: String,
 }
 
@@ -26,6 +28,7 @@ impl Default for Config {
             host: [0, 0, 0, 0], // Bind to all interfaces
             port: 5000,
             static_dir: "static".to_string(),
+            template_dir: "templates".to_string(),
             base_url: "https://lamina.sh".to_string(),
         }
     }
@@ -59,6 +62,9 @@ impl Config {
                                     config.port = port;
                                 }
                             }
+                            "template_dir" => {
+                                config.template_dir = value.to_string();
+                            }
                             "static_dir" => {
                                 config.static_dir = value.to_string();
                             }
@@ -85,6 +91,9 @@ impl Config {
         }
         if let Ok(static_dir) = std::env::var("STATIC_DIR") {
             config.static_dir = static_dir;
+        }
+        if let Ok(template_dir) = std::env::var("TEMPLATE_DIR") {
+            config.template_dir = template_dir;
         }
         if let Ok(base_url) = std::env::var("BASE_URL") {
             config.base_url = base_url;
@@ -113,4 +122,16 @@ fn parse_host(s: &str) -> Option<[u8; 4]> {
         }
     }
     Some(arr)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn defaults_point_at_the_repository_layout() {
+        let config = Config::default();
+        assert_eq!(config.template_dir, "templates");
+        assert_eq!(config.static_dir, "static");
+    }
 }

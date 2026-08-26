@@ -15,9 +15,9 @@ static CONFIG: OnceLock<Config> = OnceLock::new();
 /// Called once from application startup. Returns an error instead of panicking so a
 /// missing template stops the process with a readable message at boot, rather than
 /// taking down the first request that happens to need it.
-pub fn init_template_engine() -> Result<(), Box<dyn Error + Send + Sync>> {
+pub fn init_template_engine(config: &Config) -> Result<(), Box<dyn Error + Send + Sync>> {
     debug!("Initializing global template engine");
-    let engine = TemplateEngine::new()?;
+    let engine = TemplateEngine::new(&config.template_dir)?;
     // A second call would mean startup ran twice; keep the first engine either way.
     let _ = TEMPLATE_ENGINE.set(engine);
     Ok(())

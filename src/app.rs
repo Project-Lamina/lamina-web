@@ -13,9 +13,9 @@ pub async fn init_app(config: &Config) -> Result<(), Box<dyn std::error::Error>>
 
     // Load templates now so a missing or malformed one is a startup failure with a
     // clear message, not a panic inside the first request that needs it.
-    crate::routes::init_template_engine()
+    crate::routes::init_template_engine(config)
         .map_err(|e| -> Box<dyn std::error::Error> { e.to_string().into() })?;
-    info!("Templates loaded");
+    info!("Templates loaded from {}", config.template_dir);
 
     info!("Application initialization completed successfully");
     Ok(())
