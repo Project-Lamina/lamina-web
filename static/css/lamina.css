@@ -158,6 +158,12 @@ body {
     align-items: start;
 }
 
+/* Sidebar-less manual layout, used by the roadmap page. */
+.lmn-roadmap-layout {
+    grid-template-columns: minmax(0, 870px);
+    justify-content: center;
+}
+
 .lmn-manual-sidebar {
     position: sticky;
     top: 1.2rem;
