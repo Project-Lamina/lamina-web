@@ -5,12 +5,14 @@ use axum::serve::ListenerExt;
 use axum::{Router, routing::get};
 use log::{debug, error, info};
 use std::error;
+use std::time::Duration;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::compression::CompressionLayer;
 use tower_http::services::ServeDir;
 use tower_http::set_header::SetResponseHeaderLayer;
+use tower_http::timeout::TimeoutLayer;
 
 /// Build the application router
 pub fn build_app(config: &Config) -> Router {
@@ -47,6 +49,8 @@ pub fn build_app(config: &Config) -> Router {
         .fallback(handlers::not_found)
         .layer(
             ServiceBuilder::new()
+                // Outermost, so a stuck handler cannot hold a connection open forever.
+                .layer(TimeoutLayer::new(Duration::from_secs(15)))
                 // A panic in one handler returns 500 for that request instead of
                 // killing the connection and leaving the client with a reset.
                 .layer(CatchPanicLayer::new())
