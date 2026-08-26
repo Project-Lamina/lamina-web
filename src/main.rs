@@ -8,7 +8,7 @@ mod routes;
 mod server;
 mod templates;
 
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use logger::Logger;
 use std::error;
 
@@ -18,9 +18,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
     match Logger::init() {
         Ok(_) => {
             info!("Logger initialized successfully");
-            debug!("This is a debug message test");
-            warn!("This is a warning message test");
-            error!("This is an error message test");
         }
         Err(e) => {
             eprintln!("Failed to initialize logger: {e}");
