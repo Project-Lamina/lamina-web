@@ -51,20 +51,12 @@ pub fn homepage_release_summary() -> String {
     }
 }
 
-/// Refresh the release cache in the background, forever.
-///
-/// The homepage used to fetch from GitHub inside whichever request found the cache
-/// expired. That put a network round trip on the request path, and every concurrent
-/// request raced to make the same two calls. Refreshing on a timer instead means a
-/// request only reads memory, and GitHub sees one refresh per interval no matter how
-/// much traffic arrives.
+/// Refresh the cache on a timer, so no request ever waits on GitHub and concurrent
+/// requests do not race to make the same two calls.
 pub fn spawn_refresh_task() {
     tokio::spawn(async move {
         loop {
-            // Run each refresh as its own task. A panic would otherwise end this loop
-            // and leave the homepage serving whatever was last cached for the rest of
-            // the process's life, with nothing saying so. Joining the child reports
-            // the panic and keeps the loop alive.
+            // separate task, so a panic ends one refresh and not the loop
             if let Err(e) = tokio::spawn(refresh_release_cache()).await {
                 error!("Release refresh failed: {e}. Retrying after the usual interval");
             }
@@ -73,10 +65,8 @@ pub fn spawn_refresh_task() {
     });
 }
 
-/// Fetch once and store the result.
-///
-/// A failure leaves the previous entry in place, so the homepage keeps showing the last
-/// known release rather than dropping to "unavailable" because GitHub had a bad minute.
+/// Fetch once and store it. A failure keeps the previous entry, so a bad minute at
+/// GitHub does not drop the homepage to "unavailable".
 async fn refresh_release_cache() {
     match fetch_homepage_releases().await {
         Ok(releases) => {

@@ -46,12 +46,8 @@ pub async fn homepage() -> Html<String> {
     }
 }
 
-/// Liveness check.
-///
-/// Deliberately renders nothing: it answers whether the process is up and serving,
-/// without depending on templates, disk, or the network. A monitor hitting the
-/// homepage instead cannot tell "process died" apart from "a template broke", and
-/// pays for a full render every time it asks.
+/// Renders nothing on purpose: says the process is serving without touching templates,
+/// disk, or the network.
 pub async fn health() -> (StatusCode, &'static str) {
     (StatusCode::OK, "ok")
 }
@@ -66,7 +62,7 @@ pub async fn roadmap() -> Html<String> {
     )
 }
 
-/// Render a template that takes no variables inside the base layout.
+/// Render a variable-free template inside the base layout.
 fn render_simple_page(template: &str, title: &str, description: &str) -> Html<String> {
     let template_engine = get_template_engine();
     let variables = HashMap::new();
@@ -88,9 +84,7 @@ fn render_simple_page(template: &str, title: &str, description: &str) -> Html<St
     }
 }
 
-/// Minimal standalone error page, used when even the base template will not render.
-///
-/// The message is escaped because it can carry a filesystem path.
+/// Used when even the base template will not render. Escaped: can carry a path.
 fn render_error_page(message: &str) -> String {
     let escaped = message
         .replace('&', "&amp;")
@@ -250,7 +244,6 @@ pub async fn sitemap() -> Result<Response<String>, StatusCode> {
     info!("Serving sitemap.xml request");
     debug!("Sitemap route accessed");
 
-    // Get base URL from config (loaded from file/env/defaults)
     let base_url = get_config().base_url.clone();
 
     match generate_sitemap_xml(&base_url) {
@@ -278,7 +271,6 @@ pub async fn robots_txt() -> Result<Response<String>, StatusCode> {
     info!("Serving robots.txt request");
     debug!("Robots.txt route accessed");
 
-    // Get base URL from config (loaded from file/env/defaults)
     let base_url = get_config().base_url.clone();
 
     let robots_content = format!(

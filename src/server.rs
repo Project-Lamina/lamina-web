@@ -17,8 +17,6 @@ use tower_http::timeout::TimeoutLayer;
 /// Build the application router
 pub fn build_app(config: &Config) -> Router {
     info!("Building application router");
-    // Assets are content-addressed by the ?v= query on the stylesheet link, so they can
-    // be cached for a day rather than revalidated on every page load.
     let static_service = ServeDir::new(&config.static_dir);
     debug!(
         "Static file service configured for directory: {}",
@@ -50,13 +48,9 @@ pub fn build_app(config: &Config) -> Router {
         .fallback(handlers::not_found)
         .layer(
             ServiceBuilder::new()
-                // Outermost, so a stuck handler cannot hold a connection open forever.
                 .layer(TimeoutLayer::new(Duration::from_secs(15)))
-                // A panic in one handler returns 500 for that request instead of
-                // killing the connection and leaving the client with a reset.
+                // 500 instead of a dropped connection
                 .layer(CatchPanicLayer::new())
-                // Pages are 25-50 KB of markup and CSS. The default predicate skips
-                // already-compressed types and bodies too small to be worth it.
                 .layer(CompressionLayer::new()),
         );
 
@@ -64,11 +58,8 @@ pub fn build_app(config: &Config) -> Router {
     router
 }
 
-/// Resolve when the process is asked to stop.
-///
-/// Without this, a deploy or a container stop kills the process mid-response. Waiting
-/// on both signals lets in-flight requests finish before the listener closes. SIGTERM
-/// is the one an orchestrator sends; Ctrl-C is the one a developer sends.
+/// Resolve when the process is asked to stop, so in-flight requests finish before the
+/// listener closes. SIGTERM comes from an orchestrator, Ctrl-C from a developer.
 async fn shutdown_signal() {
     let ctrl_c = async {
         if let Err(e) = tokio::signal::ctrl_c().await {
@@ -84,7 +75,6 @@ async fn shutdown_signal() {
             }
             Err(e) => {
                 error!("Failed to install SIGTERM handler: {e}");
-                // Nothing to wait on, so leave Ctrl-C as the only shutdown path.
                 std::future::pending::<()>().await;
             }
         }
@@ -113,9 +103,8 @@ pub async fn run_server(config: Config) -> Result<(), Box<dyn error::Error>> {
     let listener = match TcpListener::bind(addr).await {
         Ok(l) => {
             info!("TCP listener bound successfully to {addr}");
-            // Without this, a compressed response is written as several small chunks
-            // and Nagle holds the last one until the client's delayed ACK arrives,
-            // adding ~40 ms to every keep-alive request.
+            // a compressed body goes out as several chunks, and without this Nagle
+            // holds the last one for the delayed ACK: ~40 ms per keep-alive request
             l.tap_io(|stream| {
                 if let Err(e) = stream.set_nodelay(true) {
                     error!("Failed to set TCP_NODELAY: {e}");
