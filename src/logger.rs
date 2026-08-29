@@ -190,7 +190,6 @@ fn rotate_if_oversized(path: &std::path::Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write as _;
 
     #[test]
     fn a_small_log_is_left_alone() {

@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use log::{debug, info};
+use std::error;
 
 /// Sitemap entry representing a URL in the sitemap
 #[derive(Debug, Clone)]
@@ -40,7 +41,7 @@ impl SitemapGenerator {
     }
 
     /// Generate the complete sitemap XML.
-    pub fn generate_sitemap(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn generate_sitemap(&self) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         info!("Generating sitemap for base URL: {}", self.base_url);
 
         let mut entries = Vec::new();
@@ -116,7 +117,7 @@ impl SitemapGenerator {
     fn generate_xml(
         &self,
         entries: &[SitemapEntry],
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         let mut xml = String::new();
 
         // XML header
@@ -148,7 +149,7 @@ impl SitemapGenerator {
 /// Generate sitemap XML for the website
 pub fn generate_sitemap_xml(
     base_url: &str,
-) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<String, Box<dyn error::Error + Send + Sync>> {
     let generator = SitemapGenerator::new(base_url.to_string());
     generator.generate_sitemap()
 }

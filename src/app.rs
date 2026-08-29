@@ -1,8 +1,9 @@
 use crate::config::Config;
 use log::{debug, info};
+use std::error;
 
 /// Initialize the application
-pub async fn init_app(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn init_app(config: &Config) -> Result<(), Box<dyn error::Error>> {
     info!("Starting Lamina website initialization");
 
     info!("Starting Lamina website server...");
@@ -15,7 +16,7 @@ pub async fn init_app(config: &Config) -> Result<(), Box<dyn std::error::Error>>
     info!("Static assets served from {}", config.static_dir);
 
     crate::routes::init_template_engine(config)
-        .map_err(|e| -> Box<dyn std::error::Error> { e.to_string().into() })?;
+        .map_err(|e| -> Box<dyn error::Error> { e.to_string().into() })?;
     info!("Templates loaded from {}", config.template_dir);
 
     crate::releases::spawn_refresh_task();
@@ -26,7 +27,7 @@ pub async fn init_app(config: &Config) -> Result<(), Box<dyn std::error::Error>>
 
 /// Fail startup if the static directory is missing, unreadable, or not a directory.
 /// Without this the site serves unstyled pages while the process looks healthy.
-fn verify_static_dir(static_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn verify_static_dir(static_dir: &str) -> Result<(), Box<dyn error::Error>> {
     let path = std::path::Path::new(static_dir);
     let cwd = std::env::current_dir()
         .map(|p| p.display().to_string())

@@ -1,8 +1,7 @@
 use crate::components::codeblock::highlight_html_code_blocks;
 use log::{debug, error};
 use std::collections::HashMap;
-use std::error;
-use std::fs;
+use std::{error, fs};
 
 /// Simple template engine for HTML templates
 pub struct TemplateEngine {
