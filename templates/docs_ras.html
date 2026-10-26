@@ -1,0 +1,64 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>ras assembler</strong></nav>
+            <p class="lmn-section-tag">Toolchain</p>
+            <h1>ras, the assembler</h1>
+            <p class="lmn-manual-lead">ras turns assembly into a relocatable object, in place of GNU <code>as</code>. It is what Lamina uses with <code>--assembler ras</code>, and a C toolchain can call it too. It is not a complete <code>as</code>: the list of what it does not take is near the bottom, and it is short enough to read.</p>
+
+            <h2 id="install">Install</h2>
+            <pre><code class="language-shell">$ cargo install lamina-ras</code></pre>
+            <p>The crate is <code>lamina-ras</code>; the binary it installs is <code>ras</code>. Building it needs Rust 1.88 or newer. The manifest says <code>rust-version = "1.85"</code>, which is wrong: the source uses let chains and 1.87 fails to compile it.</p>
+            <p>The <code>encoder</code> feature adds the MIR-to-machine-code path used for JIT. Assembling text to an object does not need it, so the default build is enough for use as an assembler.</p>
+
+            <h2 id="lamina">With the Lamina driver</h2>
+            <pre><code class="language-shell">$ lamina app.lamina --assembler ras
+$ lamina app.lamina --assembler ras -c weld</code></pre>
+
+            <h2 id="gnu">In place of GNU as</h2>
+            <p>ras reads <code>argv[0]</code>. Invoked under the name <code>as</code>, or any name ending in <code>-as</code>, it switches to GNU-compatible argument parsing and accepts the flags a compiler driver passes. So the way to put it in a C build is a symlink and <code>-B</code>:</p>
+            <pre><code class="language-shell">$ mkdir -p toolchain
+$ ln -sf "$(command -v ras)" toolchain/as
+$ gcc -B"$PWD/toolchain/" hello.c -O2 -o hello
+$ clang -fno-integrated-as -B"$PWD/toolchain/" hello.c -O2 -o hello</code></pre>
+            <p>clang needs <code>-fno-integrated-as</code>, because otherwise it assembles in-process and never calls an external assembler at all.</p>
+            <p>Under the name <code>as</code> the flags a driver sends are taken or ignored as GNU takes them: <code>-o</code>, <code>-I</code>, <code>-J</code> and <code>-arch</code> take a value, <code>-L</code> keeps local symbols, and <code>--64 --32 -n -q -s -g -Z -K -Q -k -v -V -w -d</code> along with <code>-march=</code>, <code>-mcpu=</code>, <code>-mabi=</code>, <code>-mtune=</code> and the <code>--gdwarf-</code> forms are accepted and ignored.</p>
+
+            <h2 id="native">Native mode</h2>
+            <p>Invoked as <code>ras</code>, the argument set is its own and much smaller.</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Option</span><span>Argument</span><span>Behavior</span></div>
+                <p><strong><code>-o, --output</code></strong><code>&lt;file&gt;</code><span>Object to write. Defaults to <code>a.out</code>.</span></p>
+                <p><strong><code>--target</code></strong><code>&lt;arch_os&gt;</code><span>Architecture and object format. Defaults to the host.</span></p>
+                <p><strong><code>-v, --verbose</code></strong><code>-</code><span>Log at info level. <code>RUST_LOG</code> also works.</span></p>
+                <p><strong><code>-L, --keep-locals</code></strong><code>-</code><span>Keep local symbols in the symbol table.</span></p>
+                <p><strong><code>--64, --32, --x32</code></strong><code>-</code><span>Accepted and ignored, so a driver that passes them does not fail.</span></p>
+                <p><strong><code>--version</code>, <code>-h, --help</code></strong><code>-</code><span>Print the version or the usage block.</span></p>
+            </div>
+
+            <h2 id="formats">Architectures and formats</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Format</span><span>Written for</span><span>Notes</span></div>
+                <p><strong>ELF64</strong><code>x86_64 aarch64 riscv64</code><span>Linux and the BSDs, plus Redox, Orbis and Prospero. ELF64 little-endian only.</span></p>
+                <p><strong>Mach-O</strong><code>x86_64 arm64</code><span>macOS. Any other architecture is refused by name.</span></p>
+                <p><strong>COFF</strong><code>x86_64</code><span>Windows. <code>aarch64_windows</code> is refused.</span></p>
+            </div>
+            <p>x86_64 input is AT&amp;T syntax. <code>riscv32</code> assembles but has no object writer: <code>riscv32 object output is not implemented: ras writes ELF64 only</code>.</p>
+
+            <h2 id="gaps">Where it is not a drop-in</h2>
+            <p>Worth knowing before pointing a build at it.</p>
+            <div class="lmn-doc-table">
+                <p><strong><code>gcc -g</code> fails</strong><span>Debug builds emit <code>.loc</code>, and ras has no line-table directive. <code>Unsupported directive: .loc</code>. Build without <code>-g</code>.</span></p>
+                <p><strong>Cross-assembly needs <code>--target</code></strong><span>Under the name <code>as</code> there is no way to pass it, and a prefixed name like <code>aarch64-linux-gnu-as</code> does not imply the architecture. GNU mode always assembles for the host.</span></p>
+                <p><strong>No stdin</strong><span><code>as -</code> and a redirect both fail with <code>missing input .s file</code>, whatever the usage text suggests.</span></p>
+                <p><strong>Missing directives</strong><span>No <code>.macro</code>, <code>.org</code>, <code>.fill</code>, <code>.include</code>, <code>.incbin</code>, <code>.intel_syntax</code>, <code>.octa</code>, <code>.weakref</code>, <code>.symver</code>, <code>.protected</code>, <code>.internal</code> or <code>.lcomm</code>. Each is refused by name rather than ignored.</span></p>
+                <p><strong>Comment and separator syntax</strong><span><code>/* */</code> comments are not stripped and <code>;</code> does not separate statements. Hand-written assembly using either needs editing.</span></p>
+                <p><strong>CFI is x86_64 and aarch64 only</strong><span>Other targets report <code>CFI unsupported for target</code>, and <code>.cfi_sections</code> takes only <code>.eh_frame</code>.</span></p>
+            </div>
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/weld">Link it with weld</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}

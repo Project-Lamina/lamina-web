@@ -6,42 +6,42 @@
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Targets</strong></nav>
             <p class="lmn-section-tag">Backends</p>
             <h1>Targets and backends</h1>
-            <p class="lmn-manual-lead">What a target supports is a list of features, not a score. x86_64 and AArch64 carry the whole feature set. RISC-V 64 and PowerPC64 carry everything except aggregates by value, which they refuse rather than lower to a guessed ABI. The rest emit text nobody has executed.</p>
+            <p class="lmn-manual-lead">What a target supports is a list of features, not a score. x86_64 and AArch64 do all of it. RISC-V 64 and PowerPC64 do all of it except aggregates by value, which they refuse rather than lower to a guessed ABI. The rest emit text nobody has run.</p>
             <h2 id="tested">Executed targets</h2>
-            <p>These are compiled, run, and diffed against recorded output. The first three run on a CI job on that operating system; the last three run under qemu-user by hand.</p>
+            <p>Compiled, run and diffed against recorded output. First three on a CI job on that operating system, last three under qemu by hand.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Target</span><span>Status</span><span>Notes</span></div>
-                <p><code>x86_64_linux</code><strong>Tested</strong><span>The reference path, and the only one where every feature is exercised. SysV: aggregates up to 16 bytes in registers, larger ones in memory, hidden return pointer in <code>rdi</code>.</span></p>
-                <p><code>x86_64_windows</code><strong>Tested</strong><span>Win64 passes aggregates of 1, 2, 4 or 8 bytes by value and everything else by reference. The hidden return pointer goes in <code>rcx</code> and shifts the other arguments along.</span></p>
-                <p><code>aarch64_macos</code><strong>Tested</strong><span>Apple Silicon. AAPCS64: integer aggregates up to 16 bytes in registers, larger ones returned through the caller's buffer in <code>x8</code>.</span></p>
-                <p><code>aarch64_linux</code><strong>Tested</strong><span>Same ABI as macOS, cross-executed under qemu at <code>-O0</code> through <code>-O3</code>. Through the assembler: the direct binary encoder still misses <code>IntConvert</code> and <code>Copy</code>.</span></p>
-                <p><code>riscv64_unknown</code><strong>Partial</strong><span>Scalars, control flow, and <code>callptr</code> run. No aggregate ABI. RV64 only; <code>riscv32_unknown</code> has never been executed.</span></p>
-                <p><code>powerpc64_linux</code><strong>Partial</strong><span>ELFv2, same gap as RISC-V. Locals sit above the 64-byte parameter save area, which a variadic callee such as <code>printf</code> is entitled to overwrite.</span></p>
+                <p><code>x86_64_linux</code><strong>Tested</strong><span>Reference path. Everything lands here first. SysV: integer aggregates up to 16 bytes in registers, bigger ones in memory, return pointer in <code>rdi</code>.</span></p>
+                <p><code>x86_64_windows</code><strong>Tested</strong><span>Win64 passes aggregates of 1, 2, 4 or 8 bytes by value and everything else by reference. Return pointer goes in <code>rcx</code> and pushes the other arguments along.</span></p>
+                <p><code>aarch64_macos</code><strong>Tested</strong><span>Apple Silicon. AAPCS64: integer aggregates up to 16 bytes in registers, bigger ones returned through <code>x8</code>.</span></p>
+                <p><code>aarch64_linux</code><strong>Tested</strong><span>Same ABI as macOS, cross-executed under qemu at <code>-O0</code> through <code>-O3</code>, through the assembler. The direct binary encoder still misses <code>IntConvert</code> and <code>Copy</code>.</span></p>
+                <p><code>riscv64_unknown</code><strong>Partial</strong><span>Scalars, control flow and <code>callptr</code> run. No aggregate ABI yet. RV64 only, <code>riscv32_unknown</code> has never been run.</span></p>
+                <p><code>ppc64_linux</code><strong>Partial</strong><span>ELFv2, same gap as RISC-V. Locals sit above the 64 byte parameter save area, because <code>printf</code> spills its register arguments there.</span></p>
             </div>
             <h2 id="features">What each backend can lower</h2>
-            <p>A backend refuses what it cannot classify. An unsupported aggregate is a compile error naming the function, never a silently wrong ABI.</p>
+            <p>A backend refuses what it cannot classify. An aggregate it has no rule for is a compile error naming the function, never a silently wrong ABI.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Feature</span><span>Where it works</span><span>Notes</span></div>
-                <p><strong>Integer scalars, control flow, calls</strong><code>everywhere</code><span>The common path. Every published backend lowers it.</span></p>
-                <p><strong>Integer aggregates by value</strong><code>x86_64 aarch64</code><span>RISC-V, PowerPC64, WebAssembly and the GPU backends refuse the module instead of guessing a classification.</span></p>
-                <p><strong>Float or mixed aggregates</strong><code>nowhere</code><span>A struct with a float field is refused on every target, x86_64 included.</span></p>
+                <p><strong>Integer scalars, control flow, calls</strong><code>everywhere</code><span>Common path. Every published backend lowers it.</span></p>
+                <p><strong>Integer aggregates by value</strong><code>x86_64 aarch64</code><span>A struct, tuple or array crossing a boundary by value. RISC-V, PowerPC64, WebAssembly and the GPU backends refuse the module instead of guessing a classification. A pointer to one is a scalar and works anywhere.</span></p>
+                <p><strong>Float or mixed aggregates</strong><code>nowhere</code><span>A struct with a float field is refused everywhere, x86_64 included.</span></p>
                 <p><strong>Calls through a pointer</strong><code>x86_64 aarch64 riscv64 powerpc64</code><span>WebAssembly refuses <code>callptr</code>: nothing emits a function table yet.</span></p>
-                <p><strong>Direct binary emission</strong><code>x86_64 aarch64</code><span>x86_64 is complete. AArch64 covers a subset and falls back to the assembler.</span></p>
-                <p><strong>JIT into executable memory</strong><code>x86_64</code><span>Nightly feature. Calls and multi-block functions are still open.</span></p>
+                <p><strong>Direct binary emission</strong><code>x86_64 aarch64</code><span>x86_64 is complete. AArch64 covers part of it and falls back to the assembler.</span></p>
+                <p><strong>JIT into executable memory</strong><code>x86_64</code><span>Nightly feature. Calls and multi-block functions still need doing.</span></p>
             </div>
             <h2 id="experimental">Experimental target identifiers</h2>
-            <p>These have code-generation support in the source tree and nothing behind it. Assembly comes out; no job has assembled, linked or run it, so nothing past the text is known.</p>
+            <p>Code generation exists in the tree and nothing behind it. Assembly comes out, no job has assembled, linked or run it.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Architecture</span><span>Identifiers</span><span>Notes</span></div>
-                <p><strong>AArch64</strong><code>aarch64_windows</code><span>Native assembly path, never executed.</span></p>
-                <p><strong>RISC-V</strong><code>riscv32_unknown</code><span>Native assembly path, never executed. The 64-bit identifier is the supported one.</span></p>
+                <p><strong>AArch64</strong><code>aarch64_windows</code><span>Native assembly path, never run.</span></p>
+                <p><strong>RISC-V</strong><code>riscv32_unknown</code><span>Native assembly path, never run. Use <code>riscv64_unknown</code>.</span></p>
                 <p><strong>WebAssembly</strong><code>wasm32_unknown wasm64_unknown</code><span>Text output. No aggregates, no <code>callptr</code>.</span></p>
             </div>
             <h2 id="limits">How to read this list</h2>
             <p>Target parsing, code generation, assembly, and linking are separate stages. A recognized identifier does not promise an end-to-end compiler path.</p>
             <div class="lmn-doc-table">
                 <p><strong>Driver acceptance</strong><span>The command-line parser recognizes more identifiers than this public matrix. Recognition alone is not a support claim.</span></p>
-                <p><strong>AArch64 binary emission</strong><span>The direct encoder covers part of the instruction set. Assembly-based workflows do not depend on it and are fully supported.</span></p>
+                <p><strong>AArch64 binary emission</strong><span>The direct encoder covers part of the instruction set. Assembly workflows do not go through it and are fully supported.</span></p>
                 <p><strong>Experimental register allocation</strong><span>Global linear-scan and graph-color allocation are not available for every backend. The default allocator remains the practical choice.</span></p>
             </div>
             <div class="lmn-manual-next"><span>Related</span><a href="/docs/cli">Select a target from the CLI</a></div>

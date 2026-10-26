@@ -55,13 +55,13 @@
             <h3 id="targets">Target support</h3>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Target</span><span>Status</span><span>Notes</span></div>
-                <p><code>x86_64_linux</code><strong>Tested</strong><span>The reference path, and the only one where every feature below is exercised. Scalars, control flow, calls through a pointer, integer aggregates by value, SysV return through <code>rdi</code>. Compiled, run and diffed by CI on each commit.</span></p>
-                <p><code>x86_64_windows</code><strong>Tested</strong><span>Same program set as Linux, run by CI on Windows. Win64 takes aggregates of 1, 2, 4 or 8 bytes by value and everything else by reference, with the hidden return pointer in <code>rcx</code> shifting the other arguments along.</span></p>
-                <p><code>aarch64_macos</code><strong>Tested</strong><span>Apple Silicon, run by CI on macOS. AAPCS64: integer aggregates up to 16 bytes travel in registers, larger ones return through the caller's buffer in <code>x8</code>.</span></p>
-                <p><code>aarch64_linux</code><strong>Tested</strong><span>Cross-executed under qemu-user at <code>-O0</code> through <code>-O3</code>, same ABI as the macOS path. Through the assembler; the direct binary encoder is behind it and still misses <code>IntConvert</code> and <code>Copy</code>.</span></p>
-                <p><code>riscv64_unknown</code><strong>Partial</strong><span>Scalars, control flow, and calls through a pointer run under qemu-user. No aggregate ABI: a module that passes or returns one by value is refused at lowering rather than compiled to a guess. RV64 only.</span></p>
-                <p><code>powerpc64_linux</code><strong>Partial</strong><span>ELFv2, same state as RISC-V and refused for the same reason. Locals sit above the 64-byte parameter save area, which a variadic callee such as <code>printf</code> is entitled to overwrite.</span></p>
-                <p><code>aarch64_windows riscv32_unknown</code><strong>Experimental</strong><span>Assembly comes out. Neither has ever been assembled, linked or executed by a job, so nothing is known past the text.</span></p>
+                <p><code>x86_64_linux</code><strong>Tested</strong><span>Reference path. Everything lands here first. SysV: integer aggregates up to 16 bytes in registers, bigger ones in memory, return pointer in <code>rdi</code>. CI compiles, runs and diffs every recorded program.</span></p>
+                <p><code>x86_64_windows</code><strong>Tested</strong><span>Same programs, run by CI on Windows. Win64 takes aggregates of 1, 2, 4 or 8 bytes by value and passes everything else by reference. Return pointer goes in <code>rcx</code> and pushes the other arguments along.</span></p>
+                <p><code>aarch64_macos</code><strong>Tested</strong><span>Apple Silicon, run by CI. AAPCS64: integer aggregates up to 16 bytes in registers, bigger ones returned through <code>x8</code>.</span></p>
+                <p><code>aarch64_linux</code><strong>Tested</strong><span>Same ABI as macOS. Cross-executed under qemu at <code>-O0</code> through <code>-O3</code>, through the assembler. The direct binary encoder still misses <code>IntConvert</code> and <code>Copy</code>.</span></p>
+                <p><code>riscv64_unknown</code><strong>Partial</strong><span>Scalars, control flow and <code>callptr</code> run under qemu. No aggregate ABI yet, so a module passing or returning one by value is refused at lowering instead of guessed at. RV64 only.</span></p>
+                <p><code>ppc64_linux</code><strong>Partial</strong><span>ELFv2, same aggregate gap as RISC-V. Locals sit above the 64 byte parameter save area, because <code>printf</code> spills its register arguments there.</span></p>
+                <p><code>aarch64_windows riscv32_unknown</code><strong>Experimental</strong><span>Assembly comes out. Nothing has assembled, linked or run it.</span></p>
                 <p><code>wasm32_unknown wasm64_unknown</code><strong>Experimental</strong><span>Text output only. No aggregates, and <code>callptr</code> is refused because nothing emits a function table yet.</span></p>
                 <p><code>arx64_unknown</code><strong>Experimental</strong><span>Bare metal. Integer scalar subset.</span></p>
                 <p><code>*_artery</code><strong>Planned</strong><span>The OS name parses. Nothing else is wired yet.</span></p>
@@ -85,8 +85,8 @@
             <h4>Correctness</h4>
             <div class="lmn-doc-table">
                 <p><strong>Windows output</strong><span>Done. <code>writebyte</code> no longer falls through to a Linux <code>syscall</code>, the PE emitter resolves C runtime imports instead of assuming <code>kernel32.dll</code>, and Windows links request a CRT. Win64 aggregate passing and the hidden return pointer in <code>rcx</code> followed.</span></p>
-                <p><strong>RV64G from the RISC-V backend</strong><span>Done enough to run. Register use follows the ABI split, and the recorded programs execute correctly under qemu apart from the ones using aggregates, which the backend declines rather than miscompiles.</span></p>
-                <p><strong>PowerPC64 ELFv2</strong><span>Executes under qemu, with the same aggregate gap. Locals moved above the parameter save area, where <code>printf</code> had been overwriting them.</span></p>
+                <p><strong>RV64G from the RISC-V backend</strong><span>Done enough to run. Register use follows the ABI split, and the recorded programs run correctly under qemu except the aggregate ones, which the backend refuses instead of miscompiling.</span></p>
+                <p><strong>PowerPC64 ELFv2</strong><span>Runs under qemu, same aggregate gap. Locals moved above the parameter save area, where <code>printf</code> had been overwriting them.</span></p>
                 <p><strong>Deterministic output on every backend</strong><span>Fixed on x86_64 by ordering register sets. The other backends still need the same audit, because hash-ordered emission is invisible to a test that only compares program output.</span></p>
             </div>
 
@@ -104,7 +104,7 @@
 
             <h4>Testing</h4>
             <div class="lmn-doc-table">
-                <p><strong>Testcase suite in CI on three platforms</strong><span>Done. Every recorded program is compiled, run, and diffed on Linux, Windows, and macOS, and all of them pass. AArch64, RISC-V, and PowerPC64 are cross-executed under qemu on top of that, by hand rather than by a job.</span></p>
+                <p><strong>Testcase suite in CI on three platforms</strong><span>Done. Every recorded program is compiled, run and diffed on Linux, Windows and macOS, and they all pass. AArch64, RISC-V and PowerPC64 run under qemu on top of that, by hand so far, no job yet.</span></p>
                 <p><strong>CI for ras, weld, and lamina-web</strong><span>ras has test, clippy, fmt, and commit-lint jobs. weld and lamina-web still have none.</span></p>
             </div>
 

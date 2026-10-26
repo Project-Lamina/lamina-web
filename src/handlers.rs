@@ -162,6 +162,24 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
             "Tested and experimental Lamina target identifiers for x86_64, AArch64, RISC-V, and WebAssembly.",
             "targets",
         ),
+        "abi" => (
+            "docs_abi.html",
+            "Calling Conventions",
+            "Which calling convention each Lamina backend implements, how aggregates and floats are classified, and what is still refused.",
+            "abi",
+        ),
+        "ras" => (
+            "docs_ras.html",
+            "ras Assembler",
+            "Install ras and use it in place of GNU as, through the Lamina driver or a C toolchain.",
+            "ras",
+        ),
+        "weld" => (
+            "docs_weld.html",
+            "weld Linker",
+            "Install weld and use it in place of ld, lld, or mold, with the flags it accepts and the gaps it still has.",
+            "weld",
+        ),
         "c-bindings" => (
             "docs_c_bindings.html",
             "C Bindings Development SDK",
