@@ -47,26 +47,24 @@ impl Logger {
         }
         let mut file = None;
 
-        if let Some(path_ref) = path.as_ref() {
-            if let Some(parent) = path_ref.parent() {
-                let _ = std::fs::create_dir_all(parent);
-            }
+        if let Some(path_ref) = path.as_ref()
+            && let Some(parent) = path_ref.parent()
+        {
+            let _ = std::fs::create_dir_all(parent);
         }
 
-        if write_to_file {
-            if let Some(path_ref) = path.as_ref() {
-                rotate_if_oversized(path_ref);
-                // append: truncating would discard the failed run's log on restart
-                match OpenOptions::new().create(true).append(true).open(path_ref) {
-                    Ok(f) => file = Some(Arc::new(Mutex::new(f))),
-                    Err(e) => {
-                        // no logger installed yet, so this cannot use the macros
-                        eprintln!(
-                            "lamina-web: file logging requested but {} could not be \
-                             opened: {e}. Continuing with stderr only.",
-                            path_ref.display()
-                        );
-                    }
+        if write_to_file && let Some(path_ref) = path.as_ref() {
+            rotate_if_oversized(path_ref);
+            // append: truncating would discard the failed run's log on restart
+            match OpenOptions::new().create(true).append(true).open(path_ref) {
+                Ok(f) => file = Some(Arc::new(Mutex::new(f))),
+                Err(e) => {
+                    // no logger installed yet, so this cannot use the macros
+                    eprintln!(
+                        "lamina-web: file logging requested but {} could not be \
+                         opened: {e}. Continuing with stderr only.",
+                        path_ref.display()
+                    );
                 }
             }
         }
@@ -154,13 +152,12 @@ impl Log for Logger {
         }
 
         // file gets no colors
-        if self.write_to_file {
-            if let Some(file) = &self.file {
-                if let Ok(mut file_guard) = file.lock() {
-                    let file_message = format!("[{timestamp}] {level_str} {args}");
-                    let _ = writeln!(file_guard, "{file_message}");
-                }
-            }
+        if self.write_to_file
+            && let Some(file) = &self.file
+            && let Ok(mut file_guard) = file.lock()
+        {
+            let file_message = format!("[{timestamp}] {level_str} {args}");
+            let _ = writeln!(file_guard, "{file_message}");
         }
     }
 

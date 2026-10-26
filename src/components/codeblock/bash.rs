@@ -110,26 +110,25 @@ impl LanguageLexer for BashLexer {
                                 }
                             }
                         }
-                        Some(c) => {
-                            // simple variable name or special params
+                        // simple variable name or special params
+                        Some(c)
                             if c.is_alphanumeric()
-                                || matches!(c, '_' | '@' | '*' | '#' | '?' | '!' | '-' | '$')
-                            {
-                                value.push(c);
-                                lexer.advance();
-                                while let Some(nc) = lexer.current_char() {
-                                    if nc.is_alphanumeric()
-                                        || matches!(nc, '_' | '@' | '*' | '#' | '?' | '!' | '-')
-                                    {
-                                        value.push(nc);
-                                        lexer.advance();
-                                    } else {
-                                        break;
-                                    }
+                                || matches!(c, '_' | '@' | '*' | '#' | '?' | '!' | '-' | '$') =>
+                        {
+                            value.push(c);
+                            lexer.advance();
+                            while let Some(nc) = lexer.current_char() {
+                                if nc.is_alphanumeric()
+                                    || matches!(nc, '_' | '@' | '*' | '#' | '?' | '!' | '-')
+                                {
+                                    value.push(nc);
+                                    lexer.advance();
+                                } else {
+                                    break;
                                 }
                             }
                         }
-                        None => {}
+                        _ => {}
                     }
 
                     lexer.add_token(TokenType::Variable, value, start, lexer.position);
