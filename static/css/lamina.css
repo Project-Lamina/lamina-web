@@ -2488,3 +2488,18 @@ pre code .syntax-lifetime {
         justify-content: center;
     }
 }
+
+.lmn-shipped {
+    margin-left: 0.6rem;
+    padding: 0.15em 0.6em;
+    border: 1px solid var(--lmn-green-bright);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--lmn-green-bright) 12%, transparent);
+    color: var(--lmn-green);
+    font-family: var(--lmn-sans);
+    font-size: 0.6em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}

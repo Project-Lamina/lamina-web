@@ -156,31 +156,31 @@
         <div class="lmn-section-intro">
             <p class="lmn-section-tag">Target matrix</p>
             <h2>Start with a tested target.</h2>
-            <p>Linux and Windows x86_64 are tested end to end. Other backend paths remain experimental.</p>
+            <p>x86_64 and AArch64 run every recorded program in CI. RISC-V and PowerPC64 run under qemu, without an aggregate ABI.</p>
         </div>
         <div class="lmn-target-grid">
             <article>
                 <p class="lmn-target-mark">x64</p>
                 <h3>x86_64</h3>
-                <p>Linux and Windows paths are tested. Other x86_64 identifiers remain experimental.</p>
+                <p>Everything the compiler emits, on both Linux and Windows: aggregates by value, calls through a pointer, JIT. Compiled, executed, and diffed in CI.</p>
                 <span>tested: linux + windows</span>
             </article>
             <article>
                 <p class="lmn-target-mark">A64</p>
                 <h3>AArch64</h3>
-                <p>Apple Silicon macOS has received partial testing. AArch64 paths remain experimental.</p>
-                <span>experimental</span>
+                <p>Same feature set as x86_64, including aggregates through <code>x8</code>. macOS runs in CI, Linux under qemu.</p>
+                <span>tested: macos + linux</span>
             </article>
             <article>
                 <p class="lmn-target-mark">RV</p>
                 <h3>RISC-V</h3>
-                <p>32-bit and 64-bit backend paths are available for experiments.</p>
-                <span>experimental</span>
+                <p>Scalars, control flow, and calls through a pointer run on RV64. Aggregates by value are refused, not miscompiled.</p>
+                <span>partial: rv64</span>
             </article>
             <article>
                 <p class="lmn-target-mark">W</p>
                 <h3>WebAssembly</h3>
-                <p>32-bit and 64-bit text output paths are available for experiments.</p>
+                <p>Text output only. Scalar code comes out; aggregates and <code>callptr</code> do not.</p>
                 <span>experimental</span>
             </article>
         </div>

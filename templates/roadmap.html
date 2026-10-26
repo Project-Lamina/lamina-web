@@ -43,9 +43,9 @@
             <p>Four repositories make up the toolchain. The C bindings ship from the compiler repository with their own ABI version, kept apart from the crate version on purpose.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Component</span><span>Version</span><span>Role</span></div>
-                <p><code>lamina</code><strong>0.0.10</strong><span>IR, MIR, optimizer, code generation, compiler driver.</span></p>
-                <p><code>lamina-ras</code><strong>0.1.2</strong><span>Assembler, an alternative to <code>as</code>/GAS. Assembly source to relocatable object.</span></p>
-                <p><code>lamina-weld</code><strong>0.1.1</strong><span>Linker, an alternative to <code>ld</code>/<code>lld</code>/<code>mold</code>. ELF, Mach-O, PE.</span></p>
+                <p><code>lamina</code><strong>0.1.0</strong><span>IR, MIR, optimizer, code generation, compiler driver.</span></p>
+                <p><code>lamina-ras</code><strong>0.1.5</strong><span>Assembler, an alternative to <code>as</code>/GAS. Assembly source to relocatable object.</span></p>
+                <p><code>lamina-weld</code><strong>0.1.2</strong><span>Linker, an alternative to <code>ld</code>/<code>lld</code>/<code>mold</code>. ELF, Mach-O, PE.</span></p>
                 <p><code>lamina-c</code><strong>ABI 0.1.0</strong><span>C bindings, versioned apart from the crate.</span></p>
             </div>
 
@@ -55,12 +55,14 @@
             <h3 id="targets">Target support</h3>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Target</span><span>Status</span><span>Notes</span></div>
-                <p><code>x86_64_linux</code><strong>Tested</strong><span>The reference path.</span></p>
-                <p><code>x86_64_windows</code><strong>Tested</strong><span>Has an open correctness issue on program output.</span></p>
-                <p><code>aarch64_macos</code><strong>Partial</strong><span>Apple Silicon. Keep production use conservative.</span></p>
-                <p><code>aarch64_linux aarch64_windows</code><strong>Experimental</strong><span>Assembly paths exist. Direct binary emission is unimplemented.</span></p>
-                <p><code>riscv32_unknown riscv64_unknown</code><strong>Experimental</strong><span>Emitted assembly is not yet valid RV64G.</span></p>
-                <p><code>wasm32_unknown wasm64_unknown</code><strong>Experimental</strong><span>Text output only.</span></p>
+                <p><code>x86_64_linux</code><strong>Tested</strong><span>The reference path, and the only one where every feature below is exercised. Scalars, control flow, calls through a pointer, integer aggregates by value, SysV return through <code>rdi</code>. Compiled, run and diffed by CI on each commit.</span></p>
+                <p><code>x86_64_windows</code><strong>Tested</strong><span>Same program set as Linux, run by CI on Windows. Win64 takes aggregates of 1, 2, 4 or 8 bytes by value and everything else by reference, with the hidden return pointer in <code>rcx</code> shifting the other arguments along.</span></p>
+                <p><code>aarch64_macos</code><strong>Tested</strong><span>Apple Silicon, run by CI on macOS. AAPCS64: integer aggregates up to 16 bytes travel in registers, larger ones return through the caller's buffer in <code>x8</code>.</span></p>
+                <p><code>aarch64_linux</code><strong>Tested</strong><span>Cross-executed under qemu-user at <code>-O0</code> through <code>-O3</code>, same ABI as the macOS path. Through the assembler; the direct binary encoder is behind it and still misses <code>IntConvert</code> and <code>Copy</code>.</span></p>
+                <p><code>riscv64_unknown</code><strong>Partial</strong><span>Scalars, control flow, and calls through a pointer run under qemu-user. No aggregate ABI: a module that passes or returns one by value is refused at lowering rather than compiled to a guess. RV64 only.</span></p>
+                <p><code>powerpc64_linux</code><strong>Partial</strong><span>ELFv2, same state as RISC-V and refused for the same reason. Locals sit above the 64-byte parameter save area, which a variadic callee such as <code>printf</code> is entitled to overwrite.</span></p>
+                <p><code>aarch64_windows riscv32_unknown</code><strong>Experimental</strong><span>Assembly comes out. Neither has ever been assembled, linked or executed by a job, so nothing is known past the text.</span></p>
+                <p><code>wasm32_unknown wasm64_unknown</code><strong>Experimental</strong><span>Text output only. No aggregates, and <code>callptr</code> is refused because nothing emits a function table yet.</span></p>
                 <p><code>arx64_unknown</code><strong>Experimental</strong><span>Bare metal. Integer scalar subset.</span></p>
                 <p><code>*_artery</code><strong>Planned</strong><span>The OS name parses. Nothing else is wired yet.</span></p>
             </div>
@@ -77,38 +79,39 @@
                 <p><code>1.0</code><strong>Stable IR and ABI</strong><span>The IR and the C ABI can be depended on.</span></p>
             </div>
 
-            <h3>0.1 — Correct on the targets we claim</h3>
-            <p>Right now the target table makes claims nothing verifies. This milestone closes that gap and makes the self-built toolchain the default path.</p>
+            <h3>0.1 — Correct on the targets we claim <span class="lmn-shipped">Shipped</span></h3>
+            <p>The target table used to make claims nothing verified. It no longer does: every target labeled Tested is compiled, run, and diffed by CI on that operating system, and the self-built toolchain is a first-class path.</p>
 
             <h4>Correctness</h4>
             <div class="lmn-doc-table">
-                <p><strong>Fix Windows output</strong><span>Three defects behind one symptom. <code>writebyte</code> falls through to a Linux <code>syscall</code> on every non-macOS target. The PE emitter imports every undefined symbol from <code>kernel32.dll</code>, but <code>printf</code> lives in the C runtime, so the loader cannot resolve it and the process dies before <code>main</code>. And no CRT library is requested for Windows links at all.</span></p>
-                <p><strong>Valid RV64G from the RISC-V backend</strong><span>Register use ignores the ABI's caller and callee split, <code>x30</code> and <code>x31</code> are taken as scratch, and division and the call sequence are wrong. The emitter should also state which extensions it assumes.</span></p>
-                <p><strong>Deterministic output on every backend</strong><span>Fixed on x86_64 by ordering register sets. The others need the same audit, because hash-ordered emission is invisible to a test that only compares program output.</span></p>
+                <p><strong>Windows output</strong><span>Done. <code>writebyte</code> no longer falls through to a Linux <code>syscall</code>, the PE emitter resolves C runtime imports instead of assuming <code>kernel32.dll</code>, and Windows links request a CRT. Win64 aggregate passing and the hidden return pointer in <code>rcx</code> followed.</span></p>
+                <p><strong>RV64G from the RISC-V backend</strong><span>Done enough to run. Register use follows the ABI split, and the recorded programs execute correctly under qemu apart from the ones using aggregates, which the backend declines rather than miscompiles.</span></p>
+                <p><strong>PowerPC64 ELFv2</strong><span>Executes under qemu, with the same aggregate gap. Locals moved above the parameter save area, where <code>printf</code> had been overwriting them.</span></p>
+                <p><strong>Deterministic output on every backend</strong><span>Fixed on x86_64 by ordering register sets. The other backends still need the same audit, because hash-ordered emission is invisible to a test that only compares program output.</span></p>
             </div>
 
             <h4>Language</h4>
             <div class="lmn-doc-table">
-                <p><strong>External function declarations</strong><span>A way to declare a function the module does not define, with its ABI and attributes. This unblocks more of the rest than anything else here: it lets the I/O builtins stop being per-backend intrinsics with a Linux-shaped fallback, it is what WebAssembly needs before it can do anything observable, and it is how an Artery program will reach the kernel.</span></p>
+                <p><strong>External function declarations</strong><span>Done. A module can declare a function it does not define, which is what lets the I/O builtins stop being per-backend intrinsics with a Linux-shaped fallback.</span></p>
             </div>
 
             <h4>Toolchain</h4>
             <div class="lmn-doc-table">
-                <p><strong>Move driver work out of weld</strong><span>weld stops supplying CRT objects and stops inventing an interpreter path. The Lamina driver supplies <code>crt1.o</code>, <code>-lc</code>, <code>--dynamic-linker</code>, and the search paths, derived from the target, the way <code>gcc</code> does before invoking <code>ld</code>. See <a href="#design">the reasoning</a>.</span></p>
-                <p><strong>ras and weld as the default on x86_64 Linux</strong><span>Both already work under <code>--assembler ras -c weld</code>. Making them the default is why they were written.</span></p>
-                <p><strong>Split the toolchain flags</strong><span><code>--assembler</code> and <code>--linker</code> as separate choices, <code>--compiler</code> kept as a toolchain alias. A named tool beats an alias, an alias beats detection, and an unknown value is an error rather than a silent fallback.</span></p>
+                <p><strong>Split the toolchain flags</strong><span>Done. <code>--assembler</code> and <code>--linker</code> are separate choices, <code>--compiler</code> stays as a toolchain alias, and an unknown value is an error rather than a silent fallback.</span></p>
+                <p><strong>Move driver work out of weld</strong><span>Open. weld still supplies CRT objects and invents an interpreter path; that belongs in the Lamina driver, derived from the target, the way <code>gcc</code> does before invoking <code>ld</code>. See <a href="#design">the reasoning</a>.</span></p>
+                <p><strong>ras and weld as the default on x86_64 Linux</strong><span>Open. Both work under <code>--assembler ras -c weld</code>. Making them the default is why they were written.</span></p>
             </div>
 
             <h4>Testing</h4>
             <div class="lmn-doc-table">
-                <p><strong>Testcase suite in CI on three platforms</strong><span>Add <code>windows-latest</code> and <code>macos-latest</code>, and call the test runner so the 70 recorded programs are compiled, run, and diffed on every platform the table calls tested. See <a href="#testing">Testing and CI</a>.</span></p>
-                <p><strong>CI for ras, weld, and lamina-web</strong><span>None of the three has any today. Plus <code>cargo fmt --check</code>, since the current job runs <code>cargo fmt</code> and commits, which hides what it should report.</span></p>
+                <p><strong>Testcase suite in CI on three platforms</strong><span>Done. Every recorded program is compiled, run, and diffed on Linux, Windows, and macOS, and all of them pass. AArch64, RISC-V, and PowerPC64 are cross-executed under qemu on top of that, by hand rather than by a job.</span></p>
+                <p><strong>CI for ras, weld, and lamina-web</strong><span>ras has test, clippy, fmt, and commit-lint jobs. weld and lamina-web still have none.</span></p>
             </div>
 
             <h4>Release and docs</h4>
             <div class="lmn-doc-table">
-                <p><strong>First C bindings release</strong><span>The source layer is done. What is missing is publication: archives with checksums, a C example rebuild in CI so exports and headers cannot drift, and the install page.</span></p>
-                <p><strong>One story everywhere</strong><span>The README sells four architectures as flat capabilities while the website separates tested from experimental. The website is right. Same for the nightly line: <code>--jit</code> and <code>--sandbox</code> are parsed unconditionally while the docs call the JIT nightly-only.</span></p>
+                <p><strong>First C bindings release</strong><span>Done. Stable and nightly archives build in CI with checksums, a C example is rebuilt so exports and headers cannot drift, and the install page is live.</span></p>
+                <p><strong>One story everywhere</strong><span>Open. The README still sells four architectures as flat capabilities while this table separates tested from experimental. This table is right.</span></p>
             </div>
 
             <h3>0.2 — A backend you can add a target to</h3>
