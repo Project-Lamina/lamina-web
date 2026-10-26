@@ -147,9 +147,7 @@ impl SitemapGenerator {
 }
 
 /// Generate sitemap XML for the website
-pub fn generate_sitemap_xml(
-    base_url: &str,
-) -> Result<String, Box<dyn error::Error + Send + Sync>> {
+pub fn generate_sitemap_xml(base_url: &str) -> Result<String, Box<dyn error::Error + Send + Sync>> {
     let generator = SitemapGenerator::new(base_url.to_string());
     generator.generate_sitemap()
 }
