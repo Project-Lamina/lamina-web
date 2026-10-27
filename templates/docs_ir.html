@@ -17,6 +17,10 @@
   right_wins:
     ret.i64 %right
 }</code></pre>
+            <p>A function the module does not define is declared with <code>@extern</code> and no body. A declaration ending in <code>...</code> is variadic, which is how a call reaches <code>printf</code> and friends.</p>
+            <pre><code class="language-lamina">@extern
+fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
+            <p>Only a declaration may carry <code>...</code>; Lamina cannot define a variadic function, and there is no <code>va_arg</code>. A float argument past the named ones widens to <code>f64</code> on the way out, the way C promotes one.</p>
             <h2 id="types">Types and values</h2>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Category</span><span>Syntax</span><span>Meaning</span></div>

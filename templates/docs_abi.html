@@ -41,11 +41,27 @@ fn @sum_ptr(ptr %p) -&gt; i64         # a pointer, works anywhere</code></pre>
                 <p><strong>Float and mixed aggregates</strong><span>Refused on every backend. System V packs two floats into one SSE register, AAPCS64 has homogeneous float aggregates, and ELFv2 splits a <code>{long, double}</code> across both banks. None of that is written yet.</span></p>
                 <p><strong>Aggregates on riscv64 and ppc64</strong><span>No classifier. Both run scalars, control flow and calls through a pointer, so this is the one feature separating them from the x86_64 and aarch64 paths.</span></p>
                 <p><strong>Aggregates on wasm and the GPU backends</strong><span>Not planned for the GPU kernel contract. wasm would need a layout decision first.</span></p>
-                <p><strong>General variadics</strong><span>There is no <code>va_arg</code>, no way to define a variadic function, and no marker saying a callee is one. An <code>@extern</code> declaration with a fixed prototype reaches a C variadic function, and x86_64 and ppc64 meet the variadic convention for it by setting <code>al</code> and by copying floats into the matching general register. Darwin aarch64 wants those arguments on the stack instead, which cannot be guessed, so it still passes them in registers.</span></p>
+                <p><strong>Defining a variadic function</strong><span>A call to one works: an <code>@extern</code> declaration ending in <code>...</code> marks the callee variadic, and each backend follows the variadic side of its convention from there. What is missing is the other half, <code>va_arg</code> and a variadic body, so Lamina can call <code>printf</code> but cannot be <code>printf</code>.</span></p>
                 <p><strong>Indirect tail calls</strong><span><code>callptr</code> works on x86_64, aarch64, riscv64 and ppc64. A <code>tailcall</code> through a pointer does not exist.</span></p>
                 <p><strong>Vector call ABI</strong><span>Vectors have arithmetic and memory operations on several backends, but no backend passes or returns one across a function boundary.</span></p>
                 <p><strong><code>callptr</code> on wasm</strong><span>Refused. Nothing emits a function table for the indirect call to index.</span></p>
             </div>
+
+            <h2 id="variadics">Calling a variadic function</h2>
+            <p>A declaration says where the named parameters stop.</p>
+            <pre><code class="language-lamina">@extern
+fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
+            <p>Each argument past them is promoted the way C promotes one: a float widens to <code>f64</code>, everything else travels as a word. Then each backend does what its ABI asks.</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Target</span><span>What the call does</span><span>Why</span></div>
+                <p><code>x86_64</code> System V<strong><code>al</code> holds the vector count</strong><span>A variadic callee reads <code>al</code> to decide whether to spill the SSE registers.</span></p>
+                <p><code>x86_64</code> Win64<strong>Nothing extra</strong><span>Win64 passes a variadic float in both the SSE and the integer register, which the positional rule already does.</span></p>
+                <p><code>aarch64</code> Darwin<strong>Stack</strong><span>Apple puts every variadic argument in an eight-byte stack slot, whichever registers are free.</span></p>
+                <p><code>aarch64</code> Linux<strong>Registers</strong><span>AAPCS64 treats a variadic argument like a named one.</span></p>
+                <p><code>ppc64</code> ELFv2<strong>Float in both banks</strong><span>The callee's <code>va_arg</code> may read either, so the bits go to the FPR and the positional GPR.</span></p>
+                <p><code>riscv64</code> LP64D<strong>Float in integer bank</strong><span>LP64D sends a variadic float through <code>a0</code>–<code>a7</code> as its bit pattern.</span></p>
+            </div>
+            <p>A callee with no declaration at all is treated the same way, because nothing rules out its being variadic.</p>
 
             <h2 id="refusals">Reading a refusal</h2>
             <p>An unsupported boundary is a compile error naming the value and the function, never a silently wrong ABI. The check runs at the start of every AOT backend and before JIT encoding, so it cannot be skipped by reaching for a per-architecture emitter directly.</p>
