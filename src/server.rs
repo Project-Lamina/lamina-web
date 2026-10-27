@@ -150,6 +150,7 @@ mod tests {
         "/docs",
         "/docs/getting-started",
         "/docs/ir",
+        "/docs/output",
         "/docs/cli",
         "/docs/rust",
         "/docs/irbuilder",

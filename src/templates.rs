@@ -25,6 +25,7 @@ impl TemplateEngine {
             "docs_index.html",
             "docs_getting_started.html",
             "docs_ir.html",
+            "docs_output.html",
             "docs_cli.html",
             "docs_rust.html",
             "docs_irbuilder.html",

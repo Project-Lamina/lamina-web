@@ -132,6 +132,12 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
             "Install Lamina, compile a small typed SSA IR module, and choose AOT, nightly JIT, MIR, or assembly output.",
             "getting_started",
         ),
+        "output" => (
+            "docs_output.html",
+            "Writing Output",
+            "How to print from Lamina: calling libc printf through an extern declaration, or writing bytes directly with writebyte for freestanding code.",
+            "output",
+        ),
         "ir" => (
             "docs_ir.html",
             "IR Language Reference",
@@ -228,6 +234,7 @@ fn render_docs_template(
         "getting_started",
         "cli",
         "ir",
+        "output",
         "targets",
         "abi",
         "ras",

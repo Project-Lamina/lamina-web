@@ -1,0 +1,79 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Writing output</strong></nav>
+            <p class="lmn-section-tag">Guide</p>
+            <h1>Writing output</h1>
+            <p class="lmn-manual-lead">There are two ways to print from Lamina, and <code>print</code> is neither of them. Call libc the way C does, or write bytes yourself and depend on nothing.</p>
+
+            <div class="lmn-manual-note"><strong><code>print</code> is not one of them</strong><p><code>print</code> exists so the compiler's own testcases can show a number without a runtime. It loads a format string and calls <code>printf</code>, so it quietly links libc into a program that may not want it. It is a debugging aid, it is being retired, and application code must not use it.</p></div>
+
+            <h2 id="libc">Through libc</h2>
+            <p>Declare the function with <code>@extern</code> and call it. A declaration ending in <code>...</code> is variadic, so this is how <code>printf</code> and its relatives are reached. Arguments past the named ones follow the C promotion rules: an <code>f32</code> widens to <code>f64</code> on the way out.</p>
+            <pre><code class="language-lamina">@extern
+fn @printf(ptr %fmt, ...) -&gt; i32
+
+global $fmt: [8 x i8] = "%d %s\n"
+global $who: [7 x i8] = "lamina"
+
+fn @main() -&gt; i64 {
+entry:
+  %f = getelem.i8 $fmt, 0
+  %w = getelem.i8 $who, 0
+  %r = call @printf(%f, 42, %w)
+  ret.i64 0
+}</code></pre>
+            <p>A global array is not a pointer, so <code>getelem.i8 $fmt, 0</code> takes the address of its first byte. That is the value <code>printf</code> wants.</p>
+            <p>Calling through a function pointer works too, and needs the <code>...</code> marker at the call site, because an indirect call has no declaration to read it from.</p>
+            <pre><code class="language-lamina-fragment">%p = funcaddr @printf
+%r = callptr.i32 %p(ptr %f, ..., i32 42)</code></pre>
+
+            <h2 id="freestanding">Freestanding</h2>
+            <p><code>writebyte</code> sends one byte to stdout and needs no libc, no runtime and no linked library. It is the portable choice, and it works on every target including WebAssembly, where it lowers to <code>fd_write</code>.</p>
+            <pre><code class="language-lamina">fn @put_digit(i64 %n) -&gt; i64 {
+entry:
+  %ascii = add.i64 %n, 48
+  %w = writebyte %ascii
+  ret.i64 0
+}
+
+fn @put_u64(i64 %n) -&gt; i64 {
+entry:
+  %small = lt.i64 %n, 10
+  br %small, last, more
+more:
+  %hi = div.i64 %n, 10
+  %lo = rem.i64 %n, 10
+  %r = call @put_u64(%hi)
+  %d = call @put_digit(%lo)
+  ret.i64 0
+last:
+  %e = call @put_digit(%n)
+  ret.i64 0
+}
+
+fn @main() -&gt; i64 {
+entry:
+  %a = call @put_u64(31415)
+  %nl = writebyte 10
+  ret.i64 0
+}</code></pre>
+            <p>That prints <code>31415</code>. Formatting a number is the frontend's job, not the IR's, which is why there is no instruction for it.</p>
+
+            <h2 id="raw">Raw bytes</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Does</span></div>
+                <p><strong>writebyte</strong><code>%r = writebyte %value</code><span>Writes the low 8 bits to stdout. One byte, one syscall.</span></p>
+                <p><strong>readbyte</strong><code>%r = readbyte</code><span>Reads one byte from stdin. Returns the byte, or 0 at end of input.</span></p>
+                <p><strong>write</strong><code>%r = write %ptr, %size</code><span>Writes <code>%size</code> bytes from <code>%ptr</code> to stdout.</span></p>
+                <p><strong>read</strong><code>%r = read %ptr, %size</code><span>Reads up to <code>%size</code> bytes from stdin into <code>%ptr</code>.</span></p>
+            </div>
+            <p>Each returns the count moved, or a negative errno. There is no buffering: these are syscalls, not a stdio layer.</p>
+
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/abi">Calling conventions</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}
