@@ -34,16 +34,16 @@ fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
                 <div class="lmn-reference-head"><span>Family</span><span>Opcodes</span><span>Purpose</span></div>
                 <p><strong>Arithmetic</strong><code>add sub mul div rem and or xor shl shr</code><span>Typed scalar operations.</span></p>
                 <p><strong>Comparison</strong><code>eq ne gt ge lt le</code><span>Produce boolean SSA results.</span></p>
-                <p><strong>Memory</strong><code>alloc load store dealloc memcpy memmove memset</code><span>Allocate, access, and release storage.</span></p>
-                <p><strong>Pointers</strong><code>getfieldptr getelementptr ptrtoint inttoptr</code><span>Compute and convert addresses.</span></p>
+                <p><strong>Memory</strong><code>stackalloc heapalloc load store heapfree memcpy memmove memset</code><span>Allocate, access, and release storage.</span></p>
+                <p><strong>Pointers</strong><code>getfieldptr getelem ptrtoint inttoptr</code><span>Compute and convert addresses.</span></p>
                 <p><strong>Control flow</strong><code>br jmp switch phi ret call</code><span>Build CFG edges, SSA merges, returns, and calls.</span></p>
                 <p><strong>I/O</strong><code>write read writebyte readbyte writeptr print</code><span>Perform low-level I/O. <code>print</code> is a debug-only helper.</span></p>
             </div>
             <h2 id="memory">Memory ownership</h2>
-            <p><code>alloc.stack</code> creates function-scoped storage with automatic cleanup. <code>alloc.heap</code> creates persistent storage that must be released with <code>dealloc</code>.</p>
+            <p><code>stackalloc.T</code> creates function-scoped storage with automatic cleanup. <code>heapalloc.T</code> creates persistent storage that must be released with <code>heapfree</code>.</p>
             <pre><code class="language-lamina">fn @round_trip(i64 %input) -&gt; i64 {
   entry:
-    %slot = alloc.stack i64
+    %slot = stackalloc.i64
     store.i64 %slot, %input
     %loaded = load.i64 %slot
     ret.i64 %loaded

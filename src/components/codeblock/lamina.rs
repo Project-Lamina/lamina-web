@@ -104,18 +104,66 @@ impl LanguageLexer for LaminaLexer {
     fn get_keywords(&self) -> &[&str] {
         &[
             // Function and control flow keywords
-            "fn", "ret", "br", "call", "if", "else", "loop", "while", "for",
+            "fn",
+            "ret",
+            "br",
+            "call",
+            "if",
+            "else",
+            "loop",
+            "while",
+            "for",
             // Memory operations
-            "alloc", "dealloc", "load", "store", "stack", "heap",
+            "stackalloc",
+            "heapalloc",
+            "heapfree",
+            "load",
+            "store",
+            "stack",
+            "heap",
             // Type operations
-            "getfield", "getelem", "ptr", // Binary operators
-            "add", "sub", "mul", "div", "mod", "and", "or", "xor", "shl", "shr", "eq", "ne", "lt",
-            "le", "gt", "ge", // Unary operators
-            "not", "neg", // Type keywords
-            "i8", "i16", "i32", "i64", "i128", "u8", "u16", "u32", "u64", "u128", "f32", "f64",
-            "bool", "ptr", "struct", "array", // Annotations
-            "export", "import", // Special operations
-            "print", "global", "type",
+            "getfieldptr",
+            "getelem",
+            "ptr", // Binary operators
+            "add",
+            "sub",
+            "mul",
+            "div",
+            "mod",
+            "and",
+            "or",
+            "xor",
+            "shl",
+            "shr",
+            "eq",
+            "ne",
+            "lt",
+            "le",
+            "gt",
+            "ge", // Unary operators
+            "not",
+            "neg", // Type keywords
+            "i8",
+            "i16",
+            "i32",
+            "i64",
+            "i128",
+            "u8",
+            "u16",
+            "u32",
+            "u64",
+            "u128",
+            "f32",
+            "f64",
+            "bool",
+            "ptr",
+            "struct",
+            "array", // Annotations
+            "export",
+            "import", // Special operations
+            "print",
+            "global",
+            "type",
         ]
     }
 }
@@ -163,7 +211,7 @@ fn @add(i32 %a, i32 %b) -> i32 {
     #[test]
     fn test_lamina_lexer_keywords() {
         let lexer = LaminaLexer;
-        let input = "fn ret br call if else loop while for alloc dealloc load store";
+        let input = "fn ret br call if else loop while for stackalloc heapfree load store";
 
         let tokens = lexer.lex(input);
         let keywords: Vec<&str> = tokens
@@ -176,8 +224,8 @@ fn @add(i32 %a, i32 %b) -> i32 {
         assert!(keywords.contains(&"ret"));
         assert!(keywords.contains(&"br"));
         assert!(keywords.contains(&"call"));
-        assert!(keywords.contains(&"alloc"));
-        assert!(keywords.contains(&"dealloc"));
+        assert!(keywords.contains(&"stackalloc"));
+        assert!(keywords.contains(&"heapfree"));
     }
 
     #[test]
