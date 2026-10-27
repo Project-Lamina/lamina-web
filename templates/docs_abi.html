@@ -61,7 +61,7 @@ fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
                 <p><code>ppc64</code> ELFv2<strong>Float in both banks</strong><span>The callee's <code>va_arg</code> may read either, so the bits go to the FPR and the positional GPR.</span></p>
                 <p><code>riscv64</code> LP64D<strong>Float in integer bank</strong><span>LP64D sends a variadic float through <code>a0</code>–<code>a7</code> as its bit pattern.</span></p>
             </div>
-            <p>A callee with no declaration at all is treated the same way, because nothing rules out its being variadic.</p>
+            <p>A callee with no declaration at all is treated the same way, because nothing rules out its being variadic. A call through <code>callptr</code> is not: it carries argument types and no marker, so it places them the ordinary way.</p>
 
             <h2 id="refusals">Reading a refusal</h2>
             <p>An unsupported boundary is a compile error naming the value and the function, never a silently wrong ABI. The check runs at the start of every AOT backend and before JIT encoding, so it cannot be skipped by reaching for a per-architecture emitter directly.</p>
