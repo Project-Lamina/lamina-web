@@ -232,12 +232,18 @@ pub fn highlight_html_code_blocks(html: &str) -> String {
     result
 }
 
+/// `lamina-fragment` marks a snippet that is not a whole module, so a doc test can
+/// skip compiling it. It highlights the same as `lamina`.
+fn is_lamina(language: &str) -> bool {
+    matches!(language, "lamina" | "lamina-ir" | "lamina-fragment")
+}
+
 fn highlight(language: &str, content: &str) -> String {
     let decoded = decode_html(content);
     let lexer: Box<dyn LanguageLexer> = match language {
         "bash" | "shell" | "sh" => Box::new(BashLexer),
         "c" => Box::new(CLexer),
-        "lamina" | "lamina-ir" => Box::new(LaminaLexer),
+        lang if is_lamina(lang) => Box::new(LaminaLexer),
         "rust" | "rs" => Box::new(RustLexer),
         _ => return escape_html(&decoded),
     };
@@ -252,7 +258,7 @@ fn highlight(language: &str, content: &str) -> String {
 fn render_token(language: &str, token: Token) -> String {
     let class = match token.token_type {
         TokenType::Whitespace | TokenType::Newline | TokenType::Other => None,
-        TokenType::Keyword if language == "lamina" && is_lamina_type(&token.value) => {
+        TokenType::Keyword if is_lamina(language) && is_lamina_type(&token.value) => {
             Some("syntax-type")
         }
         TokenType::Keyword => Some("syntax-keyword"),
@@ -261,11 +267,11 @@ fn render_token(language: &str, token: Token) -> String {
         TokenType::Number => Some("syntax-number"),
         TokenType::Operator => Some("syntax-operator"),
         TokenType::Identifier
-            if language == "lamina" && token.value.starts_with(['@', '$', '!']) =>
+            if is_lamina(language) && token.value.starts_with(['@', '$', '!']) =>
         {
             Some("syntax-symbol")
         }
-        TokenType::Identifier if language == "lamina" && is_lamina_instruction(&token.value) => {
+        TokenType::Identifier if is_lamina(language) && is_lamina_instruction(&token.value) => {
             Some("syntax-keyword")
         }
         TokenType::Identifier if language == "c" && token.value.ends_with("_t") => {
