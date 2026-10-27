@@ -26,13 +26,13 @@ impl LanguageLexer for LaminaLexer {
                     // String literals
                     lexer.consume_string('"');
                 }
-                '@' => {
-                    // Global symbols and function names
+                '@' | '$' => {
+                    // Function names, globals
                     let start = lexer.position;
-                    let mut value = String::from("@");
+                    let mut value = ch.to_string();
                     lexer.advance();
 
-                    // Consume identifier after @
+                    // Consume identifier after the sigil
                     while let Some(c) = lexer.current_char() {
                         if c.is_alphanumeric() || c == '_' || c == '-' {
                             value.push(c);
@@ -61,6 +61,26 @@ impl LanguageLexer for LaminaLexer {
                     }
 
                     lexer.add_token(TokenType::Variable, value, start, lexer.position);
+                }
+                '!' if lexer
+                    .peek_char(1)
+                    .is_some_and(|c| c.is_alphabetic() || c == '_') =>
+                {
+                    // Named types
+                    let start = lexer.position;
+                    let mut value = String::from("!");
+                    lexer.advance();
+
+                    while let Some(c) = lexer.current_char() {
+                        if c.is_alphanumeric() || c == '_' {
+                            value.push(c);
+                            lexer.advance();
+                        } else {
+                            break;
+                        }
+                    }
+
+                    lexer.add_token(TokenType::Identifier, value, start, lexer.position);
                 }
                 'a'..='z' | 'A'..='Z' | '_' => {
                     // Identifiers, keywords, and operators
@@ -174,10 +194,10 @@ mod tests {
     fn test_lamina_lexer_basic() {
         let lexer = LaminaLexer;
         let input = r#"# Type declaration
-type @Vec2 = struct { x: f32, y: f32 }
+type !Vec2 = struct { x: f32, y: f32 }
 
 # Global value
-global @message: [5 x i8] = "hello"
+global $message: [5 x i8] = "hello"
 
 # Function with annotations
 @export
@@ -229,7 +249,7 @@ fn @add(i32 %a, i32 %b) -> i32 {
     #[test]
     fn test_lamina_lexer_symbols() {
         let lexer = LaminaLexer;
-        let input = "@global_function %local_var";
+        let input = "@global_function %local_var $global_value !NamedType";
 
         let tokens = lexer.lex(input);
         let identifiers: Vec<&str> = tokens
@@ -244,6 +264,8 @@ fn @add(i32 %a, i32 %b) -> i32 {
             .collect();
 
         assert!(identifiers.contains(&"@global_function"));
+        assert!(identifiers.contains(&"$global_value"));
+        assert!(identifiers.contains(&"!NamedType"));
         assert!(variables.contains(&"%local_var"));
     }
 }

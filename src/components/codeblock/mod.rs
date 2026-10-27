@@ -260,7 +260,9 @@ fn render_token(language: &str, token: Token) -> String {
         TokenType::Comment => Some("syntax-comment"),
         TokenType::Number => Some("syntax-number"),
         TokenType::Operator => Some("syntax-operator"),
-        TokenType::Identifier if language == "lamina" && token.value.starts_with('@') => {
+        TokenType::Identifier
+            if language == "lamina" && token.value.starts_with(['@', '$', '!']) =>
+        {
             Some("syntax-symbol")
         }
         TokenType::Identifier if language == "lamina" && is_lamina_instruction(&token.value) => {
