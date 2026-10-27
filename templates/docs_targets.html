@@ -16,14 +16,14 @@
                 <p><code>aarch64_macos</code><strong>Tested</strong><span>Apple Silicon. AAPCS64: integer aggregates up to 16 bytes in registers, bigger ones returned through <code>x8</code>.</span></p>
                 <p><code>aarch64_linux</code><strong>Tested</strong><span>Same ABI as macOS, cross-executed under qemu at <code>-O0</code> through <code>-O3</code>, through the assembler. The direct binary encoder still misses <code>IntConvert</code> and <code>Copy</code>.</span></p>
                 <p><code>riscv64_unknown</code><strong>Partial</strong><span>Scalars, control flow, <code>callptr</code> and integer aggregates. LP64D: up to two doublewords in <code>a0</code>-<code>a7</code>, split across the last register and the stack when only one is left, bigger ones by reference. RV64 only, <code>riscv32_unknown</code> has never been run.</span></p>
-                <p><code>ppc64_linux</code><strong>Partial</strong><span>ELFv2, same gap as RISC-V. Locals sit above the 64 byte parameter save area, because <code>printf</code> spills its register arguments there.</span></p>
+                <p><code>ppc64_linux</code><strong>Partial</strong><span>ELFv2, with integer aggregates in <code>r3</code>–<code>r10</code> and the overflow split into the parameter save area. Locals sit above that 64 byte area, because <code>printf</code> spills its register arguments there.</span></p>
             </div>
             <h2 id="features">What each backend can lower</h2>
             <p>A backend refuses what it cannot classify. An aggregate it has no rule for is a compile error naming the function, never a silently wrong ABI.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Feature</span><span>Where it works</span><span>Notes</span></div>
                 <p><strong>Integer scalars, control flow, calls</strong><code>everywhere</code><span>Common path. Every published backend lowers it.</span></p>
-                <p><strong>Integer aggregates by value</strong><code>x86_64 aarch64 riscv64</code><span>A struct, tuple or array crossing a boundary by value. PowerPC64, WebAssembly and the GPU backends refuse the module instead of guessing a classification. A pointer to one is a scalar and works anywhere.</span></p>
+                <p><strong>Integer aggregates by value</strong><code>x86_64 aarch64 riscv64 powerpc64</code><span>A struct, tuple or array crossing a boundary by value. WebAssembly and the GPU backends refuse the module instead of guessing a classification. A pointer to one is a scalar and works anywhere.</span></p>
                 <p><strong>Float or mixed aggregates</strong><code>nowhere</code><span>A struct with a float field is refused everywhere, x86_64 included.</span></p>
                 <p><strong>Calls through a pointer</strong><code>everywhere but the GPU backends</code><span>WebAssembly builds a function table and calls through <code>call_indirect</code>; a function address is its table index.</span></p>
                 <p><strong>Direct binary emission</strong><code>x86_64 aarch64</code><span>x86_64 is complete. AArch64 covers part of it and falls back to the assembler.</span></p>

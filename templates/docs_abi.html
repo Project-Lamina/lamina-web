@@ -33,15 +33,15 @@ fn @sum_ptr(ptr %p) -&gt; i64         # a pointer, works anywhere</code></pre>
                 <p><code>x86_64</code> Win64<strong>Yes</strong><span>Only sizes 1, 2, 4 and 8 travel by value. Every other size goes by reference, which is what Win64 requires rather than a shortcut.</span></p>
                 <p><code>aarch64</code><strong>Yes</strong><span>Up to 16 bytes in <code>x0</code>–<code>x7</code>, or whole onto the stack when the remaining registers do not hold it. Larger returns through the caller's buffer in <code>x8</code>.</span></p>
                 <p><code>riscv64</code><strong>Yes</strong><span>Up to two doublewords in <code>a0</code>–<code>a7</code>. With one register left, the first doubleword takes it and the rest goes on the stack. Larger than two doublewords passes by reference, and a result that size returns through a hidden pointer in <code>a0</code>.</span></p>
-                <p><code>ppc64 wasm amdgpu ptx</code><strong>No</strong><span>Refused at lowering, naming the function: <code>PowerPC64 does not yet pass aggregates by value, as @make does</code>.</span></p>
+                <p><code>ppc64</code><strong>Yes</strong><span>Consecutive doublewords in <code>r3</code>–<code>r10</code>. When the registers run short the rest spills into the parameter save area, splitting the aggregate rather than demoting it. A result over two doublewords returns through a hidden pointer in <code>r3</code>.</span></p>
+                <p><code>wasm amdgpu ptx</code><strong>No</strong><span>Refused at lowering, naming the function: <code>Wasm64 does not yet pass aggregates by value, as @make does</code>.</span></p>
             </div>
             <p>Two limits apply on every target, x86_64 included. An aggregate crossing a boundary must have integer fields only, so a struct holding an <code>f32</code> or <code>f64</code> is refused everywhere. An empty aggregate is refused too.</p>
 
             <h2 id="missing">What is missing</h2>
             <div class="lmn-doc-table">
                 <p><strong>Float and mixed aggregates</strong><span>Refused on every backend. System V packs two floats into one SSE register, AAPCS64 has homogeneous float aggregates, and ELFv2 splits a <code>{long, double}</code> across both banks. None of that is written yet.</span></p>
-                <p><strong>Aggregates on ppc64</strong><span>No classifier. It runs scalars, control flow and calls through a pointer, so this is the one feature separating it from the x86_64, aarch64 and riscv64 paths.</span></p>
-                <p><strong>Aggregates on wasm and the GPU backends</strong><span>Not planned for the GPU kernel contract. wasm would need a layout decision first.</span></p>
+                <p><strong>Aggregates on wasm and the GPU backends</strong><span>Not planned for the GPU kernel contract. wasm would need a layout decision first. Every other backend passes integer aggregates by value now.</span></p>
                 <p><strong>Defining a variadic function</strong><span>A call to one works: an <code>@extern</code> declaration ending in <code>...</code> marks the callee variadic, and each backend follows the variadic side of its convention from there. What is missing is the other half, <code>va_arg</code> and a variadic body, so Lamina can call <code>printf</code> but cannot be <code>printf</code>.</span></p>
                 <p><strong>Indirect tail calls</strong><span><code>callptr</code> works on x86_64, aarch64, riscv64 and ppc64. A <code>tailcall</code> through a pointer does not exist.</span></p>
                 <p><strong>Vector call ABI</strong><span>Vectors have arithmetic and memory operations on several backends, but no backend passes or returns one across a function boundary.</span></p>
