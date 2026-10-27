@@ -6,7 +6,7 @@
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>IR language</strong></nav>
             <p class="lmn-section-tag">Reference</p>
             <h1>IR language reference</h1>
-            <p class="lmn-manual-lead">Lamina IR is readable text built from blocks and typed SSA values. Function names start with <code>@</code>; local values start with <code>%</code>.</p>
+            <p class="lmn-manual-lead">Lamina IR is readable text built from blocks and typed SSA values. Function names start with <code>@</code>, local values with <code>%</code>, globals with <code>$</code>, and named types with <code>!</code>.</p>
             <h2 id="module-shape">Module shape</h2>
             <pre><code class="language-lamina">fn @select_larger(i64 %left, i64 %right) -&gt; i64 {
   entry:
@@ -26,8 +26,8 @@ fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
                 <div class="lmn-reference-head"><span>Category</span><span>Syntax</span><span>Meaning</span></div>
                 <p><strong>Integers</strong><code>i8 i16 i32 i64 u8 u16 u32 u64</code><span>Signed and unsigned scalar integers.</span></p>
                 <p><strong>Other scalars</strong><code>f32 f64 bool char ptr</code><span>Floating point, boolean, character, and pointer values.</span></p>
-                <p><strong>Composite</strong><code>[4 x i32] struct { x: i32 } (i32, bool)</code><span>Arrays, structs, and tuples.</span></p>
-                <p><strong>Values</strong><code>%local @global 42 true</code><span>SSA locals, globals, and literals.</span></p>
+                <p><strong>Composite</strong><code>[4 x i32] struct { x: i32 } (i32, bool) !Name</code><span>Arrays, structs, tuples, and named types declared with <code>type !Name</code>.</span></p>
+                <p><strong>Values</strong><code>%local $global 42 true</code><span>SSA locals, globals, and literals.</span></p>
             </div>
             <h2 id="instructions">Instruction families</h2>
             <div class="lmn-reference-table">

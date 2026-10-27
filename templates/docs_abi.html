@@ -22,9 +22,9 @@
 
             <h2 id="aggregates">Aggregates</h2>
             <p>An aggregate here is a struct, tuple or array crossing a function boundary <strong>by value</strong>. A pointer to one is a scalar and works on every backend.</p>
-            <pre><code class="language-lamina">type @Pair = struct { a: i64, b: i64 }
+            <pre><code class="language-lamina">type !Pair = struct { a: i64, b: i64 }
 
-fn @sum_pair(@Pair %p) -&gt; i64      # by value, needs a classifier
+fn @sum_pair(!Pair %p) -&gt; i64      # by value, needs a classifier
 fn @sum_ptr(ptr %p) -&gt; i64         # a pointer, works anywhere</code></pre>
             <p>Classification differs per ABI, and there is no rule that is right everywhere. 32 bytes goes to memory on System V, AAPCS64 and LP64D, but stays in general registers on ELFv2. Two floats pack into one SSE register on System V and nowhere else. So each backend classifies for itself, and a backend without a classifier refuses rather than picking someone else's answer.</p>
             <div class="lmn-reference-table">
