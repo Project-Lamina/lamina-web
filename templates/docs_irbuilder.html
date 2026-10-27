@@ -25,8 +25,8 @@ let module = builder.build();</code></pre>
                 <p><strong>Functions</strong><code>function function_with_params param param_simple external_function</code><span>Define functions, parameters, and imports.</span></p>
                 <p><strong>Blocks and CFG</strong><code>block set_entry_block branch jump switch phi call ret ret_void</code><span>Build blocks, branches, SSA merges, calls, and returns.</span></p>
                 <p><strong>Arithmetic</strong><code>binary cmp</code><span>Add typed arithmetic and comparisons.</span></p>
-                <p><strong>Memory</strong><code>alloc_stack alloc_heap store load dealloc</code><span>Allocate, access, and release stack or heap storage.</span></p>
-                <p><strong>Pointers</strong><code>getelementptr struct_gep ptrtoint inttoptr</code><span>Compute and convert addresses.</span></p>
+                <p><strong>Memory</strong><code>stackalloc heapalloc store load heapfree</code><span>Allocate, access, and release stack or heap storage.</span></p>
+                <p><strong>Pointers</strong><code>getelem struct_gep ptrtoint inttoptr</code><span>Compute and convert addresses.</span></p>
                 <p><strong>Conversions</strong><code>zext trunc sext bitcast select</code><span>Convert scalar representations and select SSA values.</span></p>
                 <p><strong>I/O</strong><code>write read write_byte read_byte write_ptr print</code><span>Build raw I/O. <code>print</code> is a debug-only helper.</span></p>
                 <p><strong>Metadata</strong><code>inline export external hot cold cc_c target_triple ...</code><span>Attach visibility, ABI, optimization, and target annotations.</span></p>
