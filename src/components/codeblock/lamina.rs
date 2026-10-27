@@ -119,8 +119,6 @@ impl LanguageLexer for LaminaLexer {
             "heapfree",
             "load",
             "store",
-            "stack",
-            "heap",
             // Type operations
             "getfieldptr",
             "getelem",
