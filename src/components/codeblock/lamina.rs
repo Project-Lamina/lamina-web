@@ -45,7 +45,7 @@ impl LanguageLexer for LaminaLexer {
                     lexer.add_token(TokenType::Identifier, value, start, lexer.position);
                 }
                 '%' => {
-                    // Local variables and SSA values
+                    // Local variables and values
                     let start = lexer.position;
                     let mut value = String::from("%");
                     lexer.advance();

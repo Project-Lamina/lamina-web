@@ -6,7 +6,7 @@
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>IR language</strong></nav>
             <p class="lmn-section-tag">Reference</p>
             <h1>IR language reference</h1>
-            <p class="lmn-manual-lead">Lamina IR is readable text built from blocks and typed SSA values. Function names start with <code>@</code>, local values with <code>%</code>, globals with <code>$</code>, and named types with <code>!</code>.</p>
+            <p class="lmn-manual-lead">Lamina IR is readable text built from blocks and typed values. Function names start with <code>@</code>, local values with <code>%</code>, globals with <code>$</code>, and named types with <code>!</code>.</p>
             <h2 id="module-shape">Module shape</h2>
             <pre><code class="language-lamina">fn @select_larger(i64 %left, i64 %right) -&gt; i64 {
   entry:
@@ -25,19 +25,19 @@ fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Category</span><span>Syntax</span><span>Meaning</span></div>
                 <p><strong>Integers</strong><code>i8 i16 i32 i64 u8 u16 u32 u64</code><span>Signed and unsigned scalar integers.</span></p>
-                <p><strong>Other scalars</strong><code>f32 f64 bool char ptr</code><span>Floating point, boolean, character, and pointer values.</span></p>
+                <p><strong>Other scalars</strong><code>f32 f64 bool ptr</code><span>Floating point, boolean, and pointer values.</span></p>
                 <p><strong>Composite</strong><code>[4 x i32] struct { x: i32 } (i32, bool) !Name</code><span>Arrays, structs, tuples, and named types declared with <code>type !Name</code>.</span></p>
-                <p><strong>Values</strong><code>%local $global 42 true</code><span>SSA locals, globals, and literals.</span></p>
+                <p><strong>Values</strong><code>%local $global 42 true</code><span>Named locals, globals, and literals.</span></p>
             </div>
             <h2 id="instructions">Instruction families</h2>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Family</span><span>Opcodes</span><span>Purpose</span></div>
                 <p><strong>Arithmetic</strong><code>add sub mul div rem and or xor shl shr</code><span>Typed scalar operations.</span></p>
-                <p><strong>Comparison</strong><code>eq ne gt ge lt le</code><span>Produce boolean SSA results.</span></p>
+                <p><strong>Comparison</strong><code>eq ne gt ge lt le</code><span>Produce boolean results.</span></p>
                 <p><strong>Memory</strong><code>stackalloc heapalloc load store heapfree memcpy memmove memset</code><span>Allocate, access, and release storage.</span></p>
                 <p><strong>Pointers</strong><code>getfieldptr getelem ptrtoint inttoptr</code><span>Compute and convert addresses.</span></p>
-                <p><strong>Control flow</strong><code>br jmp switch phi ret call</code><span>Build CFG edges, SSA merges, returns, and calls.</span></p>
-                <p><strong>I/O</strong><code>write read writebyte readbyte writeptr print</code><span>Perform low-level I/O. <code>print</code> is a debug-only helper.</span></p>
+                <p><strong>Control flow</strong><code>br jmp switch phi ret call</code><span>Build CFG edges, phi merges, returns, and calls.</span></p>
+                <p><strong>I/O</strong><code>write read writebyte readbyte print</code><span>Perform low-level I/O. <code>print</code> is a debug-only helper.</span></p>
             </div>
             <h2 id="memory">Memory ownership</h2>
             <p><code>stackalloc.T</code> creates function-scoped storage with automatic cleanup. <code>heapalloc.T</code> creates persistent storage that must be released with <code>heapfree</code>.</p>
@@ -49,7 +49,7 @@ fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
     ret.i64 %loaded
 }</code></pre>
             <h2 id="cfg">Control-flow rules</h2>
-            <p>A function contains named basic blocks. Execution starts at its entry block, and each path ends with a terminator such as <code>ret</code>, <code>br</code>, <code>jmp</code>, or <code>switch</code>. Use <code>phi</code> when a block needs one SSA value selected from multiple incoming edges.</p>
+            <p>A function contains named basic blocks. Execution starts at its entry block, and each path ends with a terminator such as <code>ret</code>, <code>br</code>, <code>jmp</code>, or <code>switch</code>. Use <code>phi</code> when a block should select one value from multiple incoming edges. It is optional; a name can also be reassigned on each path.</p>
             <h2 id="output">Portable output</h2>
             <p>Use <code>writebyte</code> for portable text output.</p>
             <div class="lmn-manual-note"><strong>Debug-only helper</strong><p><code>print</code> is for compiler debugging. It is not available in normal Lamina releases and must not be used for application output. Use <code>writebyte</code> or the raw I/O instructions instead.</p></div>

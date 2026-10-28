@@ -27,9 +27,9 @@ pub async fn homepage() -> Html<String> {
     match template_engine.render("lamina_homepage.html", &variables) {
         Ok(content) => {
             match template_engine.render_base_with_meta_and_css(
-                "Lamina - Typed SSA compiler backend",
+                "Lamina - Typed IR compiler backend",
                 &content,
-                "Lamina compiles a compact, typed SSA IR into machine code. Use it for native builds, nightly JIT compilation, or as the backend for a language frontend.",
+                "Lamina compiles a compact, typed IR into machine code. Use it for native builds, nightly JIT compilation, or as the backend for a language frontend.",
                 None,
             ) {
                 Ok(html) => Html(html),
@@ -129,7 +129,7 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
         "getting-started" => (
             "docs_getting_started.html",
             "Getting Started",
-            "Install Lamina, compile a small typed SSA IR module, and choose AOT, nightly JIT, MIR, or assembly output.",
+            "Install Lamina, compile a small typed IR module, and choose AOT, nightly JIT, MIR, or assembly output.",
             "getting_started",
         ),
         "output" => (
@@ -141,7 +141,7 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
         "ir" => (
             "docs_ir.html",
             "IR Language Reference",
-            "Reference for Lamina typed SSA IR syntax, types, values, instructions, memory ownership, and portable output semantics.",
+            "Reference for Lamina typed IR syntax, types, values, instructions, memory ownership, and portable output semantics.",
             "ir",
         ),
         "cli" => (

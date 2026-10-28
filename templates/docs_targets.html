@@ -23,7 +23,7 @@
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Feature</span><span>Where it works</span><span>Notes</span></div>
                 <p><strong>Integer scalars, control flow, calls</strong><code>everywhere</code><span>Common path. Every published backend lowers it.</span></p>
-                <p><strong>Integer aggregates by value</strong><code>x86_64 aarch64 riscv64 powerpc64</code><span>A struct, tuple or array crossing a boundary by value. WebAssembly and the GPU backends refuse the module instead of guessing a classification. A pointer to one is a scalar and works anywhere.</span></p>
+                <p><strong>Integer aggregates by value</strong><code>x86_64 aarch64 riscv64 powerpc64</code><span>A struct or array crossing a boundary by value. WebAssembly and the GPU backends refuse the module instead of guessing a classification. A pointer to one is a scalar and works anywhere.</span></p>
                 <p><strong>Float or mixed aggregates</strong><code>nowhere</code><span>A struct with a float field is refused everywhere, x86_64 included.</span></p>
                 <p><strong>Calls through a pointer</strong><code>everywhere but the GPU backends</code><span>WebAssembly builds a function table and calls through <code>call_indirect</code>; a function address is its table index.</span></p>
                 <p><strong>Direct binary emission</strong><code>x86_64 aarch64</code><span>x86_64 is complete. AArch64 covers part of it and falls back to the assembler.</span></p>
