@@ -1,0 +1,61 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>LUMIR</strong></nav>
+            <p class="lmn-section-tag">Lamina compiler · Concepts</p>
+            <h1>LUMIR</h1>
+            <p class="lmn-manual-lead">Lamina has two intermediate forms. You write the first, the IR. The compiler lowers it to the second, LUMIR, and all optimization and code generation happen there. This page explains the second form and why it exists.</p>
+
+            <h2 id="pipeline">The pipeline</h2>
+            <pre><code class="language-shell">.lamina text  →  IR (parsed)  →  LUMIR  →  machine code
+                 lamina-ir        lamina-mir    per-target codegen</code></pre>
+            <p>IR is the text you write, parsed into named types, aggregates and high-level instructions. LUMIR is the lower form. Its values are virtual registers, its types are machine types, and its merges are copies placed on control-flow edges. Every backend reads LUMIR.</p>
+
+            <h2 id="difference">What differs</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Aspect</span><span>IR</span><span>LUMIR</span></div>
+                <p><strong>Values</strong><span>Named locals such as <code>%x</code>, each a slot with one type</span><span>Virtual registers such as <code>v0</code>, numbered per function</span></p>
+                <p><strong>Types</strong><span>Named types, aggregates and <code>!Name</code> structs</span><span>Scalar and vector machine types</span></p>
+                <p><strong>Merges</strong><span>Assignment to the same name on each path</span><span>Copies placed on the edges between blocks</span></p>
+                <p><strong>Addresses</strong><span><code>getelem</code> and <code>getfieldptr</code> with a layout</span><span>Base plus offset, or base plus index times scale</span></p>
+                <p><strong>Calls</strong><span>Typed arguments</span><span>Arguments classified by the target ABI, with stack slots assigned</span></p>
+                <p><strong>Target decisions</strong><span>None</span><span>Made here, per target</span></p>
+            </div>
+
+            <h2 id="why">Why it is separate</h2>
+            <p>A text format you write by hand should be readable, stable from one release to the next, and free of machine detail. An intermediate form that the optimizer and the backends work on should say exactly which register, which addressing mode, and what the calling convention does with a 16-byte struct. Forcing one form to do both makes each worse. The split keeps the text stable while the lower form changes.</p>
+
+            <h2 id="reading">Reading a LUMIR dump</h2>
+            <p>Write the dump with <code>--emit-mir</code>. The output is written next to the input with a <code>.lumir</code> extension and the compiler exits. For this program:</p>
+            <pre><code class="language-lamina">fn @put_digit(i64 %n) -&gt; i64 {
+entry:
+  %ascii = add.i64 %n, 48
+  %w = writebyte %ascii
+  ret.i64 0
+}
+
+fn @main() -&gt; i64 {
+entry:
+  %a = call @put_digit(7)
+  ret.i64 0
+}</code></pre>
+            <pre><code class="language-shell">$ lamina digit.lamina --emit-mir
+$ cat digit.lumir</code></pre>
+            <p>The dump names each function and block, keeps the source labels where it can, and writes each instruction with an explicit type. Registers appear as <code>v0</code>, <code>v1</code> and so on. A value's type is written on the instruction, and memory operations carry the alignment their type requires. Once the frame is laid out, stack slots appear as offsets from the frame.</p>
+            <p>A LUMIR dump has no named types, because they are resolved to their layouts.</p>
+
+            <h2 id="options">Optimization levels</h2>
+            <p><code>--opt-level</code> selects how much the LUMIR optimizer does, from <code>0</code> to <code>3</code>. The default is <code>1</code>. The optimizer runs on LUMIR, so an <code>--emit-mir</code> dump at a given level shows the result of that level. The option is marked experimental in the driver.</p>
+            <pre><code class="language-shell">$ lamina digit.lamina --emit-mir --opt-level 0
+$ lamina digit.lamina --emit-mir --opt-level 3</code></pre>
+
+            <h2 id="internal">What this page does not cover</h2>
+            <p>LUMIR is not a stable interchange format. Its text may change between releases, and it is not a language to write by hand. Write IR, and read LUMIR only to see what the compiler did.</p>
+
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/cli">Compiler driver</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}

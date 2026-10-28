@@ -4,7 +4,7 @@
         {{docs_sidebar}}
         <article class="lmn-manual-article">
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>IRBuilder</strong></nav>
-            <p class="lmn-section-tag">Rust embedding</p>
+            <p class="lmn-section-tag">Lamina compiler · Rust embedding</p>
             <h1>IRBuilder reference</h1>
             <p class="lmn-manual-lead"><code>IRBuilder</code> constructs typed modules without writing IR text by hand. Start a function, append instructions to the active block, then call <code>build()</code>.</p>
             <pre><code class="language-rust">use lamina::ir::{BinaryOp, IRBuilder, PrimitiveType, Type};
@@ -19,24 +19,25 @@ builder
 let module = builder.build();</code></pre>
             <div class="lmn-manual-note"><strong>Borrowed names</strong><p><code>IRBuilder&lt;'a&gt;</code> stores borrowed names and string values. Keep the backing strings alive until the module is finished. The C API uses an owned builder wrapper so C callers do not need to manage Rust lifetimes.</p></div>
             <h2 id="families">Method families</h2>
+            <p>The builder methods follow the instructions in <a href="/docs/ir-instructions">IR instructions</a>. Names here are the Rust method names.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Family</span><span>Methods</span><span>Purpose</span></div>
                 <p><strong>Lifecycle</strong><code>new build temp_var</code><span>Create a module, finish it, and generate temporary names.</span></p>
-                <p><strong>Functions</strong><code>function function_with_params param param_simple external_function</code><span>Define functions, parameters, and imports.</span></p>
-                <p><strong>Blocks and CFG</strong><code>block set_entry_block branch jump switch phi call ret ret_void</code><span>Build blocks, branches, phi merges, calls, and returns.</span></p>
-                <p><strong>Arithmetic</strong><code>binary cmp</code><span>Add typed arithmetic and comparisons.</span></p>
-                <p><strong>Memory</strong><code>stackalloc heapalloc store load heapfree</code><span>Allocate, access, and release stack or heap storage.</span></p>
-                <p><strong>Pointers</strong><code>getelem getfieldptr ptrtoint inttoptr</code><span>Compute and convert addresses.</span></p>
-                <p><strong>Conversions</strong><code>zext trunc sext bitcast select</code><span>Convert scalar representations and select values.</span></p>
-                <p><strong>I/O</strong><code>write read write_byte read_byte write_ptr print</code><span>Build raw I/O. <code>print</code> is a debug-only helper.</span></p>
-                <p><strong>Metadata</strong><code>inline export external hot cold cc_c target_triple ...</code><span>Attach visibility, ABI, optimization, and target annotations.</span></p>
-                <p><strong>Extended</strong><code>simd_* atomic_*</code><span>Construct aggregates, SIMD operations, and feature-gated atomics.</span></p>
+                <p><strong>Functions</strong><code>function function_with_params param external_function</code><span>Define functions, parameters, and external declarations.</span></p>
+                <p><strong>Blocks and control flow</strong><code>block set_entry_block branch jump switch call callptr ret ret_void unreachable</code><span>Build blocks, branches, switches, calls, and returns.</span></p>
+                <p><strong>Arithmetic</strong><code>binary cmp neg not rotl rotr popcount ctlz cttz bswap sqrt</code><span>Typed arithmetic, comparisons and bit operations.</span></p>
+                <p><strong>Conversions</strong><code>trunc bitcast inttofp fptoint fpcast select</code><span>Convert between representations, and select a value.</span></p>
+                <p><strong>Memory</strong><code>stackalloc store load volatile_load volatile_store getelem getfieldptr_typed ptrtoint inttoptr</code><span>Allocate stack storage, access memory, compute element and field addresses, and convert addresses.</span></p>
+                <p><strong>Function addresses</strong><code>funcaddr</code><span>The address of a function, as a pointer.</span></p>
+                <p><strong>Atomics and fences</strong><code>atomic_load atomic_store atomic_binary fence</code><span>Atomic operations with explicit ordering.</span></p>
+                <p><strong>I/O</strong><code>write read write_byte read_byte</code><span>Raw byte I/O. Output goes through <code>write_byte</code> or <code>write</code>.</span></p>
+                <p><strong>Metadata</strong><code>inline export external hot cold pure const_fn no_return cc_c section align pic pie</code><span>Attach visibility, optimization, calling-convention and module annotations.</span></p>
             </div>
-            <div class="lmn-manual-note"><strong>Do not ship <code>print</code></strong><p><code>IRBuilder::print()</code> is intended for compiler debugging and is not available in normal Lamina releases. Use <code>write_byte()</code> or the raw I/O methods for program output.</p></div>
+            <div class="lmn-manual-note"><strong>Formatting</strong><p>The builder has no method that formats a value. Write bytes with <code>write_byte()</code> or <code>write()</code>, or declare a C function with an external declaration and call it.</p></div>
             <h2 id="blocks">Functions and blocks</h2>
             <p><code>function()</code> creates an <code>entry</code> block and selects it as the active block. Call <code>block()</code> to add another block and make it active. Use <code>set_entry_block()</code> only when a different block should run first.</p>
             <h2 id="annotations">Annotations</h2>
-            <p>Function helpers include <code>inline</code>, <code>export</code>, <code>external</code>, <code>no_return</code>, <code>hot</code>, <code>cold</code>, <code>pure</code>, <code>const_fn</code>, <code>internal</code>, visibility controls, alignment, section selection, and calling-convention helpers such as <code>cc_c</code>.</p>
+            <p>Function helpers include <code>inline</code>, <code>export</code>, <code>external</code>, <code>no_return</code>, <code>hot</code>, <code>cold</code>, <code>pure</code>, <code>const_fn</code>, <code>internal</code>, visibility controls, <code>align</code>, <code>section</code>, and calling-convention helpers such as <code>cc_c</code>. <code>pic</code> and <code>pie</code> are module annotations and need the <code>nightly</code> feature.</p>
             <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings">Review the C bindings preview</a></div>
         </article>
     </div>

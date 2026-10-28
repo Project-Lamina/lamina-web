@@ -4,56 +4,187 @@
         {{docs_sidebar}}
         <article class="lmn-manual-article">
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>IR language</strong></nav>
-            <p class="lmn-section-tag">Reference</p>
-            <h1>IR language reference</h1>
-            <p class="lmn-manual-lead">Lamina IR is readable text built from blocks and typed values. Function names start with <code>@</code>, local values with <code>%</code>, globals with <code>$</code>, and named types with <code>!</code>.</p>
-            <h2 id="module-shape">Module shape</h2>
-            <pre><code class="language-lamina">fn @select_larger(i64 %left, i64 %right) -&gt; i64 {
+            <p class="lmn-section-tag">Lamina compiler · Reference</p>
+            <h1>IR language</h1>
+            <p class="lmn-manual-lead">Lamina IR is a text format for typed functions made of named blocks. This page covers the model, the lexical rules, types, declarations and annotations. Every instruction is in <a href="/docs/ir-instructions">IR instructions</a>.</p>
+
+            <h2 id="not-ssa">This is not SSA</h2>
+            <p>If you come from LLVM, read this section first. The text has no SSA form and no merge instruction. A name such as <code>%total</code> is a <strong>mutable slot</strong> for the whole function. Its first assignment defines it and fixes its type. Later assignments, on any path, must give a value of that same type.</p>
+            <p>A read of a name returns the value of its most recent assignment on the path the program actually took. Where two paths join, you assign the same name on each path and read it after the join.</p>
+            <pre><code class="language-lamina">fn @pick(i64 %n) -&gt; i64 {
   entry:
-    %is_larger = gt.i64 %left, %right
-    br %is_larger, left_wins, right_wins
-  left_wins:
-    ret.i64 %left
-  right_wins:
-    ret.i64 %right
+    %big = gt.i64 %n, 2
+    br %big, wide, narrow
+  wide:
+    %width = add.i64 %n, 100
+    jmp done
+  narrow:
+    %width = add.i64 %n, 1
+    jmp done
+  done:
+    ret.i64 %width
+}
+
+fn @main() -&gt; i64 {
+  entry:
+    %r = call @pick(1)
+    ret.i64 %r
 }</code></pre>
-            <p>A function the module does not define is declared with <code>@extern</code> and no body. A declaration ending in <code>...</code> is variadic, which is how a call reaches <code>printf</code> and friends.</p>
+            <p>The loop below is the same idea over many iterations. <code>%i</code> is assigned in <code>entry</code> and again in <code>body</code>. Each read sees the latest assignment on the path that ran. The program returns 10.</p>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    %i = add.i64 0, 0
+    jmp head
+  head:
+    %done = ge.i64 %i, 10
+    br %done, exit, body
+  body:
+    %i = add.i64 %i, 1
+    jmp head
+  exit:
+    ret.i64 %i
+}</code></pre>
+            <p>Two rules follow from the slot model, and the compiler enforces both.</p>
+            <div class="lmn-doc-table">
+                <p><strong>Definite assignment</strong><span>Every read must be definitely assigned. Every path from the entry block to a read must assign the name first. If one branch of a join never assigns the name, a read after the join is rejected, even when the other branch assigns it.</span></p>
+                <p><strong>One type per name</strong><span>A name keeps the type of its first definition. Reassigning it with a different type is a validation error. Reassigning with the same type is allowed.</span></p>
+            </div>
+            <div class="lmn-manual-note"><strong>Why</strong><p>A slot with one type and explicit assignments says exactly what a merge does. It needs no separate merge instruction, and a reader can see each value's origin by reading the path.</p></div>
+
+            <h2 id="lexical">Lexical rules</h2>
+            <div class="lmn-doc-table">
+                <p><strong>Comments</strong><span>A <code>#</code> starts a comment that runs to the end of the line. <code>//</code> is not a comment.</span></p>
+                <p><strong>Names</strong><span>A name starts with a letter or underscore, then letters, digits or underscores. Dots and dashes are not allowed. A keyword is a legal name after a sigil, so <code>%ret</code> and <code>@add</code> are valid.</span></p>
+                <p><strong>Sigils</strong><span><code>%name</code> is a local or parameter. <code>$name</code> is a global. <code>@name</code> is a function. <code>!Name</code> is a named type. Block labels and the names given to statement-form I/O are bare.</span></p>
+                <p><strong>Integers</strong><span>Decimal only, with an optional <code>-</code> attached to the digits: <code>-5</code>. No hex, underscores or leading <code>+</code>. A literal must fit its type. <code>add.i8 %x, 300</code> is an error, and so is <code>ret.i8 300</code>. This is checked in every typed position: operands, return values, stores, call arguments, switch cases, and global and array initializers.</span></p>
+                <p><strong>Floats</strong><span>Write a digit on each side of the dot: <code>1.5</code>, <code>-0.0</code>, <code>2.5e-3</code>. Under a float type you may also write <code>1e3</code>.</span></p>
+                <p><strong>Booleans</strong><span><code>true</code> and <code>false</code>, lowercase only.</span></p>
+                <p><strong>Strings</strong><span>Double-quoted. Escapes <code>\n</code>, <code>\t</code>, <code>\0</code>, <code>\xHH</code> and <code>\"</code> are decoded. Strings are valid only as initializers of <code>[N x i8]</code> globals. A string argument to a call is rejected; take the address of a global with <code>getelem.i8 $name, 0</code>.</span></p>
+            </div>
+
+            <h2 id="types">Types</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Category</span><span>Spelling</span><span>Notes</span></div>
+                <p><strong>Signed integers</strong><code>i8 i16 i32 i64 i128</code><span>Two's complement. <code>i128</code> arithmetic works; 128-bit division and conversions call compiler-rt routines (see <a href="/docs/runtime">Runtime and libc</a>). Globals of 128-bit type are not lowered yet.</span></p>
+                <p><strong>Unsigned integers</strong><code>u8 u16 u32 u64 u128</code><span>Same widths. The signedness of an operation comes from its instruction (for example <code>div</code> and <code>rem</code> on <code>u64</code> operate unsigned), not from a separate type.</span></p>
+                <p><strong>Floats</strong><code>f32 f64</code><span>IEEE binary32 and binary64.</span></p>
+                <p><strong>Boolean</strong><code>bool</code><span>The result of every comparison. A branch condition must have type <code>bool</code>. An integer is rejected: <code>br</code> needs a comparison or a <code>bool</code> value.</span></p>
+                <p><strong>Pointer</strong><code>ptr</code><span>An address. <code>stackalloc</code> and <code>funcaddr</code> produce one. Pointers are not integers; convert with <code>ptrtoint</code> and <code>inttoptr</code>.</span></p>
+                <p><strong>Void</strong><code>void</code><span>Only as a return type. A <code>void</code> function ends with <code>ret.void</code>.</span></p>
+                <p><strong>Array</strong><code>[N x T]</code><span>A fixed number of elements of one type. Nested arrays are allowed.</span></p>
+                <p><strong>Named struct</strong><code>!Name</code><span>Declared with <code>type</code>. Field offsets come from the declared layout. Access a field with <code>getfieldptr</code> and its field index.</span></p>
+            </div>
+            <p>There is no <code>char</code> and no <code>tuple</code>. Use <code>i8</code> for a signed byte or <code>u8</code> for an unsigned one. Use a struct with named fields where a tuple would go.</p>
+
+            <h2 id="declarations">Declarations</h2>
+            <p>A module is a sequence of type declarations, globals and functions, in any order. Names must be unique within their kind.</p>
+            <h3>Named types</h3>
+            <pre><code class="language-lamina">type !Pair = struct { a: i32, b: i64 }
+type !Row = [4 x i32]
+
+fn @second(ptr %p) -&gt; i64 {
+  entry:
+    %v = load.i64 %p
+    ret.i64 %v
+}
+
+fn @main() -&gt; i64 {
+  entry:
+    %slot = stackalloc.!Pair
+    %r = stackalloc.!Row
+    ret.i64 0
+}</code></pre>
+            <p>A struct needs at least one field, field names must be unique, and a trailing comma is allowed. Unnamed struct fields are not allowed, and one named type cannot be an alias of another.</p>
+
+            <h3>Globals</h3>
+            <p><code>global $name: T</code> declares a global with no initializer. <code>global $name: T = value</code> gives it one. An initializer must be a literal: a number, <code>true</code>, a string for <code>[N x i8]</code>, a list <code>[a, b]</code> for an array, or <code>{a, b}</code> for a struct.</p>
+            <pre><code class="language-lamina">type !Pair = struct { a: i32, b: i64 }
+
+global $counter: i64 = 41
+global $buf: [64 x i8]
+global $squares: [6 x i64] = [0, 1, 4, 9, 16, 25]
+global $msg: [4 x i8] = "hi\n"
+global $origin: !Pair = {1, 2}
+global $ratio: f64 = 1.5
+global $flag: bool = true
+
+fn @main() -&gt; i64 {
+  entry:
+    %c = load.i64 $counter
+    store.i64 $counter, 42
+    ret.i64 %c
+}</code></pre>
+            <ul>
+                <li>A string initializer includes its NUL terminator in the count. <code>[3 x i8] = "ab"</code> is valid; <code>[2 x i8] = "ab"</code> is not.</li>
+                <li>A list may be shorter than its array, but not longer.</li>
+                <li><code>@export</code> before <code>global</code> makes the symbol visible outside the module. <code>@align(n)</code> before <code>global</code> sets its alignment.</li>
+            </ul>
+
+            <h3>Functions</h3>
+            <p>A function is a name, typed parameters, a return type and one or more blocks. Each parameter needs a name. Execution starts at the first block, whatever its label. A block is a label, a colon, and instructions. The last instruction of each block is a terminator: <code>ret</code>, <code>jmp</code>, <code>br</code>, <code>switch</code> or <code>unreachable</code>. No instruction may follow a terminator.</p>
+            <pre><code class="language-lamina">fn @clamp(i64 %x, i64 %lo, i64 %hi) -&gt; i64 {
+  entry:
+    %below = lt.i64 %x, %lo
+    br %below, low, check_high
+  low:
+    ret.i64 %lo
+  check_high:
+    %above = gt.i64 %x, %hi
+    br %above, high, inside
+  high:
+    ret.i64 %hi
+  inside:
+    ret.i64 %x
+}
+
+fn @main() -&gt; i64 {
+  entry:
+    %r = call @clamp(50, 0, 10)
+    ret.i64 %r
+}</code></pre>
+
+            <h3>External functions</h3>
+            <p>A function the module does not define is declared with <code>@extern</code> and no body. A declaration ending in <code>...</code> is variadic. Only a declaration can be variadic; Lamina cannot define a variadic function. The <code>...</code> must be the last parameter.</p>
             <pre><code class="language-lamina">@extern
-fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
-            <p>Only a declaration may carry <code>...</code>; Lamina cannot define a variadic function, and there is no <code>va_arg</code>. A float argument past the named ones widens to <code>f64</code> on the way out, the way C promotes one.</p>
-            <h2 id="types">Types and values</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Category</span><span>Syntax</span><span>Meaning</span></div>
-                <p><strong>Integers</strong><code>i8 i16 i32 i64 u8 u16 u32 u64</code><span>Signed and unsigned scalar integers.</span></p>
-                <p><strong>Other scalars</strong><code>f32 f64 bool ptr</code><span>Floating point, boolean, and pointer values.</span></p>
-                <p><strong>Composite</strong><code>[4 x i32] struct { x: i32 } (i32, bool) !Name</code><span>Arrays, structs, tuples, and named types declared with <code>type !Name</code>.</span></p>
-                <p><strong>Values</strong><code>%local $global 42 true</code><span>Named locals, globals, and literals.</span></p>
-            </div>
-            <h2 id="instructions">Instruction families</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Family</span><span>Opcodes</span><span>Purpose</span></div>
-                <p><strong>Arithmetic</strong><code>add sub mul div rem and or xor shl shr</code><span>Typed scalar operations.</span></p>
-                <p><strong>Comparison</strong><code>eq ne gt ge lt le</code><span>Produce boolean results.</span></p>
-                <p><strong>Memory</strong><code>stackalloc heapalloc load store heapfree memcpy memmove memset</code><span>Allocate, access, and release storage.</span></p>
-                <p><strong>Pointers</strong><code>getfieldptr getelem ptrtoint inttoptr</code><span>Compute and convert addresses.</span></p>
-                <p><strong>Control flow</strong><code>br jmp switch phi ret call</code><span>Build CFG edges, phi merges, returns, and calls.</span></p>
-                <p><strong>I/O</strong><code>write read writebyte readbyte print</code><span>Perform low-level I/O. <code>print</code> is a debug-only helper.</span></p>
-            </div>
-            <h2 id="memory">Memory ownership</h2>
-            <p><code>stackalloc.T</code> creates function-scoped storage with automatic cleanup. <code>heapalloc.T</code> creates persistent storage that must be released with <code>heapfree</code>.</p>
-            <pre><code class="language-lamina">fn @round_trip(i64 %input) -&gt; i64 {
+fn @printf(ptr %fmt, ...) -&gt; i32
+
+global $fmt: [7 x i8] = "%d %f\n"
+
+fn @main() -&gt; i64 {
   entry:
-    %slot = stackalloc.i64
-    store.i64 %slot, %input
-    %loaded = load.i64 %slot
-    ret.i64 %loaded
+    %f = getelem.i8 $fmt, 0
+    %r = call @printf(ptr %f, i32 42, f64 2.5)
+    ret.i64 0
 }</code></pre>
-            <h2 id="cfg">Control-flow rules</h2>
-            <p>A function contains named basic blocks. Execution starts at its entry block, and each path ends with a terminator such as <code>ret</code>, <code>br</code>, <code>jmp</code>, or <code>switch</code>. Use <code>phi</code> when a block should select one value from multiple incoming edges. It is optional; a name can also be reassigned on each path.</p>
-            <h2 id="output">Portable output</h2>
-            <p>Use <code>writebyte</code> for portable text output.</p>
-            <div class="lmn-manual-note"><strong>Debug-only helper</strong><p><code>print</code> is for compiler debugging. It is not available in normal Lamina releases and must not be used for application output. Use <code>writebyte</code> or the raw I/O instructions instead.</p></div>
-            <div class="lmn-manual-next"><span>Next</span><a href="/docs/cli">Use the compiler driver</a></div>
+            <p>The compiler adds no libc of its own. Whatever an <code>@extern</code> name resolves to is found at link time. See <a href="/docs/runtime">Runtime and libc</a>.</p>
+
+            <h2 id="annotations">Annotations</h2>
+            <p>Annotations go on the line before the declaration they modify. Several may stack. Conflicting or repeated annotations are errors.</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Annotation</span><span>Applies to</span><span>Effect</span></div>
+                <p><strong><code>@export</code></strong><code>fn, global</code><span>Exports the symbol. Cannot be combined with <code>internal</code>, <code>private</code> or <code>@extern</code>.</span></p>
+                <p><strong><code>@extern</code></strong><code>fn</code><span>Declaration only, with no body. Supports <code>...</code>.</span></p>
+                <p><strong><code>@inline</code> <code>@noinline</code></strong><code>fn</code><span>Inlining hints. Cannot be combined with each other.</span></p>
+                <p><strong><code>@hot</code> <code>@cold</code></strong><code>fn</code><span>Placement and optimization hints. Cannot be combined with each other.</span></p>
+                <p><strong><code>@noreturn</code></strong><code>fn</code><span>The function does not return.</span></p>
+                <p><strong><code>@pure</code> <code>@const</code></strong><code>fn</code><span>Optimization hints about side effects.</span></p>
+                <p><strong><code>@internal</code> <code>@private</code> <code>@hidden</code> <code>@protected</code></strong><code>fn</code><span>Symbol visibility. Any two of these conflict.</span></p>
+                <p><strong><code>@weak</code></strong><code>fn</code><span>Weak symbol binding.</span></p>
+                <p><strong><code>@section("name")</code></strong><code>fn</code><span>Places the function in a named section. The name must be non-empty and contain no backslash.</span></p>
+                <p><strong><code>@align(n)</code></strong><code>fn, global</code><span><code>n</code> is a power of two. On a global it sets the alignment of the object.</span></p>
+                <p><strong><code>@kernel</code></strong><code>fn</code><span>GPU kernel. Refused on a CPU target with <code>GPU kernels and intrinsics require a GPU target</code>.</span></p>
+                <p><strong><code>@pic</code> <code>@pie</code></strong><code>module</code><span>Nightly only. Changes code generation on x86_64 Linux: external addresses are loaded through the GOT. <code>@pic</code> and <code>@pie</code> cannot be combined with each other or repeated. They are not available in the default build.</span></p>
+            </div>
+            <pre><code class="language-lamina">@pie
+@section(".text.hot")
+@align(64)
+fn @main() -&gt; i64 {
+  entry:
+    ret.i64 0
+}</code></pre>
+            <p>The <code>@optimize_speed</code>, <code>@optimize_size</code>, <code>@debug</code>, <code>@strip</code> and <code>@target_triple</code> annotations were removed. Use <code>--opt-level</code>, <code>-g</code>, the <code>strip</code> tool and <code>--target</code> instead.</p>
+
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/ir-instructions">IR instructions</a></div>
         </article>
     </div>
 </main>

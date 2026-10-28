@@ -1,0 +1,54 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Runtime and libc</strong></nav>
+            <p class="lmn-section-tag">Lamina compiler · Reference</p>
+            <h1>Runtime and libc</h1>
+            <p class="lmn-manual-lead">Lamina needs no C library. A program compiled from Lamina IR calls nothing you did not write, with one exception: 128-bit integer arithmetic on some operations calls compiler runtime routines. Those routines can be supplied by you, or redirected to a symbol of your choice.</p>
+
+            <h2 id="no-libc">No libc</h2>
+            <p>The compiler emits no call into libc. Instructions such as <code>writebyte</code>, <code>write</code>, <code>read</code>, <code>stackalloc</code> and the arithmetic and memory instructions are lowered to machine code or to system calls. A program that uses none of the <code>@extern</code> declarations has no external symbol to resolve.</p>
+            <p>If you want libc, declare what you need with <code>@extern</code> and call it. The compiler then links the symbol the way any C object would. <a href="/docs/output">Output and I/O</a> shows both routes.</p>
+
+            <h2 id="builtins">Compiler runtime routines</h2>
+            <p>Some operations have no single machine instruction on the target. The compiler implements them with a call to a routine from the compiler runtime (compiler-rt). These are the only external calls the compiler emits that you did not write:</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Routine</span><span>Used for</span><span>Emitted when</span></div>
+                <p><strong><code>__divti3</code></strong><span>Signed 128-bit division</span><span><code>div.i128</code></span></p>
+                <p><strong><code>__udivti3</code></strong><span>Unsigned 128-bit division</span><span><code>div.u128</code></span></p>
+                <p><strong><code>__modti3</code></strong><span>Signed 128-bit remainder</span><span><code>rem.i128</code></span></p>
+                <p><strong><code>__umodti3</code></strong><span>Unsigned 128-bit remainder</span><span><code>rem.u128</code></span></p>
+                <p><strong><code>__floattidf</code></strong><span>Signed 128-bit integer to <code>f64</code></span><span>an <code>inttofp</code> from <code>i128</code> to <code>f64</code></span></p>
+                <p><strong><code>__floatuntidf</code></strong><span>Unsigned 128-bit integer to <code>f64</code></span><span>an <code>inttofp</code> from <code>u128</code> to <code>f64</code></span></p>
+                <p><strong><code>__fixdfti</code></strong><span><code>f64</code> to signed 128-bit integer</span><span>an <code>fptoint</code> from <code>f64</code> to <code>i128</code></span></p>
+                <p><strong><code>__fixunsdfti</code></strong><span><code>f64</code> to unsigned 128-bit integer</span><span>an <code>fptoint</code> from <code>f64</code> to <code>u128</code></span></p>
+            </div>
+            <p>Conversions between <code>f32</code> and 128-bit integers use four more routines of the same kind: <code>__floattisf</code>, <code>__floatuntisf</code>, <code>__fixsfti</code> and <code>__fixunssfti</code>. They are emitted only for those conversions. A program that uses no 128-bit operations emits none of these.</p>
+            <p>Each routine is referenced by name. Nothing else is emitted without your asking. Lamina does not ship these routines in this release; a linked program must provide them, from the system's compiler runtime or from your own object.</p>
+            <p>This is what <code>div.i128</code> lowers to. The module below divides a 128-bit value and returns the low 64 bits:</p>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    %a = add.i128 1, 2
+    %b = div.i128 %a, 2
+    %c = trunc.i128.i64 %b
+    ret.i64 %c
+}</code></pre>
+
+            <h2 id="redirect">Redirecting the routines</h2>
+            <p>Set <code>LAMINA_BUILTINS</code> to a comma-separated list of <code>name=symbol</code> pairs. The name is the routine the compiler would call, and the symbol is the name it calls instead. The routine's C name is the key; the symbol is any function your program defines or links.</p>
+            <pre><code class="language-shell">$ LAMINA_BUILTINS=__divti3=my_div lamina div128.lamina --emit-asm -o div128.s</code></pre>
+            <p>The emitted code calls <code>my_div</code> where it would have called <code>__divti3</code>. The table also covers <code>malloc</code>, <code>free</code> and <code>exit</code>, and the C block-copy and block-fill routines: an <code>@extern</code> declaration of one of these names is called through the symbol you give it.</p>
+
+            <h2 id="no-os">Targets with no operating system</h2>
+            <p>A target with no operating system has no compiler runtime to link against. For such a target, a module that calls one of the routines above must define the routine itself, or name a replacement with <code>LAMINA_BUILTINS</code>. The compiler checks this at compile time and names the symbol in its error, instead of leaving the failure to the linker.</p>
+            <pre><code class="language-shell">$ lamina div128.lamina --target x86_64_unknown --emit-asm -o div128.s
+Error: `__divti3` is a compiler runtime helper that a target without a C library does not provide; define it in the module, or name an implementation with LAMINA_BUILTINS=__divti3=&lt;symbol&gt;</code></pre>
+            <p>Targets are listed on <a href="/docs/targets">Targets and backends</a>.</p>
+
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/lumir">LUMIR</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}

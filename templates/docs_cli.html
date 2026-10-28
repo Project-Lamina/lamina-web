@@ -4,38 +4,49 @@
         {{docs_sidebar}}
         <article class="lmn-manual-article">
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Compiler driver</strong></nav>
-            <p class="lmn-section-tag">CLI reference</p>
+            <p class="lmn-section-tag">Lamina compiler · Reference</p>
             <h1>Compiler driver</h1>
-            <p class="lmn-manual-lead">The <code>lamina</code> binary builds executables, emits MIR or assembly, and selects targets and tools. Nightly builds can also run code through the JIT.</p>
+            <p class="lmn-manual-lead">The <code>lamina</code> binary compiles one IR file. It writes an executable, assembly or LUMIR, selects a target, and chooses the assembler and linker. Options are listed here as <code>lamina --help</code> prints them.</p>
             <pre><code class="language-shell">$ lamina &lt;input.lamina&gt; [options]</code></pre>
+
+            <h2 id="output">Output</h2>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Option</span><span>Argument</span><span>Behavior</span></div>
-                <p><strong><code>-o, --output</code></strong><code>&lt;file&gt;</code><span>Choose the output artifact name.</span></p>
-                <p><strong><code>-v, --verbose</code></strong><code>-</code><span>Print additional compiler-driver output.</span></p>
-                <p><strong><code>--target</code></strong><code>&lt;arch_os&gt;</code><span>Select a target such as <code>x86_64_linux</code>.</span></p>
-                <p><strong><code>--opt-level</code></strong><code>&lt;0-3&gt;</code><span>Choose the experimental MIR optimization level. Default: <code>1</code>.</span></p>
-                <p><strong><code>--emit-mir</code></strong><code>-</code><span>Write <code>.lumir</code> MIR and exit.</span></p>
-                <p><strong><code>--emit-mir-asm</code></strong><code>-</code><span>Experimental: emit assembly from MIR, using <code>--target</code> for architecture and OS.</span></p>
-                <p><strong><code>--emit-asm</code></strong><code>-</code><span>Emit an assembly file without assembling or linking it.</span></p>
-                <p><strong><code>--jit</code></strong><code>-</code><span>Nightly only: compile and execute through the runtime compiler.</span></p>
-                <p><strong><code>--sandbox</code></strong><code>-</code><span>Nightly only: enable sandboxed JIT execution. Requires <code>--jit</code>.</span></p>
-                <p><strong><code>-c, --compiler</code></strong><code>&lt;name&gt;</code><span>Select a linker, or use a compatibility alias for a paired toolchain.</span></p>
-                <p><strong><code>--assembler</code></strong><code>&lt;name&gt;</code><span>Select <code>ras</code>, <code>gas</code>, or <code>clang</code>.</span></p>
-                <p><strong><code>-Wl,&lt;flag&gt;</code></strong><code>-</code><span>Pass comma-separated flags to the linker.</span></p>
-                <p><strong><code>-Wa,&lt;flag&gt;</code></strong><code>-</code><span>Pass comma-separated flags to the assembler.</span></p>
-                <p><strong><code>-j, --jobs</code></strong><code>&lt;n&gt;</code><span>Set parallel code-generation threads. Default: available cores minus two.</span></p>
-                <p><strong><code>--regalloc</code></strong><code>&lt;method&gt;</code><span>Select <code>incremental</code>, <code>linear</code>, or <code>graph</code>.</span></p>
-                <p><strong><code>-g</code></strong><code>-</code><span>Emit assembler debug lines and minimal ELF DWARF with <code>ras</code>.</span></p>
-                <p><strong><code>-h, --help</code></strong><code>-</code><span>Print the built-in command reference.</span></p>
+                <p><strong><code>-o, --output</code></strong><code>&lt;file&gt;</code><span>Name of the executable. Default: the input name without its extension.</span></p>
+                <p><strong><code>--emit-asm</code></strong><code>-</code><span>Write an assembly file and stop before assembling and linking.</span></p>
+                <p><strong><code>--emit-mir</code></strong><code>-</code><span>Write a <code>.lumir</code> file next to the input and stop. See <a href="/docs/lumir">LUMIR</a>.</span></p>
+                <p><strong><code>--jit</code></strong><code>-</code><span>Nightly build only. Compile the module and run it in the current process; the process exits with the value <code>main</code> returns. In a default build the flag is accepted and nothing runs.</span></p>
+                <p><strong><code>--sandbox</code></strong><code>-</code><span>Nightly build only. Run the JIT in a sandbox. Requires <code>--jit</code>.</span></p>
+                <p><strong><code>-g</code></strong><code>-</code><span>Emit assembler <code>.file</code> and <code>.loc</code> directives, and minimal ELF DWARF, when the assembler is <code>ras</code>.</span></p>
+                <p><strong><code>-v, --verbose</code></strong><code>-</code><span>Print more about each stage.</span></p>
+                <p><strong><code>-h, --help</code></strong><code>-</code><span>Print the usage text.</span></p>
                 <p><strong><code>--version</code></strong><code>-</code><span>Print the compiler version.</span></p>
             </div>
-            <h2 id="toolchains">Toolchain selection</h2>
-            <p>Use <code>--assembler</code> for the assembly step. The current driver still uses <code>-c, --compiler</code> for linker selection; the name is historical. Linker values are <code>ld</code>, <code>lld</code>, <code>mold</code>, <code>weld</code>, <code>link</code>, and <code>cl</code>. Compatibility aliases such as <code>gnu</code>, <code>clang</code>, <code>msvc</code>, and <code>lamina</code> select paired tools.</p>
-            <pre><code class="language-shell">$ lamina app.lamina --assembler ras -c weld
-$ lamina app.lamina --assembler gas -c ld
-$ lamina app.lamina --assembler clang -c lld
+
+            <h2 id="target">Target and optimization</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Option</span><span>Argument</span><span>Behavior</span></div>
+                <p><strong><code>--target</code></strong><code>&lt;arch_os&gt;</code><span>Target for code generation, such as <code>x86_64_linux</code>. Default: the host. See <a href="/docs/targets">Targets and backends</a>.</span></p>
+                <p><strong><code>--opt-level</code></strong><code>&lt;0-3&gt;</code><span>Optimization level for the LUMIR optimizer. Default: <code>1</code>. Experimental.</span></p>
+                <p><strong><code>--regalloc</code></strong><code>&lt;method&gt;</code><span><code>incremental</code>, <code>linear</code> or <code>graph</code>. Default: <code>linear</code> at level 1 and above on x86_64, <code>incremental</code> otherwise.</span></p>
+                <p><strong><code>--mcpu</code></strong><code>&lt;gpu&gt;</code><span>AMDGPU processor: <code>gfx900</code> or <code>gfx1200</code>. Default: <code>gfx1200</code>.</span></p>
+                <p><strong><code>-j, --jobs</code></strong><code>&lt;n&gt;</code><span>Number of code generation threads. Default: the available cores minus two.</span></p>
+            </div>
+
+            <h2 id="toolchain">Assembler and linker</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Option</span><span>Argument</span><span>Behavior</span></div>
+                <p><strong><code>--assembler</code></strong><code>&lt;name&gt;</code><span>Assembler to run: <code>ras</code>, <code>gas</code> or <code>clang</code>.</span></p>
+                <p><strong><code>-c, --compiler</code></strong><code>&lt;name&gt;</code><span>Toolchain: <code>gnu</code>, <code>clang</code>, <code>msvc</code> or <code>lamina</code>. Or a linker alone: <code>ld</code>, <code>lld</code>, <code>mold</code>, <code>weld</code>, <code>link</code> or <code>cl</code>.</span></p>
+                <p><strong><code>-Wl,&lt;flag&gt;</code></strong><code>-</code><span>Pass flags to the linker. Separate several with commas.</span></p>
+                <p><strong><code>-Wa,&lt;flag&gt;</code></strong><code>-</code><span>Pass flags to the assembler. Separate several with commas.</span></p>
+            </div>
+            <pre><code class="language-shell">$ lamina app.lamina --assembler ras -c weld -o app
+$ lamina app.lamina --assembler gas -c ld -o app
 $ lamina app.lamina --emit-mir --opt-level 3 --regalloc graph</code></pre>
-            <div class="lmn-manual-next"><span>Next</span><a href="/docs/rust">Embed Lamina from Rust</a></div>
+            <p><code>-c</code> names a linker as well as a toolchain. The option name is historical: it chooses the linker, and <code>--assembler</code> chooses the assembler.</p>
+
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/targets">Targets and backends</a></div>
         </article>
     </div>
 </main>

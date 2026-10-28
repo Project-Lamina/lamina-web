@@ -3,35 +3,32 @@
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
         <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Writing output</strong></nav>
-            <p class="lmn-section-tag">Guide</p>
-            <h1>Writing output</h1>
-            <p class="lmn-manual-lead">There are two ways to print from Lamina, and <code>print</code> is neither of them. Call libc the way C does, or write bytes yourself and depend on nothing.</p>
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Output and I/O</strong></nav>
+            <p class="lmn-section-tag">Lamina compiler · Guide</p>
+            <h1>Output and I/O</h1>
+            <p class="lmn-manual-lead">A Lamina program writes output in one of two ways. It can write bytes itself with <code>writebyte</code> and <code>write</code>, which need no libc. Or it can declare a C function such as <code>printf</code> with <code>@extern</code> and call it, which links libc.</p>
 
-            <div class="lmn-manual-note"><strong><code>print</code> is not one of them</strong><p><code>print</code> exists so the compiler's own testcases can show a number without a runtime. It loads a format string and calls <code>printf</code>, so it quietly links libc into a program that may not want it. It is a debugging aid, it is being retired, and application code must not use it.</p></div>
+            <h2 id="contract">The I/O contract</h2>
+            <p>The four I/O instructions return an integer. The value tells you what happened:</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Instruction</span><span>Success</span><span>End of input</span><span>Error</span></div>
+                <p><strong>write</strong><span>Number of bytes written</span><span>not applicable</span><span><code>-2</code></span></p>
+                <p><strong>read</strong><span>Number of bytes read. <code>0</code> when the size is <code>0</code>.</span><span><code>-1</code>, when no bytes were available</span><span><code>-2</code></span></p>
+                <p><strong>writebyte</strong><span><code>1</code></span><span>not applicable</span><span><code>-2</code></span></p>
+                <p><strong>readbyte</strong><span>The byte, <code>0</code> to <code>255</code>. A zero byte is data, not end of input.</span><span><code>-1</code></span><span><code>-2</code></span></p>
+            </div>
+            <p>The values are integers. The surface does not state their width; treat them as 64-bit signed. Builds that predate this contract may return different values for end of input and for errors, so check for <code>-1</code> and <code>-2</code> only with a build that implements it.</p>
 
-            <h2 id="libc">Through libc</h2>
-            <p>Declare the function with <code>@extern</code> and call it. A declaration ending in <code>...</code> is variadic, so this is how <code>printf</code> and its relatives are reached. Arguments past the named ones follow the C promotion rules: an <code>f32</code> widens to <code>f64</code> on the way out.</p>
-            <pre><code class="language-lamina">@extern
-fn @printf(ptr %fmt, ...) -&gt; i32
-
-global $fmt: [8 x i8] = "%d %s\n"
-global $who: [7 x i8] = "lamina"
-
-fn @main() -&gt; i64 {
-entry:
-  %f = getelem.i8 $fmt, 0
-  %w = getelem.i8 $who, 0
-  %r = call @printf(%f, 42, %w)
-  ret.i64 0
+            <h2 id="bytes">Writing bytes</h2>
+            <p><code>writebyte</code> sends one byte to standard output. This program writes <code>Hi</code> and a newline:</p>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    %a = writebyte 72
+    %b = writebyte 105
+    %c = writebyte 10
+    ret.i64 0
 }</code></pre>
-            <p>A global array is not a pointer, so <code>getelem.i8 $fmt, 0</code> takes the address of its first byte. That is the value <code>printf</code> wants.</p>
-            <p>Calling through a function pointer works too, and needs the <code>...</code> marker at the call site, because an indirect call has no declaration to read it from.</p>
-            <pre><code class="language-lamina-fragment">%p = funcaddr @printf
-%r = callptr.i32 %p(ptr %f, ..., i32 42)</code></pre>
-
-            <h2 id="freestanding">Freestanding</h2>
-            <p><code>writebyte</code> sends one byte to stdout and needs no libc, no runtime and no linked library. It is the portable choice, and it works on every target including WebAssembly, where it lowers to <code>fd_write</code>.</p>
+            <p>Formatting a number is the frontend's job, so Lamina has no instruction for it. This helper writes an unsigned number in decimal, one digit at a time, using only <code>writebyte</code>. It prints <code>31415</code>:</p>
             <pre><code class="language-lamina">fn @put_digit(i64 %n) -&gt; i64 {
 entry:
   %ascii = add.i64 %n, 48
@@ -60,19 +57,45 @@ entry:
   %nl = writebyte 10
   ret.i64 0
 }</code></pre>
-            <p>That prints <code>31415</code>. Formatting a number is the frontend's job, not the IR's, which is why there is no instruction for it.</p>
 
-            <h2 id="raw">Raw bytes</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Does</span></div>
-                <p><strong>writebyte</strong><code>%r = writebyte %value</code><span>Writes the low 8 bits to stdout. One byte, one syscall.</span></p>
-                <p><strong>readbyte</strong><code>%r = readbyte</code><span>Reads one byte from stdin. Returns the byte, or 0 at end of input.</span></p>
-                <p><strong>write</strong><code>%r = write %ptr, %size</code><span>Writes <code>%size</code> bytes from <code>%ptr</code> to stdout.</span></p>
-                <p><strong>read</strong><code>%r = read %ptr, %size</code><span>Reads up to <code>%size</code> bytes from stdin into <code>%ptr</code>.</span></p>
-            </div>
-            <p>Each returns the count moved, or a negative errno. There is no buffering: these are syscalls, not a stdio layer.</p>
+            <h2 id="buffers">Reading and writing buffers</h2>
+            <p><code>write</code> takes a pointer and a byte count and returns how many bytes it wrote. <code>read</code> does the reverse. This program copies standard input to standard output one byte at a time, and stops when <code>readbyte</code> reports end of input:</p>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    jmp loop
+  loop:
+    %b = readbyte
+    %eof = eq.i64 %b, -1
+    br %eof, done, emit
+  emit:
+    %w = writebyte %b
+    jmp loop
+  done:
+    ret.i64 0
+}</code></pre>
+            <p>The loop tests the result against <code>-1</code>, not against zero, so a zero byte in the input does not end it.</p>
 
-            <div class="lmn-manual-next"><span>Next</span><a href="/docs/abi">Calling conventions</a></div>
+            <h2 id="libc">Through libc, with printf</h2>
+            <p>Declare the function with <code>@extern</code>. A declaration ending in <code>...</code> is variadic, so this is how <code>printf</code> and its relatives are called. Arguments past the named ones follow the C promotion rules: an <code>f32</code> is passed as an <code>f64</code>. This program prints <code>2.50</code> and a newline:</p>
+            <pre><code class="language-lamina">@extern
+fn @printf(ptr %fmt, ...) -&gt; i32
+
+global $fmt: [7 x i8] = "%.2f\n"
+
+fn @main() -&gt; i64 {
+  entry:
+    %f = getelem.i8 $fmt, 0
+    %r = call @printf(ptr %f, f64 2.5)
+    ret.i64 0
+}</code></pre>
+            <p>A global array is not a pointer. <code>getelem.i8 $fmt, 0</code> takes the address of its first byte, which is the value <code>printf</code> expects. Linking this program links libc, because <code>printf</code> is provided by it.</p>
+            <p>An indirect call through <code>callptr</code> needs the <code>...</code> marker at the call site, because the call has no declaration to read it from:</p>
+            <pre><code class="language-lamina-fragment">%p = funcaddr @printf
+%r = callptr.i32 %p(ptr %f, ..., i32 42)</code></pre>
+
+            <div class="lmn-manual-note"><strong>Output is not buffered</strong><p><code>writebyte</code>, <code>write</code> and the other I/O instructions are system calls. There is no stdio layer under them, so each call is its own write. The libc route goes through <code>printf</code>, which is buffered by libc as usual.</p></div>
+
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/runtime">Runtime and libc</a></div>
         </article>
     </div>
 </main>

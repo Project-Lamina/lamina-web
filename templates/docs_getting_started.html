@@ -4,43 +4,63 @@
         {{docs_sidebar}}
         <article class="lmn-manual-article">
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Getting started</strong></nav>
-            <p class="lmn-section-tag">Guide</p>
+            <p class="lmn-section-tag">Lamina compiler · Guide</p>
             <h1>Getting started</h1>
-            <p class="lmn-manual-lead">Install the driver and compile a small typed IR module. Then choose an AOT build or an inspection output. Runtime compilation is available as a nightly feature.</p>
-            <div class="lmn-manual-note"><strong>What Lamina is</strong><p>A frontend can emit Lamina IR text or build a module with <code>IRBuilder</code>. Lamina lowers the module, runs optimization passes, and generates target code.</p></div>
+            <p class="lmn-manual-lead">Install the Lamina driver, compile a small module written in Lamina IR, and run it. The compiler is the <code>lamina</code> binary. The rest of the toolchain, <code>ras</code> and <code>weld</code>, is optional.</p>
+            <div class="lmn-manual-note"><strong>What you write</strong><p>Lamina IR is a text format. You write it by hand, or a frontend writes it for you, or you build it in Rust with <a href="/docs/irbuilder">IRBuilder</a>. The compiler lowers it, optimizes it, and generates machine code for one target.</p></div>
+
             <h2 id="install">Install the driver</h2>
             <pre><code class="language-shell">$ cargo install lamina
-$ lamina --help</code></pre>
-            <p>When working from a source checkout, replace <code>lamina</code> with <code>cargo run --</code>.</p>
-            <h2 id="first-module">Compile a first module</h2>
+$ lamina --version</code></pre>
+            <p>From a source checkout, run <code>cargo run --</code> in place of <code>lamina</code>. Everything after <code>--</code> is passed to the driver.</p>
+
+            <h2 id="first-module">A first module</h2>
+            <p>Save this as <code>answer.lamina</code>. <code>@main</code> is the program's entry point, and its return value becomes the exit status.</p>
             <pre><code class="language-lamina">fn @main() -&gt; i64 {
   entry:
     %answer = add.i64 40, 2
     ret.i64 %answer
 }</code></pre>
-            <pre><code class="language-shell">$ lamina answer.lamina
+            <pre><code class="language-shell">$ lamina answer.lamina -o answer
 $ ./answer
 $ echo $?
 42</code></pre>
-            <p>The default path is AOT compilation: Lamina emits target assembly, assembles it, and links an executable. The process exit status is <code>42</code> because <code>@main</code> returns the computed value.</p>
-            <h2 id="modes">Choose an output mode</h2>
+            <p>The default path compiles to assembly, assembles it, and links an executable. The exit status is 42.</p>
+
+            <h2 id="output">Write output</h2>
+            <p>A program writes text one byte at a time with <code>writebyte</code>. This one prints <code>Hi</code> and a newline:</p>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    %a = writebyte 72
+    %b = writebyte 105
+    %c = writebyte 10
+    ret.i64 0
+}</code></pre>
+            <p>More ways to write output, including <code>printf</code> through <code>@extern</code>, are on <a href="/docs/output">Output and I/O</a>.</p>
+
+            <h2 id="modes">Choose what the driver produces</h2>
             <div class="lmn-doc-table">
-                <p><strong>AOT</strong><span>The default path. Generate assembly and link a native executable.</span></p>
-                <p><strong>Nightly JIT</strong><span>Enable the nightly feature, then use <code>--jit</code> to compile and execute on the host at runtime.</span></p>
-                <p><strong>Inspect MIR</strong><span>Use <code>--emit-mir</code> to write a <code>.lumir</code> file and exit.</span></p>
-                <p><strong>Inspect assembly</strong><span>Use <code>--emit-asm</code> to stop before assembling and linking.</span></p>
+                <p><strong>Executable</strong><span>The default. Compiles, assembles and links a native program.</span></p>
+                <p><strong>Assembly</strong><span><code>--emit-asm</code> writes an assembly file and stops before assembling or linking.</span></p>
+                <p><strong>LUMIR</strong><span><code>--emit-mir</code> writes a <code>.lumir</code> file next to the input and stops. See <a href="/docs/lumir">LUMIR</a>.</span></p>
+                <p><strong>JIT</strong><span>Nightly builds only. <code>--jit</code> compiles and runs the module in the current process. Build with the <code>nightly</code> feature.</span></p>
             </div>
-            <pre><code class="language-shell">$ lamina answer.lamina
-$ lamina answer.lamina --emit-mir --opt-level 2
-$ lamina answer.lamina --emit-asm --target x86_64_linux</code></pre>
-            <div class="lmn-manual-note"><strong>Nightly JIT</strong><p>JIT is not part of the normal release surface. Build Lamina with the <code>nightly</code> feature before using <code>--jit</code>.</p></div>
-            <pre><code class="language-shell">$ cargo install lamina --features nightly
-$ lamina answer.lamina --jit</code></pre>
-            <h2 id="source-checkout">Work from a source checkout</h2>
-            <p>Use <code>cargo run --</code> when testing a local checkout. Everything after <code>--</code> is passed to the Lamina driver.</p>
-            <pre><code class="language-shell">$ cargo run -- answer.lamina --emit-mir
-$ cargo run --features nightly -- answer.lamina --jit</code></pre>
-            <div class="lmn-manual-next"><span>Next</span><a href="/docs/ir">Read the IR language reference</a></div>
+            <pre><code class="language-shell">$ lamina answer.lamina --emit-asm -o answer.s
+$ lamina answer.lamina --emit-mir
+$ lamina answer.lamina --target x86_64_linux -o answer</code></pre>
+
+            <h2 id="toolchain">Choose the assembler and linker</h2>
+            <p>The driver calls an assembler and a linker to make an executable. <code>--assembler</code> selects the assembler, and <code>-c</code> selects the linker. To build through this project's own tools, use <code>ras</code> and <code>weld</code>:</p>
+            <pre><code class="language-shell">$ lamina answer.lamina --assembler ras -c weld -o answer</code></pre>
+            <p>See <a href="/docs/ras">ras</a> and <a href="/docs/weld">weld</a> for installing them.</p>
+
+            <h2 id="next">Next steps</h2>
+            <div class="lmn-doc-table">
+                <p><strong>The language</strong><span><a href="/docs/ir">IR language</a> explains the slot model, types and declarations. <a href="/docs/ir-instructions">IR instructions</a> lists every instruction.</span></p>
+                <p><strong>The driver</strong><span><a href="/docs/cli">Compiler driver</a> lists every option.</span></p>
+                <p><strong>Targets</strong><span><a href="/docs/targets">Targets and backends</a> lists the target names and what each one supports.</span></p>
+            </div>
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/ir">IR language</a></div>
         </article>
     </div>
 </main>

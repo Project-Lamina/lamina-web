@@ -4,7 +4,7 @@
         {{docs_sidebar}}
         <article class="lmn-manual-article">
             <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>weld linker</strong></nav>
-            <p class="lmn-section-tag">Toolchain</p>
+            <p class="lmn-section-tag">weld · Linker</p>
             <h1>weld, the linker</h1>
             <p class="lmn-manual-lead">weld links relocatable objects into an executable, in place of <code>ld</code>, <code>lld</code> or <code>mold</code>. Dynamic executables on x86_64 Linux work through the gcc driver today. Static glibc, shared libraries and dynamic linking on the other architectures do not.</p>
 
@@ -51,12 +51,12 @@ $ gcc -B"$PWD/toolchain/" hello.c -O2 -o hello</code></pre>
 
             <h2 id="gaps">Where it is not a drop-in</h2>
             <div class="lmn-doc-table">
-                <p><strong>Static glibc fails</strong><span><code>gcc -static</code> stops at <code>static GNU IFUNC is not supported: __new_memcpy; resolver calls require IRELATIVE relocations and startup relocation tables</code>. glibc selects <code>memcpy</code> and friends through IFUNC resolvers, and nothing emits <code>IRELATIVE</code> yet. <code>-static</code> is for freestanding objects and plain archives.</span></p>
+                <p><strong>Static glibc fails</strong><span><code>gcc -static</code> stops at <code>static GNU IFUNC is not supported: __new_memcpy; resolver calls require IRELATIVE relocations and startup relocation tables</code>. glibc selects its string and block-copy routines through IFUNC resolvers, and nothing emits <code>IRELATIVE</code> yet. <code>-static</code> is for freestanding objects and plain archives.</span></p>
                 <p><strong>No shared libraries</strong><span><code>-shared</code> is refused, so weld cannot build a <code>.so</code>.</span></p>
                 <p><strong>Dynamic linking is x86_64 only</strong><span>aarch64 and riscv64 link statically and as PIE, but have no PLT or GOT construction.</span></p>
                 <p><strong>Entry point on aarch64 and riscv64</strong><span>With no <code>_start</code> defined, weld's synthetic startup stub is written for x86_64 only. The other two fall back to entering at <code>main</code>, which is wrong without a CRT.</span></p>
                 <p><strong>clang AArch64 objects with unwind tables</strong><span><code>unsupported AArch64 relocation type 261</code>, which is <code>R_AARCH64_PREL32</code> in <code>.eh_frame</code>. Building with <code>-fno-asynchronous-unwind-tables</code> gets past it.</span></p>
-                <p><strong>Quiet failures</strong><span>A failed link often prints only <code>weld: link failed</code>. An unknown <code>-e</code> symbol falls back silently, a missing <code>-l</code> is dropped in dynamic mode, and <code>-v</code> needs <code>RUST_LOG=info</code> to print anything.</span></p>
+                <p><strong>Quiet failures</strong><span>A failed link often prints only <code>weld: link failed</code>. An unknown <code>-e</code> symbol falls back silently, a missing <code>-l</code> is dropped in dynamic mode, and <code>-v</code> needs <code>RUST_LOG=info</code> to show anything.</span></p>
                 <p><strong>Interpreter path is assumed</strong><span>Without <code>--dynamic-linker</code> weld writes the glibc path. A musl system needs it passed. The gcc driver passes it anyway.</span></p>
                 <p><strong>Archives need an index</strong><span><code>archive has no index; run ranlib to add one</code>.</span></p>
             </div>

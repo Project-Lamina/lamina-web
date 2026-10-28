@@ -116,7 +116,7 @@ pub async fn docs() -> Html<String> {
     render_docs_template(
         "docs_index.html",
         "Lamina Documentation",
-        "Documentation for Lamina IR, the compiler driver, Rust embedding, IRBuilder, target backends, and the C bindings development SDK.",
+        "Documentation for the Lamina compiler and its IR, ras, weld, camina, and the lamina-c C bindings.",
         "home",
     )
 }
@@ -135,14 +135,38 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
         "output" => (
             "docs_output.html",
             "Writing Output",
-            "How to print from Lamina: calling libc printf through an extern declaration, or writing bytes directly with writebyte for freestanding code.",
+            "Lamina output and I/O: the byte I/O contract, writebyte and write, and calling printf through an extern declaration.",
             "output",
         ),
         "ir" => (
             "docs_ir.html",
-            "IR Language Reference",
-            "Reference for Lamina typed IR syntax, types, values, instructions, memory ownership, and portable output semantics.",
+            "IR Language",
+            "Lamina IR as a typed, block-based text format with mutable slots rather than SSA: types, declarations, annotations, and the rules for reads and assignments.",
             "ir",
+        ),
+        "ir-instructions" => (
+            "docs_ir_instructions.html",
+            "IR Instructions",
+            "Every Lamina IR instruction form: arithmetic, conversions, memory, atomics, calls, control flow, and I/O, with examples.",
+            "ir_instructions",
+        ),
+        "runtime" => (
+            "docs_runtime.html",
+            "Runtime and libc",
+            "Lamina needs no C library. The compiler runtime routines it may call for 128-bit arithmetic, and how to redirect them with LAMINA_BUILTINS.",
+            "runtime",
+        ),
+        "lumir" => (
+            "docs_lumir.html",
+            "LUMIR",
+            "LUMIR, the lower intermediate form that Lamina optimizes and lowers to machine code, and how it differs from the IR text.",
+            "lumir",
+        ),
+        "camina" => (
+            "docs_camina.html",
+            "camina C Compiler",
+            "camina, an early C compiler that lowers a subset of C to Lamina IR: what compiles, what does not, and the stdio gap.",
+            "camina",
         ),
         "cli" => (
             "docs_cli.html",
@@ -177,7 +201,7 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
         "ras" => (
             "docs_ras.html",
             "ras Assembler",
-            "Install ras and use it in place of GNU as, through the Lamina driver or a C toolchain.",
+            "ras, the assembler: install it, use it through the Lamina driver or in place of GNU as, and the gaps it has.",
             "ras",
         ),
         "weld" => (
@@ -234,6 +258,10 @@ fn render_docs_template(
         "getting_started",
         "cli",
         "ir",
+        "ir_instructions",
+        "runtime",
+        "lumir",
+        "camina",
         "output",
         "targets",
         "abi",

@@ -1,0 +1,65 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>camina</strong></nav>
+            <p class="lmn-section-tag">Front end · Early</p>
+            <h1>camina, a C compiler for Lamina</h1>
+            <p class="lmn-manual-lead">camina reads a C file and lowers it to Lamina IR, then calls Lamina to produce an executable. It compiles a useful subset of C. It is early work. Programs it accepts run correctly in the cases tested here. Much of C is not supported yet, and the parts that are supported are not complete.</p>
+            <div class="lmn-manual-note lmn-manual-note-planned"><strong>Name</strong><p>The project is called camina. The crate and binary are still named <code>cina</code> in its manifest. Build the crate, and run the binary as <code>cina</code>.</p></div>
+
+            <h2 id="status">Current state</h2>
+            <div class="lmn-doc-table">
+                <p><strong>Compiles</strong><span>Functions with <code>int</code>, <code>long</code>, <code>unsigned int</code>, <code>char</code>, <code>double</code> and <code>void</code> types. Global variables with initializers. <code>if</code>, <code>else</code>, <code>while</code>, <code>for</code>, <code>break</code>, <code>continue</code>, the ternary operator, compound assignment, <code>++</code> and <code>--</code>, casts, <code>sizeof(type)</code>, and recursion.</span></p>
+                <p><strong>Not parsed</strong><span><code>switch</code>, <code>do ... while</code> loops, arrays, and <code>struct</code> declarations with member access.</span></p>
+                <p><strong>Refused in lowering</strong><span>A pointer local, with or without an initializer: <code>int *p = &amp;v;</code> and <code>int *p; p = &amp;v;</code> both fail with <em>Only simple variable declarations are supported</em>.</span></p>
+                <p><strong>Standard I/O</strong><span>Calls to <code>printf</code>, <code>puts</code>, <code>putchar</code> and the other stdio names compile when <code>&lt;stdio.h&gt;</code> is included. The lowering discards them, so a program that prints produces no output. Do not rely on any output from camina programs yet.</span></p>
+                <p><strong>Division by zero</strong><span>Not diagnosed. A program that divides by zero at run time is terminated by the signal.</span></p>
+            </div>
+
+            <h2 id="build">Build and run</h2>
+            <p>camina is built from its own repository. It depends on the Lamina crates in the sibling directory and on the default toolchain, so build it from a checkout that has both.</p>
+            <pre><code class="language-shell">$ cargo build --release
+$ target/release/cina program.c</code></pre>
+            <p>The compiler writes an executable next to the source, named after it. Its exit status is the value <code>main</code> returns.</p>
+
+            <h2 id="example">An example that works</h2>
+            <p>This program sums a value over a loop, calling a helper function. It exits with status 20.</p>
+            <pre><code class="language-c">int add(int a, int b) {
+    return a + b;
+}
+
+int main(void) {
+    int total = 0;
+    int i;
+    for (i = 0; i < 5; i++) {
+        total += add(i, 2);
+    }
+    return total;
+}</code></pre>
+            <p>Recursion, <code>unsigned</code> division, and the other constructs in the table above returned the expected values in the cases tested.</p>
+
+            <h2 id="gaps">What does not compile</h2>
+            <p>Each of these fails at the stage shown. Rewrite the code to avoid them until the feature exists.</p>
+            <pre><code class="language-c">/* fails: switch is not parsed */
+int main(void) {
+    int x = 2;
+    switch (x) {
+        case 2: return 5;
+        default: return 0;
+    }
+}
+
+/* fails: pointer locals are refused in lowering */
+int main(void) {
+    int v = 3;
+    int *p = &amp;v;
+    return *p;
+}</code></pre>
+
+            <div class="lmn-manual-next"><span>Related</span><a href="/docs/getting-started">Compile a first program with Lamina</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}

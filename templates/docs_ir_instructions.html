@@ -1,0 +1,261 @@
+<main class="lamina-home lmn-manual-page">
+    {{docs_header}}
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>IR instructions</strong></nav>
+            <p class="lmn-section-tag">Lamina compiler · Reference</p>
+            <h1>IR instructions</h1>
+            <p class="lmn-manual-lead">Every instruction form the parser accepts, with its operands and result. Read <a href="/docs/ir">IR language</a> first for the slot model and the lexical rules.</p>
+
+            <h2 id="forms">Two shapes</h2>
+            <p>An instruction that produces a value is written <code>%name = op ...</code>. One that produces none is written <code>op ...</code>. Using the wrong shape is an error. Where an instruction has a suffix, it is written after a dot: <code>add.i64</code>, <code>load.i32</code>. A suffix names the operation's type; conversions take two types, <code>trunc.i64.i8</code>.</p>
+            <p>Operands are values (<code>%name</code>, a global <code>$name</code>, or a literal) except where a bare label or a bare name is required. Literals are range-checked against the suffix type.</p>
+
+            <h2 id="arithmetic">Integer and float arithmetic</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
+                <p><strong>Binary</strong><code>add sub mul div rem and or xor shl shr</code><span>Operands and result have the suffix type. <code>add sub mul div</code> take floats as well as integers. <code>rem and or xor shl shr</code> are integer-only. <code>div</code>, <code>rem</code> and <code>shr</code> are signed or unsigned according to the suffix type.</span></p>
+                <p><strong>Rotate</strong><code>rotl rotr</code><span>Integer only. Rotate left or right.</span></p>
+                <p><strong>Negate</strong><code>neg</code><span>Any numeric type. Two's complement negation for integers.</span></p>
+                <p><strong>Bitwise not</strong><code>not</code><span>Integer only.</span></p>
+                <p><strong>Bit counts</strong><code>popcount ctlz cttz bswap</code><span>Integer only. Count set bits, leading zeros, trailing zeros, or byte-swap.</span></p>
+                <p><strong>Square root</strong><code>sqrt</code><span><code>f32</code> and <code>f64</code> only.</span></p>
+            </div>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    %a = sub.i64 10, 3
+    %b = mul.i64 %a, 2
+    %c = div.i64 %b, 4
+    %d = rem.i64 %c, 3
+    %e = and.i64 %d, 7
+    %f = or.i64 %e, 8
+    %g = xor.i64 %f, 1
+    %h = shl.i64 %g, 2
+    %i = shr.i64 %h, 1
+    %j = neg.i64 %i
+    %k = not.i64 %j
+    %l = rotl.i64 %k, 3
+    %m = popcount.i64 %l
+    %n = ctlz.i64 %m
+    %o = cttz.i64 %n
+    %p = bswap.i64 %o
+    ret.i64 %p
+}</code></pre>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    %x = add.f64 1.5, 2.25
+    %r = sqrt.f64 %x
+    %y = mul.f64 %r, 2.0
+    %z = neg.f64 %y
+    %ok = lt.f64 %z, 0.0
+    %n = fptoint.f64.i64 %y
+    ret.i64 %n
+}</code></pre>
+
+            <h2 id="compare">Comparison</h2>
+            <p><code>eq ne gt ge lt le</code> take two operands of the suffix type and produce a <code>bool</code>. Signedness follows the suffix type. A <code>bool</code> is accepted by <code>and</code> and <code>or</code> and by <code>br</code> and <code>select</code>.</p>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    %a = eq.i64 1, 1
+    %b = ne.i64 1, 2
+    %c = ge.i64 3, 2
+    %d = le.i64 3, 2
+    %e = lt.i64 1, 2
+    %f = and.bool %a, %b
+    br %f, yes, no
+  yes:
+    ret.i64 1
+  no:
+    ret.i64 0
+}</code></pre>
+
+            <h2 id="conversions">Conversions</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
+                <p><strong>Truncate</strong><code>trunc.S.D</code><span>Keeps the low bits. The target must be narrower than the source.</span></p>
+                <p><strong>Extend</strong><code>extend.S.D</code><span>Widens an integer. The source type's signedness picks sign or zero extension. The target must be wider. This is the one widening instruction; there is no separate zero or sign form.</span></p>
+                <p><strong>Bit cast</strong><code>bitcast.S.D</code><span>Reinterprets the bits. Source and target must be the same size.</span></p>
+                <p><strong>Integer to float</strong><code>inttofp.S.D</code><span>Source is an integer, target is <code>f32</code> or <code>f64</code>.</span></p>
+                <p><strong>Float to integer</strong><code>fptoint.S.D</code><span>Source is <code>f32</code> or <code>f64</code>, target is an integer. Truncates toward zero.</span></p>
+                <p><strong>Float to float</strong><code>fpcast.S.D</code><span>Between <code>f32</code> and <code>f64</code> only.</span></p>
+            </div>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    %a = add.f64 1.5, 2.25
+    %b = sqrt.f64 %a
+    %c = fpcast.f64.f32 %b
+    %d = fpcast.f32.f64 %c
+    %e = fptoint.f64.i64 %d
+    %f = inttofp.i64.f64 %e
+    %g = trunc.i64.i32 %e
+    %h = bitcast.f64.i64 %f
+    ret.i64 %e
+}</code></pre>
+            <div class="lmn-manual-note"><strong>Extend</strong><p><em>Planned for 0.2.0; the compiler still accepts only <code>zext</code> and <code>sext</code> today.</em> The widening form is <code>extend.S.D</code>, with the extension chosen by the source type's signedness: <code>%w = extend.i8.i64 %b</code> sign-extends an <code>i8</code> and zero-extends a <code>u8</code>. It replaces the earlier zero-extend and sign-extend spellings.</p></div>
+            <pre><code class="language-lamina-fragment">%w = extend.i8.i64 %b
+%u = extend.u8.u64 %c</code></pre>
+
+            <h2 id="select">Select</h2>
+            <p><code>%r = select.T cond, a, b</code> returns <code>a</code> when <code>cond</code> is true and <code>b</code> otherwise. <code>cond</code> must be a <code>bool</code>. <code>a</code> and <code>b</code> have type <code>T</code>.</p>
+            <pre><code class="language-lamina">fn @max(i64 %a, i64 %b) -&gt; i64 {
+  entry:
+    %a_wins = gt.i64 %a, %b
+    %r = select.i64 %a_wins, %a, %b
+    ret.i64 %r
+}
+
+fn @main() -&gt; i64 {
+  entry:
+    %r = call @max(3, 9)
+    ret.i64 %r
+}</code></pre>
+
+            <h2 id="memory">Memory</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
+                <p><strong>Stack allocation</strong><code>%p = stackalloc.T</code> or <code>stackalloc.T align n</code><span>Reserves storage for one <code>T</code> (or a named type or array) in the current frame, and returns its <code>ptr</code>. It is released when the function returns. <code>align n</code> sets the alignment and must be a power of two.</span></p>
+                <p><strong>Load</strong><code>%v = load.T ptr</code><span>Reads a <code>T</code> from memory.</span></p>
+                <p><strong>Store</strong><code>store.T ptr, value</code><span>Writes a <code>T</code>. The value must have type <code>T</code>.</span></p>
+                <p><strong>Volatile</strong><code>%v = volatile load.T ptr</code>, <code>volatile store.T ptr, value</code><span>Same as load and store, with the access kept in program order and not elided. Only these two may be volatile.</span></p>
+                <p><strong>Element address</strong><code>%p = getelem.T ptr, index</code><span>Address of element <code>index</code> of an array or of a sequence of <code>T</code>. The index is scaled by the size of <code>T</code>, so the suffix is required. The index may be a value of any integer type.</span></p>
+                <p><strong>Field address</strong><code>%p = getfieldptr.!Name ptr, N</code><span>Address of field <code>N</code> of the named struct. The suffix names the layout type and is required. <code>N</code> is an integer literal.</span></p>
+                <p><strong>Pointer to integer</strong><code>%n = ptrtoint.T ptr</code><span>Converts an address to an integer of type <code>T</code>.</span></p>
+                <p><strong>Integer to pointer</strong><code>%p = inttoptr.T value</code><span>Converts an integer of type <code>T</code> to a pointer.</span></p>
+            </div>
+            <pre><code class="language-lamina">global $tab: [3 x i64] = [10, 20, 30]
+
+fn @main() -&gt; i64 {
+  entry:
+    %cell = stackalloc.i64 align 16
+    store.i64 %cell, 1
+    %arr = stackalloc.[4 x i32]
+    %e = getelem.i32 %arr, 2
+    store.i32 %e, 9
+    %t = getelem.i64 $tab, 1
+    %tv = load.i64 %t
+    volatile store.i64 %cell, 6
+    %w = volatile load.i64 %cell
+    ret.i64 %w
+}</code></pre>
+            <div class="lmn-manual-note"><strong>Field addresses</strong><p><em>Planned for 0.2.0; the compiler still takes <code>getfieldptr %p, 1</code> without a type today, and falls back to eight bytes per field when the struct type is unknown.</em> <code>getfieldptr</code> takes the layout type in its suffix, so the field offset comes from the named struct: <code>getfieldptr.!Pair %p, 1</code> is field 1 of <code>!Pair</code>. The index must be a literal.</p></div>
+            <pre><code class="language-lamina-fragment">type !Pair = struct { a: i32, b: i64 }
+
+fn @set_b(ptr %p) -&gt; void {
+  entry:
+    %f = getfieldptr.!Pair %p, 1
+    store.i64 %f, 5
+    ret.void
+}</code></pre>
+
+            <h2 id="atomics">Atomics and fences</h2>
+            <p>Atomic operations take an integer or <code>ptr</code> type. Orderings are <code>relaxed</code>, <code>acquire</code>, <code>release</code>, <code>acqrel</code> and <code>seqcst</code>. <code>atomic_load</code> rejects <code>release</code> and <code>acqrel</code>. <code>atomic_store</code> rejects <code>acquire</code> and <code>acqrel</code>.</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
+                <p><strong>Atomic load</strong><code>%v = atomic_load.T ptr, ORD</code><span>Returns the value.</span></p>
+                <p><strong>Atomic store</strong><code>atomic_store.T ptr, value, ORD</code><span>Stores the value. No result.</span></p>
+                <p><strong>Read-modify-write</strong><code>%old = atomic_add atomic_sub atomic_and atomic_or atomic_xor atomic_exchange .T ptr, value, ORD</code><span>Applies the operation and returns the previous value. Spelled with a dot before the type: <code>atomic_add.i64</code>.</span></p>
+                <p><strong>Fence</strong><code>fence ORD</code><span>No operands and no result.</span></p>
+            </div>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    %cell = stackalloc.i64
+    store.i64 %cell, 1
+    %old = atomic_add.i64 %cell, 3, seqcst
+    %now = atomic_load.i64 %cell, acquire
+    atomic_store.i64 %cell, 7, release
+    %x = atomic_exchange.i64 %cell, 100, acqrel
+    fence seqcst
+    ret.i64 %now
+}</code></pre>
+
+            <h2 id="calls">Calls and function addresses</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
+                <p><strong>Call</strong><code>call @f(args)</code> or <code>%r = call @f(args)</code><span>Direct call. Each argument is a value, optionally preceded by its type: <code>call @f(7)</code> or <code>call @f(i64 7)</code>. A typed argument must match the parameter exactly. The result is typed by the callee; a call to a <code>void</code> function has no result.</span></p>
+                <p><strong>Function address</strong><code>%p = funcaddr @f</code><span>The address of a function, as a <code>ptr</code>.</span></p>
+                <p><strong>Indirect call</strong><code>%r = callptr.T ptr(args)</code> or <code>callptr.void ptr(args)</code><span>Calls through a pointer. The suffix is the return type and is required. Every argument must carry its type. A bare <code>...</code> may appear once, to mark the variadic tail of a call to a variadic function.</span></p>
+            </div>
+            <pre><code class="language-lamina">fn @add(i64 %a, i64 %b) -&gt; i64 {
+  entry:
+    %s = add.i64 %a, %b
+    ret.i64 %s
+}
+
+fn @main() -&gt; i64 {
+  entry:
+    %f = funcaddr @add
+    %r = callptr.i64 %f(i64 40, i64 2)
+    %s = call @add(i64 %r, 0)
+    ret.i64 %s
+}</code></pre>
+            <p>A call to a function the module does not define needs an <code>@extern</code> declaration first. Calling an undeclared name is an error.</p>
+
+            <h2 id="control">Control flow</h2>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
+                <p><strong>Branch</strong><code>br cond, then, else</code><span><code>cond</code> must be a <code>bool</code> value. Labels are bare.</span></p>
+                <p><strong>Jump</strong><code>jmp label</code><span>Unconditional.</span></p>
+                <p><strong>Switch</strong><code>switch.T value, default, [literal, label], ...</code><span>Dispatches on an integer <code>value</code> of type <code>T</code>. Case literals are checked against <code>T</code>. The discriminant must be a value; a literal discriminant is refused.</span></p>
+                <p><strong>Return</strong><code>ret.T value</code> or <code>ret.void</code><span>The value must have the function's return type.</span></p>
+                <p><strong>Unreachable</strong><code>unreachable</code><span>Marks a block that must not be reached. It ends the block.</span></p>
+            </div>
+            <pre><code class="language-lamina">fn @label_for(i32 %k) -&gt; i64 {
+  entry:
+    switch.i32 %k, other, [0, zero], [7, seven]
+  zero:
+    ret.i64 0
+  seven:
+    ret.i64 7
+  other:
+    ret.i64 1
+}
+
+fn @main() -&gt; i64 {
+  entry:
+    %k = add.i32 3, 4
+    %r = call @label_for(%k)
+    ret.i64 %r
+}</code></pre>
+
+            <h2 id="io">Input and output</h2>
+            <p>These four instructions move bytes to and from the process's standard streams. The assignment form binds the result to a name. The statement form, used when the result is not needed, takes a trailing bare name instead, which defines that name for the rest of the function. Each result is an integer. The full contract, including the end-of-input and error values, is on <a href="/docs/output">Output and I/O</a>.</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Instruction</span><span>Assignment form</span><span>Statement form</span></div>
+                <p><strong>Write</strong><code>%n = write %buf, size</code><span><code>write %buf, size, name</code></span></p>
+                <p><strong>Read</strong><code>%n = read %buf, size</code><span><code>read %buf, size, name</code></span></p>
+                <p><strong>Write byte</strong><code>%n = writebyte value</code><span><code>writebyte value, name</code></span></p>
+                <p><strong>Read byte</strong><code>%n = readbyte</code><span><code>readbyte name</code></span></p>
+            </div>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+  entry:
+    %p = stackalloc.[4 x i8]
+    store.i8 %p, 79
+    %n = write %p, 1
+    %m = writebyte 10
+    write %p, 1, k
+    writebyte 10, j
+    %r = read %p, 1
+    %b = readbyte
+    ret.i64 %n
+}</code></pre>
+            <p><code>readbyte</code> takes no operand, so <code>%b = readbyte %x</code> is an error: <code>%x</code> starts the next statement.</p>
+
+            <h2 id="removed">Removed spellings</h2>
+            <p>These spellings are rejected with a hint that names their replacement.</p>
+            <div class="lmn-doc-table">
+                <p><strong><code>print</code></strong><span>Removed. Write bytes with <code>writebyte</code>, or call a printf-style function declared with <code>@extern</code>.</span></p>
+                <p><strong><code>heapalloc</code>, <code>heapfree</code></strong><span>Removed. Declare <code>@extern fn @malloc(i64 %n) -&gt; ptr</code> and <code>@extern fn @free(ptr %p) -&gt; void</code>, then call them.</span></p>
+                <p><strong><code>memcpy</code>, <code>memmove</code>, <code>memset</code></strong><span>Removed. Declare them with <code>@extern</code> and call them. They were always calls.</span></p>
+                <p><strong><code>zext.S.D</code>, <code>sext.S.D</code></strong><span>Replaced by <code>extend.S.D</code>, chosen by the source signedness.</span></p>
+                <p><strong><code>alloc</code>, <code>getfield</code>, <code>getelementptr</code>, <code>extract</code>, <code>tuple</code></strong><span>Removed. Use <code>stackalloc</code>, <code>getfieldptr</code> with a layout type, <code>getelem</code> with a type suffix, and named structs.</span></p>
+                <p><strong><code>sitofp</code>, <code>uitofp</code>, <code>fptosi</code>, <code>fptoui</code>, <code>fpext</code>, <code>fptrunc</code></strong><span>Replaced by <code>inttofp</code>, <code>fptoint</code> and <code>fpcast</code>.</span></p>
+                <p><strong><code>char</code></strong><span>Removed type. Use <code>i8</code> or <code>u8</code>.</span></p>
+            </div>
+            <p>Variadic instructions (<code>va_start</code>, <code>va_arg</code>, <code>va_end</code>, <code>va_copy</code>) exist in the parser, but the compiler refuses them outside a variadic function, and a Lamina function cannot be variadic. <code>tailcall</code> does not exist. Two-result instructions do not exist.</p>
+
+            <div class="lmn-manual-next"><span>Next</span><a href="/docs/output">Output and I/O</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}
