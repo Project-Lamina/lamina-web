@@ -15,8 +15,8 @@
                 <p><strong><code>-o, --output</code></strong><code>&lt;file&gt;</code><span>Name of the executable. Default: the input name without its extension.</span></p>
                 <p><strong><code>--emit-asm</code></strong><code>-</code><span>Write an assembly file and stop before assembling and linking.</span></p>
                 <p><strong><code>--emit-mir</code></strong><code>-</code><span>Write a <code>.lumir</code> file next to the input and stop. See <a href="/docs/lumir">LUMIR</a>.</span></p>
-                <p><strong><code>--jit</code></strong><code>-</code><span>Nightly build only. Compile the module and run it in the current process; the process exits with the value <code>main</code> returns. In a default build the flag is accepted and nothing runs.</span></p>
-                <p><strong><code>--sandbox</code></strong><code>-</code><span>Nightly build only. Run the JIT in a sandbox. Requires <code>--jit</code>.</span></p>
+                <p><strong><code>--jit</code></strong><code>-</code><span>Compile the module and run it in the current process; the process exits with the value <code>main</code> returns. Works in a default build. If in-memory compilation fails it falls back to building and running a temporary executable, which is reported under <code>--verbose</code>.</span></p>
+                <p><strong><code>--sandbox</code></strong><code>-</code><span>Run the JIT in a sandbox. Requires <code>--jit</code>.</span></p>
                 <p><strong><code>-g</code></strong><code>-</code><span>Emit assembler <code>.file</code> and <code>.loc</code> directives, and minimal ELF DWARF, when the assembler is <code>ras</code>.</span></p>
                 <p><strong><code>-v, --verbose</code></strong><code>-</code><span>Print more about each stage.</span></p>
                 <p><strong><code>-h, --help</code></strong><code>-</code><span>Print the usage text.</span></p>
