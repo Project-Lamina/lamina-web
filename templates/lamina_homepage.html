@@ -156,31 +156,31 @@
         <div class="lmn-section-intro">
             <p class="lmn-section-tag">Target matrix</p>
             <h2>Start with a tested target.</h2>
-            <p>x86_64 and AArch64 run every recorded program in CI. RISC-V and PowerPC64 run under qemu, no aggregate ABI yet.</p>
+            <p>x86_64 Linux, Windows and macOS pass the recorded programs in CI. AArch64, RISC-V 64 and PowerPC64 run most of them under qemu; RISC-V and PowerPC64 pass integer aggregates by value too.</p>
         </div>
         <div class="lmn-target-grid">
             <article>
                 <p class="lmn-target-mark">x64</p>
                 <h3>x86_64</h3>
-                <p>Everything the compiler emits, on Linux and Windows both. Aggregates by value, <code>callptr</code>, JIT. Compiled, run and diffed in CI.</p>
+                <p>The reference target. Inline assembly and variadic definitions are x86_64 Linux only. Aggregates by value, atomics, bit intrinsics, and the nightly JIT. Compiled, run and diffed in CI.</p>
                 <span>tested: linux + windows</span>
             </article>
             <article>
                 <p class="lmn-target-mark">A64</p>
                 <h3>AArch64</h3>
-                <p>Same features as x86_64, aggregates through <code>x8</code> included. macOS runs in CI, Linux under qemu.</p>
-                <span>tested: macos + linux</span>
+                <p>143 of 156 recorded programs pass under qemu. Inline assembly and variadic definitions are refused by name. macOS passes in CI.</p>
+                <span>tested: macos (CI) + linux (qemu)</span>
             </article>
             <article>
                 <p class="lmn-target-mark">RV</p>
                 <h3>RISC-V</h3>
-                <p>Scalars, control flow and <code>callptr</code> run on RV64. Aggregates by value are refused, not miscompiled.</p>
+                <p>Scalars, control flow, <code>callptr</code> and integer aggregates by value run on RV64: 140 of 156 recorded programs under qemu at -O0.</p>
                 <span>partial: rv64</span>
             </article>
             <article>
                 <p class="lmn-target-mark">W</p>
                 <h3>WebAssembly</h3>
-                <p>Text output only. Scalar code comes out, aggregates and <code>callptr</code> do not.</p>
+                <p>WAT output. <code>wasm32_wasi</code> runs under wasmtime: 103 of 156 recorded programs match. Aggregates by value are refused.</p>
                 <span>experimental</span>
             </article>
         </div>

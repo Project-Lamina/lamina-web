@@ -44,7 +44,7 @@
             <h2 id="no-os">Targets with no operating system</h2>
             <p>A target with no operating system has no compiler runtime to link against. For such a target, a module that calls one of the routines above must define the routine itself, or name a replacement with <code>LAMINA_BUILTINS</code>. The compiler checks this at compile time and names the symbol in its error, instead of leaving the failure to the linker.</p>
             <pre><code class="language-shell">$ lamina div128.lamina --target x86_64_unknown --emit-asm -o div128.s
-Error: `__divti3` is a compiler runtime helper that a target without a C library does not provide; define it in the module, or name an implementation with LAMINA_BUILTINS=__divti3=&lt;symbol&gt;</code></pre>
+Error: "Code generation failed: Codegen Error: Unsupported feature: `__divti3` is a compiler runtime helper that a target without a C library does not provide; define it in the module, or name an implementation with LAMINA_BUILTINS=__divti3=&lt;symbol&gt;"</code></pre>
             <p>Targets are listed on <a href="/docs/targets">Targets and backends</a>.</p>
 
             <div class="lmn-manual-next"><span>Next</span><a href="/docs/lumir">LUMIR</a></div>

@@ -7,7 +7,7 @@
             <p class="lmn-section-tag">Lamina compiler · Embedding</p>
             <h1>Rust API guide</h1>
             <p class="lmn-manual-lead">Use the library helpers to compile IR from Rust. For exact types and item signatures, open the generated docs on docs.rs.</p>
-            <div class="lmn-manual-note"><strong>Published reference</strong><p>The generated API reference for Lamina <code>0.2.0</code> is on <a href="https://docs.rs/lamina/latest/lamina/" target="_blank" rel="noopener">docs.rs</a>. This guide covers common tasks; docs.rs lists every public Rust item.</p></div>
+            <div class="lmn-manual-note"><strong>Published reference</strong><p>The newest <code>lamina</code> on crates.io is 0.1.0, and <a href="https://docs.rs/lamina/latest/lamina/" target="_blank" rel="noopener">docs.rs</a> documents that release. This guide follows the 0.2.0 source tree, so names here may not appear on docs.rs yet. The examples were compiled against the 0.2.0 source.</p></div>
             <h2 id="assembly">Compile IR to host assembly</h2>
             <pre><code class="language-rust">use lamina::compile_lamina_ir_to_assembly;
 
@@ -24,7 +24,13 @@ compile_lamina_ir_to_assembly(ir, &amp;mut assembly, 1)?;</code></pre>
             <h2 id="target">Compile for a target</h2>
             <p>Use <code>compile_lamina_ir_to_target_assembly</code> when your frontend needs assembly for a specific <code>architecture_os</code> target.</p>
             <pre><code class="language-rust">use lamina::compile_lamina_ir_to_target_assembly;
-
+let ir = r#"
+fn @main() -&gt; i64 {
+entry:
+  %answer = add.i64 40, 2
+  ret.i64 %answer
+}
+"#;
 let mut assembly = Vec::new();
 compile_lamina_ir_to_target_assembly(
     ir,
@@ -33,9 +39,26 @@ compile_lamina_ir_to_target_assembly(
     1,
 )?;</code></pre>
             <div class="lmn-manual-note"><strong>Assembly helpers</strong><p>Both helper functions parse IR text and write assembly into any <code>std::io::Write</code> destination. The host helper detects the current target. The target helper validates an explicit <code>architecture_os</code> string.</p></div>
+            <h2 id="object">Get object file bytes</h2>
+            <p><code>compile_module_to_object</code> takes a parsed module and a target and returns the bytes of a relocatable object (ELF, Mach-O or COFF) in a <code>Vec&lt;u8&gt;</code>. Nothing is written to disk. It compiles at optimization level 1, the CLI default.</p>
+            <pre><code class="language-rust">use lamina::target::Target;
+use std::str::FromStr;
+
+let module = lamina::parser::parse_module(r#"
+fn @main() -&gt; i64 {
+entry:
+    %result = add.i64 42, 8
+    ret.i64 %result
+}
+"#)?;
+let target = Target::from_str("x86_64_linux")?;
+let object = lamina::compile_module_to_object(&amp;module, target)?;
+assert_eq!(&amp;object[..4], b"\x7fELF");</code></pre>
+            <p>This is the doc example in the library source, and it passes under <code>cargo test --doc</code>.</p>
             <h2 id="jit">Nightly runtime compilation</h2>
             <p>Runtime compilation is not part of the normal release surface. Enable the <code>nightly</code> feature before using the inline macro or lower-level JIT APIs.</p>
             <pre><code class="language-shell">$ cargo add lamina --features nightly</code></pre>
+            <p><code>cargo add</code> takes the crates.io release, 0.1.0, not the 0.2.0 source that the examples on this page were checked against. Use a path or git dependency on a 0.2.0 checkout.</p>
             <pre><code class="language-rust">use lamina::lamina;
 
 let add = lamina!(r#"

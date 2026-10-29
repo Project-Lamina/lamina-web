@@ -9,15 +9,13 @@
             <p class="lmn-manual-lead">weld links relocatable objects into an executable, in place of <code>ld</code>, <code>lld</code> or <code>mold</code>. Dynamic executables on x86_64 Linux work through the gcc driver today. Static glibc, shared libraries and dynamic linking on the other architectures do not.</p>
 
             <h2 id="install">Install</h2>
-            <pre><code class="language-shell">$ cargo install lamina-weld</code></pre>
-            <p>The crate is <code>lamina-weld</code>; the binary it installs is <code>weld</code>. It is edition 2024, so it needs Rust 1.85 or newer. There are no feature flags.</p>
-
+            <p>The crate is <code>lamina-weld</code>; the binary it installs is <code>weld</code>. The newest release on crates.io is 0.1.2, which is older than the 0.2.0 this page describes, so <code>cargo install lamina-weld</code> does not get the current behavior. The 0.2.0 source needs Rust 1.88 (its manifest sets <code>rust-version = "1.88"</code>). From a checkout, run <code>cargo install --path weld</code>. There are no feature flags.</p>
             <h2 id="lamina">With the Lamina driver</h2>
             <pre><code class="language-shell">$ lamina app.lamina -c weld
 $ lamina app.lamina --assembler ras -c weld</code></pre>
 
             <h2 id="gnu">In place of ld</h2>
-            <p>Use a prefix directory holding an <code>ld</code> symlink and point the compiler at it with <code>-B</code>. Unlike ras, weld does not look at <code>argv[0]</code>; the symlink is only there so the driver finds it.</p>
+            <p>Use a prefix directory holding an <code>ld</code> symlink and point the compiler at it with <code>-B</code>. Unlike ras, weld does not look at <code>argv[0]</code>; the symlink is only there so the driver finds it. The <code>argv[0]</code> claim was not tested.</p>
             <pre><code class="language-shell">$ mkdir -p toolchain
 $ ln -sf "$(command -v weld)" toolchain/ld
 $ ln -sf "$(command -v ras)" toolchain/as
@@ -31,7 +29,7 @@ $ gcc -B"$PWD/toolchain/" hello.c -O2 -o hello</code></pre>
                 <div class="lmn-reference-head"><span>Flag</span><span>Behavior</span><span>Notes</span></div>
                 <p><strong><code>-o -e -l -L</code></strong><span>Taken</span><span>Output, entry symbol, library, library path. Joined and separate forms both parse.</span></p>
                 <p><strong><code>-static</code></strong><span>Taken</span><span>Resolves archives only. Produces <code>ET_EXEC</code> with no interpreter and no dynamic symbols.</span></p>
-                <p><strong><code>-pie -no-pie</code></strong><span>Taken</span><span>Both work on all three architectures. <code>-static -pie</code> together is an error.</span></p>
+                <p><strong><code>-pie -no-pie</code></strong><span>Taken</span><span>Accepted on all three architectures. On aarch64 the PIE names <code>/lib/ld-linux-aarch64.so.1</code> as its interpreter, which was not run here. <code>-static -pie</code> together is an error.</span></p>
                 <p><strong><code>--start-group --end-group</code></strong><span>Taken</span><span>Archive cycles resolve to a fixed point.</span></p>
                 <p><strong><code>-rpath --dynamic-linker</code></strong><span>Taken</span><span>rpath entries join into one <code>DT_RUNPATH</code>.</span></p>
                 <p><strong><code>--gc-sections -s -Map</code></strong><span>Taken</span><span>Section GC, strip, map file.</span></p>
@@ -44,8 +42,8 @@ $ gcc -B"$PWD/toolchain/" hello.c -O2 -o hello</code></pre>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Format</span><span>Static</span><span>Dynamic</span></div>
                 <p><strong>ELF64</strong><code>x86_64 aarch64 riscv64</code><span>PLT, GOT and <code>DT_NEEDED</code> are written for <strong>x86_64 only</strong>. A <code>-l</code> on aarch64 or riscv64 ends in <code>undefined symbol</code>.</span></p>
-                <p><strong>Mach-O</strong><code>x86_64 arm64</code><span>Loads <code>/usr/lib/dyld</code> and libSystem, and ad-hoc codesigns when running on macOS.</span></p>
-                <p><strong>PE32+</strong><code>x86_64</code><span>COFF input must be AMD64. Selected by a <code>.exe</code> output name.</span></p>
+                <p><strong>Mach-O</strong><code>x86_64 arm64</code><span>Mach-O executables are written and checked with <code>file</code>. Whether dyld and libSystem load, and whether the output is ad-hoc codesigned, was not run: there is no macOS host here.</span></p>
+                <p><strong>PE32+</strong><code>x86_64</code><span>COFF input must be AMD64. Any COFF input produces a PE32+ executable, whatever the output name.</span></p>
             </div>
             <p>ELF input is ELF64 little-endian only, so <code>-m elf_i386</code> and 32-bit objects are refused.</p>
 
@@ -56,9 +54,9 @@ $ gcc -B"$PWD/toolchain/" hello.c -O2 -o hello</code></pre>
                 <p><strong>Dynamic linking is x86_64 only</strong><span>aarch64 and riscv64 link statically and as PIE, but have no PLT or GOT construction.</span></p>
                 <p><strong>Entry point on aarch64 and riscv64</strong><span>With no <code>_start</code> defined, weld's synthetic startup stub is written for x86_64 only. The other two fall back to entering at <code>main</code>, which is wrong without a CRT.</span></p>
                 <p><strong>clang AArch64 objects with unwind tables</strong><span><code>unsupported AArch64 relocation type 261</code>, which is <code>R_AARCH64_PREL32</code> in <code>.eh_frame</code>. Building with <code>-fno-asynchronous-unwind-tables</code> gets past it.</span></p>
-                <p><strong>Quiet failures</strong><span>A failed link often prints only <code>weld: link failed</code>. An unknown <code>-e</code> symbol falls back silently, a missing <code>-l</code> is dropped in dynamic mode, and <code>-v</code> needs <code>RUST_LOG=info</code> to show anything.</span></p>
-                <p><strong>Interpreter path is assumed</strong><span>Without <code>--dynamic-linker</code> weld writes the glibc path. A musl system needs it passed. The gcc driver passes it anyway.</span></p>
-                <p><strong>Archives need an index</strong><span><code>archive has no index; run ranlib to add one</code>.</span></p>
+                <p><strong>Quiet failures</strong><span>A failed link often prints only <code>weld: link failed</code>. An unknown <code>-e</code> symbol falls back silently, a missing <code>-l</code> is dropped without a message (checked on a static output), and <code>-v</code> needs <code>RUST_LOG=info</code> to show anything.</span></p>
+                <p><strong>Interpreter path is assumed</strong><span>Without <code>--dynamic-linker</code> weld writes the glibc path. A musl system needs it passed. The gcc driver passes it anyway. Not run on musl.</span></p>
+                <p><strong>Archives need an index</strong><span><code>archive has no index; run ranlib to add one</code>. Taken from the source; not run in this pass.</span></p>
             </div>
             <div class="lmn-manual-next"><span>Related</span><a href="/docs/ras">The ras assembler</a></div>
         </article>

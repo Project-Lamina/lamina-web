@@ -16,8 +16,8 @@
                 <p><strong><code>--emit-asm</code></strong><code>-</code><span>Write an assembly file and stop before assembling and linking.</span></p>
                 <p><strong><code>--emit-mir</code></strong><code>-</code><span>Write a <code>.lumir</code> file next to the input and stop. See <a href="/docs/lumir">LUMIR</a>.</span></p>
                 <p><strong><code>--jit</code></strong><code>-</code><span>Compile the module and run it in the current process; the process exits with the value <code>main</code> returns. Works in a default build. If in-memory compilation fails it falls back to building and running a temporary executable, which is reported under <code>--verbose</code>.</span></p>
-                <p><strong><code>--sandbox</code></strong><code>-</code><span>Run the JIT in a sandbox. Requires <code>--jit</code>.</span></p>
-                <p><strong><code>-g</code></strong><code>-</code><span>Emit assembler <code>.file</code> and <code>.loc</code> directives, and minimal ELF DWARF, when the assembler is <code>ras</code>.</span></p>
+                <p><strong><code>--sandbox</code></strong><code>-</code><span>Run the JIT in a sandbox. Requires <code>--jit</code>. The sandboxed path encodes single-block functions only and does not fall back to an executable: a multi-block function fails with <code>Sandbox compilation failed</code>.</span></p>
+                <p><strong><code>-g</code></strong><code>-</code><span>Emit assembler <code>.file</code> and <code>.loc</code> directives, and minimal ELF DWARF. Works with <code>--assembler gas</code> or <code>clang</code>. With <code>--assembler ras</code> it fails: ras does not implement <code>.loc</code>.</span></p>
                 <p><strong><code>-v, --verbose</code></strong><code>-</code><span>Print more about each stage.</span></p>
                 <p><strong><code>-h, --help</code></strong><code>-</code><span>Print the usage text.</span></p>
                 <p><strong><code>--version</code></strong><code>-</code><span>Print the compiler version.</span></p>
@@ -27,6 +27,7 @@
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Option</span><span>Argument</span><span>Behavior</span></div>
                 <p><strong><code>--target</code></strong><code>&lt;arch_os&gt;</code><span>Target for code generation, such as <code>x86_64_linux</code>. Default: the host. See <a href="/docs/targets">Targets and backends</a>.</span></p>
+                <p><strong><code>--cpu-level</code></strong><code>&lt;v1|v2|v3|v4&gt;</code><span>The x86-64 level the output may use. Default: <code>v2</code>. At <code>v1</code>, <code>popcount</code> compiles to a SWAR sequence, because the POPCNT instruction belongs to v2. Only for x86_64 targets; other targets refuse the flag.</span></p>
                 <p><strong><code>--opt-level</code></strong><code>&lt;0-3&gt;</code><span>Optimization level for the LUMIR optimizer. Default: <code>1</code>. Experimental.</span></p>
                 <p><strong><code>--regalloc</code></strong><code>&lt;method&gt;</code><span><code>incremental</code>, <code>linear</code> or <code>graph</code>. Default: <code>linear</code> at level 1 and above on x86_64, <code>incremental</code> otherwise.</span></p>
                 <p><strong><code>--mcpu</code></strong><code>&lt;gpu&gt;</code><span>AMDGPU processor: <code>gfx900</code> or <code>gfx1200</code>. Default: <code>gfx1200</code>.</span></p>
@@ -44,6 +45,7 @@
             <pre><code class="language-shell">$ lamina app.lamina --assembler ras -c weld -o app
 $ lamina app.lamina --assembler gas -c ld -o app
 $ lamina app.lamina --emit-mir --opt-level 3 --regalloc graph</code></pre>
+            <p>A linker named with <code>-c</code> must be on <code>PATH</code>. Without <code>weld</code> on <code>PATH</code>, the driver fails with <code>Failed to spawn linker 'weld'</code>.</p>
             <p><code>-c</code> names a linker as well as a toolchain. The option name is historical: it chooses the linker, and <code>--assembler</code> chooses the assembler.</p>
 
             <div class="lmn-manual-next"><span>Next</span><a href="/docs/targets">Targets and backends</a></div>

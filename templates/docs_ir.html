@@ -175,6 +175,7 @@ fn @main() -&gt; i64 {
                 <p><strong><code>@kernel</code></strong><code>fn</code><span>GPU kernel. Refused on a CPU target with <code>GPU kernels and intrinsics require a GPU target</code>.</span></p>
                 <p><strong><code>@pic</code> <code>@pie</code></strong><code>module</code><span>Nightly only. Changes code generation on x86_64 Linux: external addresses are loaded through the GOT. <code>@pic</code> and <code>@pie</code> cannot be combined with each other or repeated. They are not available in the default build.</span></p>
             </div>
+            <p>Nightly build only. The default build rejects <code>@pie</code>.</p>
             <pre><code class="language-lamina">@pie
 @section(".text.hot")
 @align(64)

@@ -8,6 +8,7 @@
             <h1>Calling conventions</h1>
             <p class="lmn-manual-lead">A Lamina function has to agree with C on where arguments live, or nothing links. Each backend implements one platform ABI. Where a backend has no rule for something, it refuses the module and names the function instead of guessing.</p>
 
+            <div class="lmn-manual-note"><strong>How this page was checked</strong><p>The register lists and the aggregate rules were checked against the backend source, and the aggregate and variadic behavior was checked by compiling and running test programs under qemu where a target allows it. The claims about what a C compiler does on each platform were not checked against C-generated code in this pass, and the Windows and macOS rules were not run here.</p></div>
             <h2 id="implemented">What each backend implements</h2>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Target</span><span>Convention</span><span>Integer and float banks</span></div>
@@ -15,23 +16,36 @@
                 <p><code>x86_64</code> Windows<strong>Win64</strong><span>Integers in <code>rcx rdx r8 r9</code> with 32 bytes of shadow space. A hidden return pointer takes <code>rcx</code> and pushes the rest along.</span></p>
                 <p><code>aarch64</code><strong>AAPCS64</strong><span>Integers in <code>x0</code>–<code>x7</code>, floats in <code>d0</code>–<code>d7</code>. A hidden return pointer goes in <code>x8</code>, which is not an argument register.</span></p>
                 <p><code>riscv64</code><strong>LP64D</strong><span>Integers in <code>a0</code>–<code>a7</code>, floats in <code>fa0</code>–<code>fa7</code>. A variadic float travels in the integer bank instead.</span></p>
-                <p><code>ppc64</code><strong>ELFv2</strong><span>Integers in <code>r3</code>–<code>r10</code>, floats in <code>f1</code>–<code>f13</code>. The 64 byte parameter save area belongs to the callee, so locals start above it.</span></p>
+                <p><code>ppc64</code><strong>ELFv2</strong><span>Integers in <code>r3</code>–<code>r10</code>, floats in <code>f1</code>–<code>f13</code>. The caller reserves a 64 byte parameter save area and the callee may spill its register arguments into it, so the callee keeps its locals above it.</span></p>
                 <p><code>wasm32 wasm64</code><strong>None</strong><span>Scalar parameters and results only, as wasm value types.</span></p>
                 <p><code>amdgpu ptx</code><strong>Kernel contract</strong><span>Scalar kernel arguments. Not a C calling convention.</span></p>
             </div>
 
             <h2 id="aggregates">Aggregates</h2>
             <p>An aggregate here is a struct or array crossing a function boundary <strong>by value</strong>. A pointer to one is a scalar and works on every backend.</p>
-            <pre><code class="language-lamina-fragment">type !Pair = struct { a: i64, b: i64 }
+            <pre><code class="language-lamina">type !Pair = struct { a: i64, b: i64 }
 
-fn @sum_pair(!Pair %p) -&gt; i64      # by value, needs a classifier
-fn @sum_ptr(ptr %p) -&gt; i64         # a pointer, works anywhere</code></pre>
+fn @sum_pair(!Pair %p) -&gt; i64 {
+entry:
+  %pa = getfieldptr %p, 0
+  %a = load.i64 %pa
+  %pb = getfieldptr %p, 1
+  %b = load.i64 %pb
+  %s = add.i64 %a, %b
+  ret.i64 %s
+}
+
+fn @sum_ptr(ptr %p) -&gt; i64 {
+entry:
+  %a = load.i64 %p
+  ret.i64 %a
+}</code></pre>
             <p>Classification differs per ABI, and there is no rule that is right everywhere. 32 bytes goes to memory on System V, AAPCS64 and LP64D, but stays in general registers on ELFv2. Two floats pack into one SSE register on System V and nowhere else. So each backend classifies for itself, and a backend without a classifier refuses rather than picking someone else's answer.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Target</span><span>By value</span><span>Rule</span></div>
                 <p><code>x86_64</code> System V<strong>Yes</strong><span>Up to 16 bytes in consecutive integer registers, or on the stack when too few remain. Larger goes to memory, returned through the hidden pointer in <code>rdi</code>.</span></p>
                 <p><code>x86_64</code> Win64<strong>Yes</strong><span>Only sizes 1, 2, 4 and 8 travel by value. Every other size goes by reference, which is what Win64 requires rather than a shortcut.</span></p>
-                <p><code>aarch64</code><strong>Yes</strong><span>Up to 16 bytes in <code>x0</code>–<code>x7</code>, or whole onto the stack when the remaining registers do not hold it. Larger returns through the caller's buffer in <code>x8</code>.</span></p>
+                <p><code>aarch64</code><strong>Yes</strong><span>Up to 16 bytes in <code>x0</code>–<code>x7</code>, or whole onto the stack when the remaining registers do not hold it. Larger arguments pass the address of a copy the caller makes. Larger returns go through the caller's buffer in <code>x8</code>.</span></p>
                 <p><code>riscv64</code><strong>Yes</strong><span>Up to two doublewords in <code>a0</code>–<code>a7</code>. With one register left, the first doubleword takes it and the rest goes on the stack. Larger than two doublewords passes by reference, and a result that size returns through a hidden pointer in <code>a0</code>.</span></p>
                 <p><code>ppc64</code><strong>Yes</strong><span>Consecutive doublewords in <code>r3</code>–<code>r10</code>. When the registers run short the rest spills into the parameter save area, splitting the aggregate rather than demoting it. A result over two doublewords returns through a hidden pointer in <code>r3</code>.</span></p>
                 <p><code>wasm amdgpu ptx</code><strong>No</strong><span>Refused at lowering, naming the function: <code>Wasm64 does not yet pass aggregates by value, as @make does</code>.</span></p>
@@ -42,8 +56,8 @@ fn @sum_ptr(ptr %p) -&gt; i64         # a pointer, works anywhere</code></pre>
             <div class="lmn-doc-table">
                 <p><strong>Float and mixed aggregates</strong><span>Refused on every backend. System V packs two floats into one SSE register, AAPCS64 has homogeneous float aggregates, and ELFv2 splits a <code>{long, double}</code> across both banks. None of that is written yet.</span></p>
                 <p><strong>Aggregates on wasm and the GPU backends</strong><span>Not planned for the GPU kernel contract. wasm would need a layout decision first. Every other backend passes integer aggregates by value now.</span></p>
-                <p><strong>Defining a variadic function</strong><span>A call to one works: an <code>@extern</code> declaration ending in <code>...</code> marks the callee variadic, and each backend follows the variadic side of its convention from there. What is missing is the other half, <code>va_arg</code> and a variadic body, so Lamina can call <code>printf</code> but cannot be <code>printf</code>.</span></p>
-                <p><strong>Indirect tail calls</strong><span><code>callptr</code> works on x86_64, aarch64, riscv64 and ppc64. A <code>tailcall</code> through a pointer does not exist.</span></p>
+                <p><strong>Defining a variadic function</strong><span>Calling one works on every backend in the table below. A variadic body (<code>va_start</code> and <code>va_arg</code>) is written on x86_64 System V only. aarch64, riscv64 and ppc64 refuse <code>va_start</code> by name, and Win64 refuses it too. So Lamina can call <code>printf</code> everywhere in that table, but can only be <code>printf</code> on x86_64 Linux.</span></p>
+                <p><strong>Tail calls</strong><span><code>callptr</code> works on x86_64, aarch64, riscv64, ppc64 and wasm. The IR has no <code>tailcall</code> instruction at all, direct or indirect; the parser rejects the spelling.</span></p>
                 <p><strong>Vector call ABI</strong><span>Vectors have arithmetic and memory operations on several backends, but no backend passes or returns one across a function boundary.</span></p>
             </div>
 
@@ -61,13 +75,13 @@ fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
                 <p><code>ppc64</code> ELFv2<strong>Float in both banks</strong><span>The callee's <code>va_arg</code> may read either, so the bits go to the FPR and the positional GPR.</span></p>
                 <p><code>riscv64</code> LP64D<strong>Float in integer bank</strong><span>LP64D sends a variadic float through <code>a0</code>–<code>a7</code> as its bit pattern.</span></p>
             </div>
-            <p>A callee with no declaration at all is treated the same way, because nothing rules out its being variadic. A call through <code>callptr</code> is not: it carries argument types and no marker, so it places them the ordinary way.</p>
+            <p>On x86_64, a callee with no declaration is treated as possibly variadic, and <code>al</code> is set.</p>
+            <p><strong>Known gap: <code>callptr</code>.</strong> The IR accepts a bare <code>...</code> in a <code>callptr</code>, but the x86_64 backend ignores it and does not set <code>al</code>. So a float argument passed through a pointer to a variadic function is not safe on x86_64 yet. Call the variadic function directly through an <code>@extern</code> declaration for that case. Found by reading the x86_64 backend. A simple test call still printed the right value, so the failure does not show in a small program.</p>
 
             <h2 id="refusals">Reading a refusal</h2>
             <p>An unsupported boundary is a compile error naming the value and the function, never a silently wrong ABI. The check runs at the start of every AOT backend and before JIT encoding, so it cannot be skipped by reaching for a per-architecture emitter directly.</p>
-            <pre><code class="language-shell">$ lamina big.lamina --target riscv64_unknown --emit-asm -o big
-Error: "Code generation failed: Codegen Error: Unsupported feature: \
-Riscv64 does not yet pass aggregates by value, as @make does"</code></pre>
+            <pre><code class="language-shell">$ lamina sum.lamina --target wasm32_wasi --emit-asm -o sum
+Error: "Code generation failed: Codegen Error: Unsupported feature: Wasm32 does not yet pass aggregates by value, as @sum does"</code></pre>
             <div class="lmn-manual-next"><span>Related</span><a href="/docs/targets">Targets and backends</a></div>
         </article>
     </div>

@@ -15,7 +15,7 @@
                 <p><strong>AOT API</strong><span>Owned builder handles, module serialization, assembly compilation, buffers, and status codes are implemented.</span></p>
                 <p><strong>Nightly JIT</strong><span>The optional JIT module builds behind <code>--features nightly</code>.</span></p>
                 <p><strong>Public headers</strong><span><code>lamina.h</code> and <code>lamina_nightly.h</code> exist. They are maintained by hand until cbindgen supports Rust 2024 <code>#[unsafe(no_mangle)]</code>.</span></p>
-                <p><strong>Example checks</strong><span>The stable AOT, raw IR, and nightly JIT examples build and run against the published Linux archives.</span></p>
+                <p><strong>Example checks</strong><span>Checked against the published archives: the stable <code>builder_aot</code> and <code>raw_ir</code> examples, and the nightly <code>builder_jit</code> example, build and run. The archives are version 0.1.0. The source tree is 0.2.0, and its <code>raw_ir</code> example does not run (see below).</span></p>
                 <p><strong>Release bundles</strong><span>AOT and nightly JIT Linux x86_64 tarballs are published on the rolling GitHub prerelease.</span></p>
             </div>
 
@@ -39,17 +39,19 @@ $ ./builder_aot</code></pre>
             <pre><code class="language-shell">$ git clone https://github.com/SkuldNorniern/lamina.git
 $ cd lamina
 $ cargo build --manifest-path lamina-c/Cargo.toml --release</code></pre>
+            <div class="lmn-manual-note"><strong>Does not build from a clean clone</strong><p>This command fails today. <code>lamina-c/Cargo.toml</code> patches only <code>lamina-platform</code> and <code>lamina-mir</code>, so cargo looks for <code>lamina-ras</code> and <code>lamina-codegen</code> 0.2.0 on crates.io, where those versions do not exist. Adding <code>lamina-ras</code> (a checkout of <code>ras</code> next to <code>lamina</code>) and <code>lamina-codegen</code> to its patch table makes it build. The fix belongs in <code>lamina-c/Cargo.toml</code>. With those two patches added, the build succeeded and <code>builder_aot.c</code> ran; <code>raw_ir.c</code> exited with status 1 (see below).</p></div>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Platform</span><span>Shared library</span><span>Static library</span></div>
                 <p><strong>Linux</strong><code>lamina-c/target/release/liblamina_c.so</code><code>lamina-c/target/release/liblamina_c.a</code></p>
                 <p><strong>Windows</strong><code>lamina-c/target/release/lamina_c.dll</code><code>lamina-c/target/release/lamina_c.lib</code></p>
                 <p><strong>macOS</strong><code>lamina-c/target/release/liblamina_c.dylib</code><code>lamina-c/target/release/liblamina_c.a</code></p>
             </div>
+            <div class="lmn-manual-note"><strong>Source tree examples</strong><p>The <code>raw_ir.c</code> example in the source tree passes IR that uses <code>alloc.ptr.stack</code>. The 0.2.0 parser rejects <code>alloc</code> and suggests <code>stackalloc.&lt;type&gt;</code>, so that example exits with status 1 against the current source. The 0.1.0 archive accepts it. Not fixed here: the example lives in the lamina repository.</p></div>
             <div class="lmn-manual-note"><strong>Apple Silicon macOS</strong><p>The <code>aarch64_macos</code> compiler path has received partial testing. Treat macOS C binding builds as preview work until release coverage is broader.</p></div>
-
             <h2 id="nightly">Build the nightly JIT extension</h2>
             <p>JIT is not part of the stable C surface. Build with the nightly feature only when testing runtime compilation.</p>
             <pre><code class="language-shell">$ cargo build --manifest-path lamina-c/Cargo.toml --release --features nightly</code></pre>
+            <p>This goes through the same manifest as the source build above, so it has the same missing patch entries.</p>
             <p>JIT declarations live in the additive <code>lamina_nightly.h</code> header. Stable programs should include only <code>lamina.h</code>.</p>
 
             <h2 id="release-shape">Archive availability</h2>

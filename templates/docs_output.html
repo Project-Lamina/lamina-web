@@ -89,9 +89,16 @@ fn @main() -&gt; i64 {
     ret.i64 0
 }</code></pre>
             <p>A global array is not a pointer. <code>getelem.i8 $fmt, 0</code> takes the address of its first byte, which is the value <code>printf</code> expects. Linking this program links libc, because <code>printf</code> is provided by it.</p>
-            <p>An indirect call through <code>callptr</code> needs the <code>...</code> marker at the call site, because the call has no declaration to read it from:</p>
-            <pre><code class="language-lamina-fragment">%p = funcaddr @printf
-%r = callptr.i32 %p(ptr %f, ..., i32 42)</code></pre>
+            <p>An indirect call through <code>callptr</code> has no declaration to read variadic-ness from, so the <code>...</code> marker is the only signal. The x86_64 backend does not act on that marker yet, so float arguments through a pointer to a variadic function are not safe there. Call such a function directly for floats. Integer arguments are fine through a pointer, as in this example:</p>
+            <pre><code class="language-lamina">@extern
+fn @printf(ptr %fmt, ...) -&gt; i32
+
+fn @via_pointer(ptr %f) -&gt; i32 {
+entry:
+  %p = funcaddr @printf
+  %r = callptr.i32 %p(ptr %f, ..., i32 42)
+  ret.i32 %r
+}</code></pre>
 
             <div class="lmn-manual-note"><strong>Output is not buffered</strong><p><code>writebyte</code>, <code>write</code> and the other I/O instructions are system calls. There is no stdio layer under them, so each call is its own write. The libc route goes through <code>printf</code>, which is buffered by libc as usual.</p></div>
 

@@ -19,7 +19,7 @@
                 <p><strong>Rotate</strong><code>rotl rotr</code><span>Integer only. Rotate left or right.</span></p>
                 <p><strong>Negate</strong><code>neg</code><span>Any numeric type. Two's complement negation for integers.</span></p>
                 <p><strong>Bitwise not</strong><code>not</code><span>Integer only.</span></p>
-                <p><strong>Bit counts</strong><code>popcount ctlz cttz bswap</code><span>Integer only. Count set bits, leading zeros, trailing zeros, or byte-swap.</span></p>
+                <p><strong>Bit counts</strong><code>popcount ctlz cttz bswap</code><span>Integer only. Count set bits, leading zeros, trailing zeros, or byte-swap. Available on x86_64, aarch64, riscv64 and ppc64.</span></p>
                 <p><strong>Square root</strong><code>sqrt</code><span><code>f32</code> and <code>f64</code> only.</span></p>
             </div>
             <pre><code class="language-lamina">fn @main() -&gt; i64 {
@@ -92,9 +92,13 @@
     %h = bitcast.f64.i64 %f
     ret.i64 %e
 }</code></pre>
-            <div class="lmn-manual-note"><strong>Extend</strong><p><em>Planned for 0.2.0; the compiler still accepts only <code>zext</code> and <code>sext</code> today.</em> The widening form is <code>extend.S.D</code>, with the extension chosen by the source type's signedness: <code>%w = extend.i8.i64 %b</code> sign-extends an <code>i8</code> and zero-extends a <code>u8</code>. It replaces the earlier zero-extend and sign-extend spellings.</p></div>
-            <pre><code class="language-lamina-fragment">%w = extend.i8.i64 %b
-%u = extend.u8.u64 %c</code></pre>
+            <div class="lmn-manual-note"><strong>Extend</strong><p>The widening form is <code>extend.S.D</code>, with the extension chosen by the source type's signedness: <code>%w = extend.i8.i64 %b</code> sign-extends an <code>i8</code> and zero-extends a <code>u8</code>. <code>zext</code> and <code>sext</code> are rejected, and the error names <code>extend</code> as the replacement.</p></div>
+            <pre><code class="language-lamina">fn @widen(i8 %b, u8 %c) -&gt; i64 {
+entry:
+  %w = extend.i8.i64 %b
+  %u = extend.u8.u64 %c
+  ret.i64 %w
+}</code></pre>
 
             <h2 id="select">Select</h2>
             <p><code>%r = select.T cond, a, b</code> returns <code>a</code> when <code>cond</code> is true and <code>b</code> otherwise. <code>cond</code> must be a <code>bool</code>. <code>a</code> and <code>b</code> have type <code>T</code>.</p>
@@ -138,7 +142,7 @@ fn @main() -&gt; i64 {
     %w = volatile load.i64 %cell
     ret.i64 %w
 }</code></pre>
-            <div class="lmn-manual-note"><strong>Field addresses</strong><p><em>Planned for 0.2.0; the compiler still takes <code>getfieldptr %p, 1</code> without a type today, and falls back to eight bytes per field when the struct type is unknown.</em> <code>getfieldptr</code> takes the layout type in its suffix, so the field offset comes from the named struct: <code>getfieldptr.!Pair %p, 1</code> is field 1 of <code>!Pair</code>. The index must be a literal.</p></div>
+            <div class="lmn-manual-note"><strong>Field addresses</strong><p><em>Planned for 0.2.0; the compiler still takes <code>getfieldptr %p, 1</code> without a type today, and falls back to eight bytes per field when the struct type is unknown. The typed form below is rejected today with <code>getfieldptr takes no type suffix</code>.</em> <code>getfieldptr</code> takes the layout type in its suffix, so the field offset comes from the named struct: <code>getfieldptr.!Pair %p, 1</code> is field 1 of <code>!Pair</code>. The index must be a literal.</p></div>
             <pre><code class="language-lamina-fragment">type !Pair = struct { a: i32, b: i64 }
 
 fn @set_b(ptr %p) -&gt; void {
@@ -149,7 +153,7 @@ fn @set_b(ptr %p) -&gt; void {
 }</code></pre>
 
             <h2 id="atomics">Atomics and fences</h2>
-            <p>Atomic operations take an integer or <code>ptr</code> type. Orderings are <code>relaxed</code>, <code>acquire</code>, <code>release</code>, <code>acqrel</code> and <code>seqcst</code>. <code>atomic_load</code> rejects <code>release</code> and <code>acqrel</code>. <code>atomic_store</code> rejects <code>acquire</code> and <code>acqrel</code>.</p>
+            <p>Atomic operations are available on x86_64, aarch64, riscv64 and ppc64. <code>atomic_cmpxchg</code> is not in the IR: the parser rejects it because it yields two results, and suggests <code>atomic_exchange</code>. Atomic operations take an integer or <code>ptr</code> type. Orderings are <code>relaxed</code>, <code>acquire</code>, <code>release</code>, <code>acqrel</code> and <code>seqcst</code>. <code>atomic_load</code> rejects <code>release</code> and <code>acqrel</code>. <code>atomic_store</code> rejects <code>acquire</code> and <code>acqrel</code>.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
                 <p><strong>Atomic load</strong><code>%v = atomic_load.T ptr, ORD</code><span>Returns the value.</span></p>
@@ -174,7 +178,7 @@ fn @set_b(ptr %p) -&gt; void {
                 <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
                 <p><strong>Call</strong><code>call @f(args)</code> or <code>%r = call @f(args)</code><span>Direct call. Each argument is a value, optionally preceded by its type: <code>call @f(7)</code> or <code>call @f(i64 7)</code>. A typed argument must match the parameter exactly. The result is typed by the callee; a call to a <code>void</code> function has no result.</span></p>
                 <p><strong>Function address</strong><code>%p = funcaddr @f</code><span>The address of a function, as a <code>ptr</code>.</span></p>
-                <p><strong>Indirect call</strong><code>%r = callptr.T ptr(args)</code> or <code>callptr.void ptr(args)</code><span>Calls through a pointer. The suffix is the return type and is required. Every argument must carry its type. A bare <code>...</code> may appear once, to mark the variadic tail of a call to a variadic function.</span></p>
+                <p><strong>Indirect call</strong><code>%r = callptr.T ptr(args)</code> or <code>callptr.void ptr(args)</code><span>Calls through a pointer. The suffix is the return type and is required. Every argument must carry its type. A bare <code>...</code> may appear once, to mark the variadic tail of a call to a variadic function. The x86_64 backend does not yet act on it; see the ABI page before passing float arguments through a pointer.</span></p>
             </div>
             <pre><code class="language-lamina">fn @add(i64 %a, i64 %b) -&gt; i64 {
   entry:
@@ -191,6 +195,19 @@ fn @main() -&gt; i64 {
 }</code></pre>
             <p>A call to a function the module does not define needs an <code>@extern</code> declaration first. Calling an undeclared name is an error.</p>
 
+            <h2 id="asm">Inline assembly</h2>
+            <p><code>%r = asm.T "template", operands, clobber(names)</code> runs the template as x86_64 assembly and gives the result type <code>T</code>. <code>asm.void "template", clobber(names)</code> has no result. In the template, <code>$0</code>, <code>$1</code> and so on name the operands in order, and <code>$$</code> is a literal dollar sign, so <code>$$7</code> is the immediate 7 in AT&amp;T syntax.</p>
+            <div class="lmn-doc-table">
+                <p><strong>Input</strong><span><code>in(reg) %v</code> takes any register. <code>in(rcx) %v</code> takes that register.</span></p>
+                <p><strong>Output</strong><span><code>out(reg)</code> takes any register and <code>out(eax)</code> a named one. The result is the value of that register after the template runs.</span></p>
+                <p><strong>Clobbers</strong><span>Name every register the template changes, plus <code>memory</code> if it writes memory and <code>flags</code> if it sets the flags.</span></p>
+                <p><strong>Targets</strong><span>x86_64 Linux only. The AArch64, RISC-V and PowerPC64 backends refuse the module and name themselves in the error.</span></p>
+            </div>
+            <pre><code class="language-lamina">fn @main() -&gt; i64 {
+entry:
+  %t = asm.i64 "movq $$7, $0", out(reg)
+  ret.i64 %t
+}</code></pre>
             <h2 id="control">Control flow</h2>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
@@ -252,7 +269,7 @@ fn @main() -&gt; i64 {
                 <p><strong><code>sitofp</code>, <code>uitofp</code>, <code>fptosi</code>, <code>fptoui</code>, <code>fpext</code>, <code>fptrunc</code></strong><span>Replaced by <code>inttofp</code>, <code>fptoint</code> and <code>fpcast</code>.</span></p>
                 <p><strong><code>char</code></strong><span>Removed type. Use <code>i8</code> or <code>u8</code>.</span></p>
             </div>
-            <p>Variadic instructions (<code>va_start</code>, <code>va_arg</code>, <code>va_end</code>, <code>va_copy</code>) exist in the parser, but the compiler refuses them outside a variadic function, and a Lamina function cannot be variadic. <code>tailcall</code> does not exist. Two-result instructions do not exist.</p>
+            <p>Variadic bodies (<code>va_start</code>, <code>va_arg</code>, <code>va_end</code>, <code>va_copy</code>) are written on x86_64 System V only. Other targets refuse them by name. A Lamina function can be variadic on that target. <code>tailcall</code> does not exist. Two-result instructions do not exist.</p>
 
             <div class="lmn-manual-next"><span>Next</span><a href="/docs/output">Output and I/O</a></div>
         </article>

@@ -11,18 +11,16 @@
 
             <h2 id="status">Current state</h2>
             <div class="lmn-doc-table">
-                <p><strong>Compiles</strong><span>Functions with <code>int</code>, <code>long</code>, <code>unsigned int</code>, <code>char</code>, <code>double</code> and <code>void</code> types. Global variables with initializers. <code>if</code>, <code>else</code>, <code>while</code>, <code>for</code>, <code>break</code>, <code>continue</code>, the ternary operator, compound assignment, <code>++</code> and <code>--</code>, casts, <code>sizeof(type)</code>, and recursion.</span></p>
-                <p><strong>Not parsed</strong><span><code>switch</code>, <code>do ... while</code> loops, arrays, and <code>struct</code> declarations with member access.</span></p>
-                <p><strong>Refused in lowering</strong><span>A pointer local, with or without an initializer: <code>int *p = &amp;v;</code> and <code>int *p; p = &amp;v;</code> both fail with <em>Only simple variable declarations are supported</em>.</span></p>
-                <p><strong>Standard I/O</strong><span>Calls to <code>printf</code>, <code>puts</code>, <code>putchar</code> and the other stdio names compile when <code>&lt;stdio.h&gt;</code> is included. The lowering discards them, so a program that prints produces no output. Do not rely on any output from camina programs yet.</span></p>
-                <p><strong>Division by zero</strong><span>Not diagnosed. A program that divides by zero at run time is terminated by the signal.</span></p>
+                <p><strong>Compiles</strong><span>Functions with <code>int</code>, <code>long</code>, <code>unsigned int</code>, <code>char</code>, <code>double</code> and <code>void</code> types. Global variables with initializers. <code>if</code>, <code>else</code>, <code>while</code>, <code>for</code>, <code>break</code>, <code>continue</code>, the ternary operator, compound assignment, <code>++</code> and <code>--</code>, casts, <code>sizeof(type)</code>, recursion, <code>switch</code> with <code>case</code> and <code>default</code>, and pointer locals such as <code>int *p = &amp;v;</code> or <code>int *p; p = &amp;v;</code>. These were run in the cases tested and returned the expected values.</span></p>
+                <p><strong>Not parsed</strong><span><code>do ... while</code> loops, array declarations and indexing, and struct declarations. Each fails in the parser with an error that names the token.</span></p>
+                <p><strong>Standard I/O</strong><span>Calls to <code>printf</code>, <code>puts</code> and <code>putchar</code> with <code>&lt;stdio.h&gt;</code> included reach standard output. Checked for <code>printf("hi\n")</code>, <code>puts</code> and <code>putchar</code>. Other stdio functions were not checked.</span></p>
+                <p><strong>Division by zero</strong><span>Not diagnosed. A program that divides by zero at run time is terminated by the signal (exit 136, SIGFPE).</span></p>
             </div>
-
             <h2 id="build">Build and run</h2>
             <p>camina is built from its own repository. It depends on the Lamina crates in the sibling directory and on the default toolchain, so build it from a checkout that has both.</p>
             <pre><code class="language-shell">$ cargo build --release
 $ target/release/cina program.c</code></pre>
-            <p>The compiler writes an executable next to the source, named after it. Its exit status is the value <code>main</code> returns.</p>
+            <p>The compiler writes an executable next to the source, named after it. Its exit status is the value <code>main</code> returns. While it runs, it prints each stage to standard output, starting with the token stream.</p>
 
             <h2 id="example">An example that works</h2>
             <p>This program sums a value over a loop, calling a helper function. It exits with status 20.</p>
@@ -42,22 +40,23 @@ int main(void) {
 
             <h2 id="gaps">What does not compile</h2>
             <p>Each of these fails at the stage shown. Rewrite the code to avoid them until the feature exists.</p>
-            <pre><code class="language-c">/* fails: switch is not parsed */
+            <pre><code class="language-c">/* fails: arrays are not parsed */
 int main(void) {
-    int x = 2;
-    switch (x) {
-        case 2: return 5;
-        default: return 0;
-    }
+    int a[3];
+    a[0] = 4;
+    return a[0];
 }
 
-/* fails: pointer locals are refused in lowering */
-int main(void) {
-    int v = 3;
-    int *p = &amp;v;
-    return *p;
-}</code></pre>
+/* fails: struct declarations are not parsed */
+struct P { int x; };
+int main(void) { return 1; }
 
+/* fails: do ... while is not parsed */
+int main(void) {
+    int i = 0;
+    do { i++; } while (i &lt; 3);
+    return i;
+}</code></pre>
             <div class="lmn-manual-next"><span>Related</span><a href="/docs/getting-started">Compile a first program with Lamina</a></div>
         </article>
     </div>

@@ -75,7 +75,7 @@ int main(void) {
 }</code></pre>
 
             <h2 id="aot-example">Compile a module to assembly</h2>
-            <p>Use a null target to compile for the host, or pass an explicit tested target such as <code>x86_64_linux</code> or <code>x86_64_windows</code>. The current C API accepts only <code>opt_level = 0</code>.</p>
+            <p>Use a null target to compile for the host, or pass an explicit target such as <code>x86_64_linux</code>. The targets page says which ones have been run. The current C API accepts only <code>opt_level = 0</code>.</p>
             <pre><code class="language-c">lia_compile_options_t options = {
     .target = "x86_64_linux",
     .codegen_units = 1,
