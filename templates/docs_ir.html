@@ -73,8 +73,14 @@ fn @main() -&gt; i64 {
                 <p><strong>Void</strong><code>void</code><span>Only as a return type. A <code>void</code> function ends with <code>ret.void</code>.</span></p>
                 <p><strong>Array</strong><code>[N x T]</code><span>A fixed number of elements of one type. Nested arrays are allowed.</span></p>
                 <p><strong>Named struct</strong><code>!Name</code><span>Declared with <code>type</code>. Field offsets come from the declared layout. Access a field with <code>getfieldptr</code> and its field index.</span></p>
+                <p><strong>Vector</strong><code>&lt;N x T&gt;</code><span>N lanes of a primitive type. The bracket tells it from an array, <code>[N x T]</code>. A vector may be the type suffix of an instruction and the type of a value, and nothing else &#8212; see below.</span></p>
             </div>
             <p>There is no <code>char</code> and no <code>tuple</code>. Use <code>i8</code> for a signed byte or <code>u8</code> for an unsigned one. Use a struct with named fields where a tuple would go.</p>
+
+            <h3>Vectors are a suffix type</h3>
+            <p>A lane type is one of <code>i8 i16 i32 i64</code>, their unsigned forms, <code>f32</code> and <code>f64</code>. <code>bool</code>, <code>ptr</code> and the 128-bit integers have no lane form. The total width, lanes times lane bits, must be 128 or 256; anything else is refused as no vector register width. Only 128 is lowered by any backend today.</p>
+            <p>A vector type may not appear in a declaration. Not a function parameter, not a return type, not a global, not a struct field, not a <code>stackalloc</code>. Validation refuses each by name, and <code>type_layout</code> deliberately gives a vector no size and no alignment, so any path that would need one fails rather than invent it. The reason is the ABI: every target classifies a vector at a call boundary differently, no backend implements that classification, and admitting the syntax would admit a shape the register allocator refuses.</p>
+            <p>What is left is enough to write a kernel. A vector enters a function through <code>load</code>, through <code>splat</code>, or lane by lane through <code>insertlane</code>; it leaves through <code>store</code> or <code>extractlane</code>. A <code>[4 x i32]</code> global and a <code>load.&lt;4 x i32&gt;</code> reach the same bytes a vector global would. A helper that works on vectors takes a pointer. See <a href="/docs/ir-instructions#vectors">the instruction reference</a> for the operations.</p>
 
             <h2 id="declarations">Declarations</h2>
             <p>A module is a sequence of type declarations, globals and functions, in any order. Names must be unique within their kind.</p>
@@ -144,7 +150,7 @@ fn @main() -&gt; i64 {
 }</code></pre>
 
             <h3>External functions</h3>
-            <p>A function the module does not define is declared with <code>@extern</code> and no body. A declaration ending in <code>...</code> is variadic. Only a declaration can be variadic; Lamina cannot define a variadic function. The <code>...</code> must be the last parameter.</p>
+            <p>A function the module does not define is declared with <code>@extern</code> and no body. A declaration ending in <code>...</code> is variadic, and so is a function with a body. On x86_64 Linux the body reads the extra arguments with <code>va_start</code> and <code>va_arg</code>; the other targets refuse <code>va_start</code> by name. The <code>...</code> must be the last parameter.</p>
             <pre><code class="language-lamina">@extern
 fn @printf(ptr %fmt, ...) -&gt; i32
 
@@ -167,7 +173,7 @@ fn @main() -&gt; i64 {
                 <p><strong><code>@inline</code> <code>@noinline</code></strong><code>fn</code><span>Inlining hints. Cannot be combined with each other.</span></p>
                 <p><strong><code>@hot</code> <code>@cold</code></strong><code>fn</code><span>Placement and optimization hints. Cannot be combined with each other.</span></p>
                 <p><strong><code>@noreturn</code></strong><code>fn</code><span>The function does not return.</span></p>
-                <p><strong><code>@pure</code> <code>@const</code></strong><code>fn</code><span>Optimization hints about side effects.</span></p>
+                <p><strong><code>@pure</code></strong><code>fn</code><span>Optimization hints about side effects.</span></p>
                 <p><strong><code>@internal</code> <code>@private</code> <code>@hidden</code> <code>@protected</code></strong><code>fn</code><span>Symbol visibility. Any two of these conflict.</span></p>
                 <p><strong><code>@weak</code></strong><code>fn</code><span>Weak symbol binding.</span></p>
                 <p><strong><code>@section("name")</code></strong><code>fn</code><span>Places the function in a named section. The name must be non-empty and contain no backslash.</span></p>
@@ -183,7 +189,7 @@ fn @main() -&gt; i64 {
   entry:
     ret.i64 0
 }</code></pre>
-            <p>The <code>@optimize_speed</code>, <code>@optimize_size</code>, <code>@debug</code>, <code>@strip</code> and <code>@target_triple</code> annotations were removed. Use <code>--opt-level</code>, <code>-g</code>, the <code>strip</code> tool and <code>--target</code> instead.</p>
+            <p>The <code>@optimize_speed</code>, <code>@optimize_size</code>, <code>@debug</code>, <code>@strip</code> and <code>@target_triple</code> annotations were removed. Use <code>--opt-level</code>, <code>-g</code>, the <code>strip</code> tool and <code>--target</code> instead. <code>@const</code> was removed too: use <code>@pure</code>.</p>
 
             <div class="lmn-manual-next"><span>Next</span><a href="/docs/ir-instructions">IR instructions</a></div>
         </article>

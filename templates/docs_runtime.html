@@ -36,6 +36,8 @@
     ret.i64 %c
 }</code></pre>
 
+            <p>Linked with the default weld linker, this module prints <code>[WARN] weld cannot link: undefined symbol __divti3; linking with GNU ld instead</code>. The GNU ld fallback links the routine and the program exits with 1.</p>
+
             <h2 id="redirect">Redirecting the routines</h2>
             <p>Set <code>LAMINA_BUILTINS</code> to a comma-separated list of <code>name=symbol</code> pairs. The name is the routine the compiler would call, and the symbol is the name it calls instead. The routine's C name is the key; the symbol is any function your program defines or links.</p>
             <pre><code class="language-shell">$ LAMINA_BUILTINS=__divti3=my_div lamina div128.lamina --emit-asm -o div128.s</code></pre>

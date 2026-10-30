@@ -23,8 +23,8 @@
             <h2 id="pending">Before a stable SDK release</h2>
             <ul>
                 <li><strong>Header automation</strong><span>Track cbindgen support for Rust 2024 <code>#[unsafe(no_mangle)]</code>. Until then, review the hand-maintained headers with each ABI change.</span></li>
-                <li><strong>Clean CI rebuild</strong><span>Rebuild the C examples from scratch in CI so the <code>lia_*</code> exports, headers, and examples cannot drift apart.</span></li>
-                <li><strong>Checksums</strong><span>Generate portable checksum files. The current rolling release records the correct digest but writes a CI-runner path into each <code>.sha256</code> file.</span></li>
+                <li><strong>Clean rebuild of the examples</strong><span>Rebuild the C examples from scratch so the <code>lia_*</code> exports, the headers and the examples cannot drift apart.</span></li>
+                <li><strong>Checksums</strong><span>Generate portable checksum files. The current rolling release records the correct digest but writes the build machine&#8217;s own path into each <code>.sha256</code> file.</span></li>
                 <li><strong>More platforms</strong><span>Add packaged smoke tests before publishing Windows or Apple Silicon macOS archives.</span></li>
                 <li><strong>ABI review</strong><span>Finish naming, ownership, and error-contract review before promising compatibility across releases.</span></li>
             </ul>

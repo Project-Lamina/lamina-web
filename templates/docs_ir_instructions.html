@@ -19,7 +19,7 @@
                 <p><strong>Rotate</strong><code>rotl rotr</code><span>Integer only. Rotate left or right.</span></p>
                 <p><strong>Negate</strong><code>neg</code><span>Any numeric type. Two's complement negation for integers.</span></p>
                 <p><strong>Bitwise not</strong><code>not</code><span>Integer only.</span></p>
-                <p><strong>Bit counts</strong><code>popcount ctlz cttz bswap</code><span>Integer only. Count set bits, leading zeros, trailing zeros, or byte-swap. Available on x86_64, aarch64, riscv64 and ppc64.</span></p>
+                <p><strong>Bit counts</strong><code>popcount ctlz cttz bswap</code><span>Integer only. Count set bits, leading zeros, trailing zeros, or byte-swap. Compile on x86_64, aarch64, riscv64, ppc64le and armv7. loongarch64 and riscv32 refuse them by name.</span></p>
                 <p><strong>Square root</strong><code>sqrt</code><span><code>f32</code> and <code>f64</code> only.</span></p>
             </div>
             <pre><code class="language-lamina">fn @main() -&gt; i64 {
@@ -142,7 +142,7 @@ fn @main() -&gt; i64 {
     %w = volatile load.i64 %cell
     ret.i64 %w
 }</code></pre>
-            <div class="lmn-manual-note"><strong>Field addresses</strong><p><em>Planned for 0.2.0; the compiler still takes <code>getfieldptr %p, 1</code> without a type today, and falls back to eight bytes per field when the struct type is unknown. The typed form below is rejected today with <code>getfieldptr takes no type suffix</code>.</em> <code>getfieldptr</code> takes the layout type in its suffix, so the field offset comes from the named struct: <code>getfieldptr.!Pair %p, 1</code> is field 1 of <code>!Pair</code>. The index must be a literal.</p></div>
+            <div class="lmn-manual-note"><strong>Field addresses</strong><p><code>getfieldptr</code> takes the layout type in its suffix, and the suffix is required, so the field offset comes from the named struct: <code>getfieldptr.!Pair %p, 1</code> is field 1 of <code>!Pair</code>. The bare form <code>getfieldptr %p, 1</code> is a parse error: <code>getfieldptr needs its struct layout as a suffix, because the field offset depends on it</code>. The index must be a literal.</p></div>
             <pre><code class="language-lamina-fragment">type !Pair = struct { a: i32, b: i64 }
 
 fn @set_b(ptr %p) -&gt; void {
@@ -152,8 +152,22 @@ fn @set_b(ptr %p) -&gt; void {
     ret.void
 }</code></pre>
 
+            <h2 id="vectors">Vectors</h2>
+            <p>A vector is a type, not a second family of operations. An opcode already carries its type as a suffix, so <code>add.&lt;4 x i32&gt;</code> is the same <code>add</code> as <code>add.i64</code>. There is no <code>simd_add</code> and no parallel opcode table. The <a href="/docs/ir#types">type page</a> says where a <code>&lt;N x T&gt;</code> may appear; the short version is that it may be an instruction suffix and the type of a value, and nothing else.</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
+                <p><strong>Element-wise</strong><code>add sub mul and or xor</code><span>Both operands and the result have the suffix type. <code>div</code>, <code>rem</code>, <code>rotl</code> and <code>rotr</code> have no vector form on any target here and are refused by name.</span></p>
+                <p><strong>Shift</strong><code>%c = shl.&lt;4 x i32&gt; %a, %n</code><span>The type of the count says which shift it is. A scalar or a literal count is one count for every lane. A count vector of the same shape is one count per lane. Both readings are correct on their face, which is why the type decides rather than a second opcode. The lane type picks logical against arithmetic the way it does for scalars: <code>shr.&lt;4 x u32&gt;</code> is logical, <code>shr.&lt;4 x i32&gt;</code> arithmetic. Float lanes are refused. A count of the lane width or more gives zero, or the sign for an arithmetic right shift, on every target and in both forms.</span></p>
+                <p><strong>Splat</strong><code>%v = splat.&lt;4 x i32&gt; 7</code><span>One scalar into every lane.</span></p>
+                <p><strong>Extract a lane</strong><code>%x = extractlane.&lt;4 x i32&gt; %v, 2</code><span>Result is a scalar of the lane type. The index is part of the instruction, not an operand; writing <code>%i</code> there is a parse error naming the reason. A lane chosen at run time is a different and far more expensive operation, and accepting one silently would be a performance cliff nobody can see.</span></p>
+                <p><strong>Insert a lane</strong><code>%w = insertlane.&lt;4 x i32&gt; %v, 9, 1</code><span>Result is a vector. The index is constant, as above.</span></p>
+                <p><strong>Shuffle</strong><code>%s = shuffle.&lt;4 x i32&gt; %a, %b, [0, 5, 2, 7]</code><span>The mask holds one entry per result lane and indexes the lanes of <code>%a</code> followed by those of <code>%b</code>, so entries run from 0 to 2N-1. The mask is constant. MIR has no shuffle opcode, so this expands to a zero splat and an extract-insert pair per lane: correct everywhere, and not what a single <code>pshufd</code> would cost.</span></p>
+                <p><strong>Memory</strong><code>%v = load.&lt;4 x i32&gt; %p</code>, <code>store.&lt;4 x i32&gt; %p, %v</code><span>The ordinary load and store with a vector suffix. The pointer is a plain <code>ptr</code>, so nothing about the vector reaches a declaration.</span></p>
+            </div>
+            <p>There are no vector comparisons, no reductions, no vector <code>select</code>, no masks, no gather or scatter and no conversions between vector types. x86_64, AArch64 and WebAssembly lower 128-bit vectors; every other backend refuses by name. 256-bit vectors parse and validate and no backend lowers them. The <a href="/docs/targets#features">target matrix</a> has the per-backend holes.</p>
+
             <h2 id="atomics">Atomics and fences</h2>
-            <p>Atomic operations are available on x86_64, aarch64, riscv64 and ppc64. <code>atomic_cmpxchg</code> is not in the IR: the parser rejects it because it yields two results, and suggests <code>atomic_exchange</code>. Atomic operations take an integer or <code>ptr</code> type. Orderings are <code>relaxed</code>, <code>acquire</code>, <code>release</code>, <code>acqrel</code> and <code>seqcst</code>. <code>atomic_load</code> rejects <code>release</code> and <code>acqrel</code>. <code>atomic_store</code> rejects <code>acquire</code> and <code>acqrel</code>.</p>
+            <p>Atomic operations are available on x86_64, aarch64, riscv64 and ppc64le. <code>atomic_cmpxchg.T ptr, expected, desired, success, failure</code> yields one result, the value that was in memory before the operation. The exchange happened exactly when that value equals <code>expected</code>. Atomic operations take an integer or <code>ptr</code> type. Orderings are <code>relaxed</code>, <code>acquire</code>, <code>release</code>, <code>acqrel</code> and <code>seqcst</code>. <code>atomic_load</code> rejects <code>release</code> and <code>acqrel</code>. <code>atomic_store</code> rejects <code>acquire</code> and <code>acqrel</code>.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
                 <p><strong>Atomic load</strong><code>%v = atomic_load.T ptr, ORD</code><span>Returns the value.</span></p>

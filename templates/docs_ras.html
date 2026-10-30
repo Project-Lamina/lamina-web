@@ -9,10 +9,10 @@
             <p class="lmn-manual-lead">ras turns assembly into a relocatable object, in place of GNU <code>as</code>. It is what Lamina uses with <code>--assembler ras</code>, and a C toolchain can call it too. It is not a complete <code>as</code>: the list of what it does not take is near the bottom, and it is short enough to read.</p>
 
             <h2 id="install">Install</h2>
-            <p>The crate is <code>lamina-ras</code>; the binary it installs is <code>ras</code>. The newest release on crates.io is 0.1.5, which is not the version this page describes. <code>cargo install lamina-ras</code> gets 0.1.5.</p>
-            <p>The 0.2.0 source needs Rust 1.88 or newer. It uses let chains, and Rust 1.87 refuses it. Its manifest patches <code>lamina-platform</code>, <code>lamina-mir</code> and <code>lamina-codegen</code> to a sibling <code>lamina</code> checkout, so build it from a checkout that has both directories side by side. Build it with <code>cargo install --path ras</code> from there.</p>
+            <p>The crate is <code>lamina-ras</code>; the binary it installs is <code>ras</code>. The newest release{{#if ras_version}}, {{ras_version}},{{/if}} is not the version this page describes, so <code>cargo install lamina-ras</code> does not get it.</p>
+            <p>The source this page describes needs Rust 1.88 or newer. It uses let chains, and Rust 1.87 refuses it. Its manifest patches <code>lamina-platform</code>, <code>lamina-mir</code> and <code>lamina-codegen</code> to a sibling <code>lamina</code> checkout, so build it from a checkout that has both directories side by side. Build it with <code>cargo install --path ras</code> from there.</p>
             <p>The <code>encoder</code> feature adds the MIR-to-machine-code path used for JIT. Assembling text to an object does not need it, so the default build is enough for use as an assembler.</p>
-            <div class="lmn-manual-note"><strong>Not checked here</strong><p>Installing 0.1.5 from crates.io was not run; the version above comes from <code>cargo info</code>.</p></div>
+            <div class="lmn-manual-note"><strong>Not checked here</strong><p>Installing the published release from crates.io was not run.</p></div>
             <h2 id="lamina">With the Lamina driver</h2>
             <pre><code class="language-shell">$ lamina app.lamina --assembler ras
 $ lamina app.lamina --assembler ras -c weld</code></pre>
@@ -41,16 +41,33 @@ $ gcc -B"$PWD/toolchain/" hello.c -O2 -o hello</code></pre>
             <h2 id="formats">Architectures and formats</h2>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Format</span><span>Written for</span><span>Notes</span></div>
-                <p><strong>ELF64</strong><code>x86_64 aarch64 riscv64</code><span>Linux and the BSDs, plus Redox, Orbis and Prospero. ELF64 little-endian only.</span></p>
+                <p><strong>ELF64</strong><code>x86_64 aarch64 riscv32 riscv64 ppc64le</code><span>Linux and the BSDs, plus Redox, Orbis and Prospero. ELF64 little-endian only; riscv32 parses but object output is refused, because ras writes ELF64 and nothing else. The Lamina driver does not route PowerPC through ras even though the encoder is there; it sends that target to GNU <code>as</code>.</span></p>
                 <p><strong>Mach-O</strong><code>x86_64 arm64</code><span>macOS. Any other architecture is refused by name.</span></p>
                 <p><strong>COFF</strong><code>x86_64</code><span>Windows. <code>aarch64_windows</code> is refused.</span></p>
             </div>
             <p>x86_64 input is AT&amp;T syntax. <code>riscv32_linux</code> is refused at object output: <code>riscv32 object output is not implemented: ras writes ELF64 only</code>. The bare <code>riscv32_unknown</code> and <code>riscv64_unknown</code> names are refused because they name no operating system; use the <code>_linux</code> names.</p>
 
+            <h2 id="x86-simd">x86-64 vector coverage</h2>
+            <p>This is the part of the x86-64 encoder most likely to decide whether a build works, so it is written out rather than summarized. Each encoding is checked against GNU <code>as</code> by assembling the same source with both and comparing the <code>.text</code> bytes and the relocation list. The comparison normalizes one thing and only one: which multi-byte form an assembler pads with, since that differs between binutils releases while where the padding starts and ends does not. A second set of tests pins exact bytes per instruction form, so a regression cannot hide behind a reference assembler that moved at the same time.</p>
+            <div class="lmn-doc-table">
+                <p><strong>SSE, SSE2, SSE3, SSSE3</strong><span>The packed and scalar float sets, the full packed-integer set, the horizontal and duplicate forms, <code>pshufb</code>, <code>palignr</code>, the sign and absolute-value ops, and every <code>cvt</code> and <code>cvtt</code> form.</span></p>
+                <p><strong>SSE4.1, SSE4.2</strong><span>The blends, <code>dpps</code>/<code>dppd</code>, <code>insertps</code>/<code>extractps</code>, <code>pmulld</code>/<code>pmuldq</code>, all twelve <code>pmovsx</code>/<code>pmovzx</code> forms, <code>ptest</code>, the rounds, the byte and doubleword lane transfers, <code>crc32</code>, the string compares and <code>popcnt</code>.</span></p>
+                <p><strong>AVX, AVX2</strong><span>The VEX counterparts of the above over both <code>xmm</code> and <code>ymm</code>: arithmetic, the integer ops, the shuffles and blends, the moves, the broadcasts, the 128-bit insert and extract, the permutes, the masked moves, and <code>vzeroupper</code>.</span></p>
+                <p><strong>FMA3</strong><span>The mnemonic is decomposed rather than tabulated, so <code>vfmadd</code>, <code>vfmsub</code>, <code>vfnmadd</code> and <code>vfnmsub</code> across the 132, 213 and 231 operand orders and the <code>ps</code>, <code>pd</code>, <code>ss</code> and <code>sd</code> widths are all covered, as are <code>vfmaddsub</code> and <code>vfmsubadd</code> in their packed forms. The combinations that do not exist &#8212; a scalar <code>maddsub</code>, a negated <code>maddsub</code> &#8212; are rejected. FMA4, the four-operand AMD form, is not implemented.</span></p>
+                <p><strong>Variable vector shifts</strong><span><code>vpsllvd</code>, <code>vpsllvq</code>, <code>vpsrlvd</code>, <code>vpsrlvq</code> and <code>vpsravd</code>. <code>vpsravq</code> is AVX-512 only and is correctly absent.</span></p>
+                <p><strong>Other extensions</strong><span>AES-NI, PCLMULQDQ, the BMI2 shifts, LZCNT and TZCNT, a working x87 subset, and the TLS relocation syntaxes.</span></p>
+            </div>
+            <p>Three gaps, stated because an assembler that silently miscodes is worse than one that refuses:</p>
+            <div class="lmn-doc-table">
+                <p><strong>AVX-512</strong><span>Effectively absent. There is an EVEX prefix and exactly one mnemonic that uses it, <code>vpmullq</code>, register operands only. There is no <code>%zmm</code> register, no mask register, and no <code>{z}</code>, broadcast or rounding decorator.</span></p>
+                <p><strong>VSIB gathers</strong><span>No <code>vgather</code> or <code>vpgather</code> form, and the memory-operand parser has no vector-index path, so a VSIB address cannot be written at all.</span></p>
+                <p><strong>MMX</strong><span>No <code>%mm</code> registers, no <code>emms</code>, and no NP-prefixed forms of the packed ops. Every <code>p</code> opcode is the <code>xmm</code> SSE2 encoding.</span></p>
+            </div>
+
             <h2 id="gaps">Where it is not a drop-in</h2>
             <p>Worth knowing before pointing a build at it.</p>
             <div class="lmn-doc-table">
-                <p><strong><code>gcc -g</code> fails</strong><span>Debug builds emit <code>.loc</code>, and ras has no line-table directive. <code>Unsupported directive: .loc</code>. Build without <code>-g</code>, or use <code>--assembler gas</code> or clang for debug output.</span></p>
+                <p><strong><code>gcc -g</code> fails</strong><span>gcc emits its own <code>.debug_*</code> sections under <code>-g</code>, and ras refuses to add <code>.loc</code> line tables beside them: <code>Object file error: source defines .debug_* sections; ras cannot add .loc DWARF beside them</code>. Build without <code>-g</code>. For debug output, <code>lamina -g --assembler ras</code> works, and so does <code>--assembler gas</code>.</span></p>
                 <p><strong>Cross-assembly needs <code>--target</code></strong><span>Under the name <code>as</code> there is no way to pass it, and a prefixed name like <code>aarch64-linux-gnu-as</code> does not imply the architecture. GNU mode always assembles for the host.</span></p>
                 <p><strong>No stdin in GNU mode</strong><span>Under the name <code>as</code>, <code>as -</code> and a redirect both fail with <code>missing input .s file</code>. Native <code>ras</code> reads stdin when it is redirected, but <code>ras -</code> is refused with <code>Unknown option: -</code>.</span></p>
                 <p><strong>Missing directives</strong><span>No <code>.macro</code>, <code>.org</code>, <code>.fill</code>, <code>.include</code>, <code>.incbin</code>, <code>.intel_syntax</code>, <code>.octa</code>, <code>.weakref</code>, <code>.symver</code> or <code>.lcomm</code>. Each is refused by name rather than ignored. <code>.protected</code> and <code>.internal</code> are accepted.</span></p>

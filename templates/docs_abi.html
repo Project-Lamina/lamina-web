@@ -8,7 +8,7 @@
             <h1>Calling conventions</h1>
             <p class="lmn-manual-lead">A Lamina function has to agree with C on where arguments live, or nothing links. Each backend implements one platform ABI. Where a backend has no rule for something, it refuses the module and names the function instead of guessing.</p>
 
-            <div class="lmn-manual-note"><strong>How this page was checked</strong><p>The register lists and the aggregate rules were checked against the backend source, and the aggregate and variadic behavior was checked by compiling and running test programs under qemu where a target allows it. The claims about what a C compiler does on each platform were not checked against C-generated code in this pass, and the Windows and macOS rules were not run here.</p></div>
+            <div class="lmn-manual-note"><strong>How this page was checked</strong><p>The register lists and the aggregate rules were checked against the backend source, and the aggregate and variadic behavior was checked by compiling and running test programs under qemu where a target allows it. In the most recent pass, the qemu runs of the cross targets were not reproduced, and the x86_64 aggregate and variadic programs were run natively. The claims about what a C compiler does on each platform were not checked against C-generated code in this pass, and the Windows and macOS rules were not run here.</p></div>
             <h2 id="implemented">What each backend implements</h2>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Target</span><span>Convention</span><span>Integer and float banks</span></div>
@@ -16,7 +16,12 @@
                 <p><code>x86_64</code> Windows<strong>Win64</strong><span>Integers in <code>rcx rdx r8 r9</code> with 32 bytes of shadow space. A hidden return pointer takes <code>rcx</code> and pushes the rest along.</span></p>
                 <p><code>aarch64</code><strong>AAPCS64</strong><span>Integers in <code>x0</code>–<code>x7</code>, floats in <code>d0</code>–<code>d7</code>. A hidden return pointer goes in <code>x8</code>, which is not an argument register.</span></p>
                 <p><code>riscv64</code><strong>LP64D</strong><span>Integers in <code>a0</code>–<code>a7</code>, floats in <code>fa0</code>–<code>fa7</code>. A variadic float travels in the integer bank instead.</span></p>
-                <p><code>ppc64</code><strong>ELFv2</strong><span>Integers in <code>r3</code>–<code>r10</code>, floats in <code>f1</code>–<code>f13</code>. The caller reserves a 64 byte parameter save area and the callee may spill its register arguments into it, so the callee keeps its locals above it.</span></p>
+                <p><code>ppc64le</code>, <code>ppc64</code><strong>ELFv2</strong><span>Integers in <code>r3</code>–<code>r10</code>, floats in <code>f1</code>–<code>f13</code>. The caller reserves a 64 byte parameter save area and the callee may spill its register arguments into it, so the callee keeps its locals above it. Both byte orders use the same convention; only the endianness differs. Elsewhere on this page <code>ppc64</code> means the backend, not one of the two.</span></p>
+                <p><code>s390x</code><strong>z/Architecture ELF</strong><span>Integers in <code>%r2</code>–<code>%r6</code>, floats in <code>%f0</code>, <code>%f2</code>, <code>%f4</code>, <code>%f6</code>. Results in <code>%r2</code> and <code>%f0</code>. Every frame opens with a 160-byte register save area. Big-endian, and the stack is 8-byte aligned at a call rather than 16.</span></p>
+                <p><code>mips64</code>, <code>mips64el</code><strong>N64</strong><span>Integers in <code>$4</code>–<code>$11</code>, floats in <code>$f12</code>–<code>$f19</code>, positionally alongside them: an argument takes the register matching its first doubleword whatever its class. Results in <code>$2</code> and <code>$f0</code>. <code>$25</code> carries the callee address, which is how a position-independent callee finds its own global pointer.</span></p>
+                <p><code>armv7</code><strong>AAPCS, VFP hard float</strong><span>Integers in <code>r0</code>–<code>r3</code>, floats in the VFP bank. A 64-bit value takes an even-odd register pair.</span></p>
+                <p><code>thumbv6m</code>, <code>thumbv7m</code><strong>AAPCS, soft float</strong><span>Integers in <code>r0</code>–<code>r3</code>. There is no float bank: floating point is refused rather than lowered to soft-float libcalls that nothing here ships.</span></p>
+                <p><code>i686</code><strong>cdecl</strong><span>Every argument on the stack, caller-cleaned. Integer results in <code>eax</code>, and <code>edx:eax</code> for 64 bits, which is the pair this backend does not yet produce. Floats come back on the x87 stack.</span></p>
                 <p><code>wasm32 wasm64</code><strong>None</strong><span>Scalar parameters and results only, as wasm value types.</span></p>
                 <p><code>amdgpu ptx</code><strong>Kernel contract</strong><span>Scalar kernel arguments. Not a C calling convention.</span></p>
             </div>
@@ -27,9 +32,9 @@
 
 fn @sum_pair(!Pair %p) -&gt; i64 {
 entry:
-  %pa = getfieldptr %p, 0
+  %pa = getfieldptr.!Pair %p, 0
   %a = load.i64 %pa
-  %pb = getfieldptr %p, 1
+  %pb = getfieldptr.!Pair %p, 1
   %b = load.i64 %pb
   %s = add.i64 %a, %b
   ret.i64 %s
@@ -81,7 +86,7 @@ fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
             <h2 id="refusals">Reading a refusal</h2>
             <p>An unsupported boundary is a compile error naming the value and the function, never a silently wrong ABI. The check runs at the start of every AOT backend and before JIT encoding, so it cannot be skipped by reaching for a per-architecture emitter directly.</p>
             <pre><code class="language-shell">$ lamina sum.lamina --target wasm32_wasi --emit-asm -o sum
-Error: "Code generation failed: Codegen Error: Unsupported feature: Wasm32 does not yet pass aggregates by value, as @sum does"</code></pre>
+Error: "Code generation failed: Codegen Error: Unsupported feature: Wasm32 does not yet pass aggregates by value, as @sum_pair does"</code></pre>
             <div class="lmn-manual-next"><span>Related</span><a href="/docs/targets">Targets and backends</a></div>
         </article>
     </div>

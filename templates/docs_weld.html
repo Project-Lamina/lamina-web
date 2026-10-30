@@ -9,7 +9,7 @@
             <p class="lmn-manual-lead">weld links relocatable objects into an executable, in place of <code>ld</code>, <code>lld</code> or <code>mold</code>. Dynamic executables on x86_64 Linux work through the gcc driver today. Static glibc, shared libraries and dynamic linking on the other architectures do not.</p>
 
             <h2 id="install">Install</h2>
-            <p>The crate is <code>lamina-weld</code>; the binary it installs is <code>weld</code>. The newest release on crates.io is 0.1.2, which is older than the 0.2.0 this page describes, so <code>cargo install lamina-weld</code> does not get the current behavior. The 0.2.0 source needs Rust 1.88 (its manifest sets <code>rust-version = "1.88"</code>). From a checkout, run <code>cargo install --path weld</code>. There are no feature flags.</p>
+            <p>The crate is <code>lamina-weld</code>; the binary it installs is <code>weld</code>. The newest release{{#if weld_version}}, {{weld_version}},{{/if}} is older than the source this page describes, so <code>cargo install lamina-weld</code> does not get the current behavior. That source needs Rust 1.88 (its manifest sets <code>rust-version = "1.88"</code>). From a checkout, run <code>cargo install --path weld</code>. There are no feature flags.</p>
             <h2 id="lamina">With the Lamina driver</h2>
             <pre><code class="language-shell">$ lamina app.lamina -c weld
 $ lamina app.lamina --assembler ras -c weld</code></pre>

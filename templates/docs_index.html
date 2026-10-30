@@ -4,7 +4,7 @@
         <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/">Lamina</a><span>/</span><strong>Documentation</strong></nav>
         <p class="lmn-kicker"><span></span> Documentation</p>
         <h1>Lamina docs, by<br><em>product.</em></h1>
-        <p class="lmn-manual-lead">This project has five parts. Each has its own section below. They share a toolchain, but each one can be read on its own.</p>
+        <p class="lmn-manual-lead">This project has four parts. Each has its own section below. They share a toolchain, but each one can be read on its own.</p>
         <div class="lmn-actions">
             <a class="lmn-button lmn-button-primary" href="/docs/getting-started">Compile a first program</a>
             <a class="lmn-button lmn-button-quiet" href="/docs/ir">Read the IR language</a>
@@ -13,14 +13,13 @@
     <section class="lmn-section lmn-manual-directory">
         <div class="lmn-section-intro">
             <p class="lmn-section-tag">Products</p>
-            <h2>Five parts, one toolchain.</h2>
-            <p>Lamina is the compiler. ras and weld replace GNU as and ld in a build. camina is an early C front end that targets Lamina. lamina-c exposes the compiler to C programs.</p>
+            <h2>Four parts, one toolchain.</h2>
+            <p>Lamina is the compiler. ras and weld replace GNU as and ld in a build. lamina-c exposes the compiler to C programs.</p>
         </div>
         <div class="lmn-manual-card-grid">
             <a href="/docs/getting-started"><small>Lamina / Compiler</small><h3>Lamina</h3><p>A typed, block-based IR compiled to native code. Covers the IR language, instructions, I/O, the runtime, LUMIR, the driver, targets, and the Rust API.</p><span>Start with the compiler →</span></a>
             <a href="/docs/ras"><small>Toolchain</small><h3>ras</h3><p>An assembler that writes ELF64, Mach-O and COFF objects. Works in place of GNU as.</p><span>Read the ras docs →</span></a>
             <a href="/docs/weld"><small>Toolchain</small><h3>weld</h3><p>A linker for x86_64 Linux, macOS and Windows executables. Static executables work; shared objects do not.</p><span>Read the weld docs →</span></a>
-            <a href="/docs/camina"><small>Front end</small><h3>camina</h3><p>A C compiler that lowers a subset of C to Lamina IR. It compiles small programs, but produces no output from stdio calls yet.</p><span>Read the camina docs →</span></a>
             <a href="/docs/c-bindings"><small>Bindings</small><h3>lamina-c</h3><p>A C API over the IRBuilder, module serialization and AOT assembly output. Development archives for Linux x86_64.</p><span>Read the C bindings →</span></a>
             <a href="https://docs.rs/lamina/latest/lamina/" target="_blank" rel="noopener"><small>External</small><h3>Generated Rust API</h3><p>Exact Rust types, feature flags and source links, on docs.rs.</p><span>Open docs.rs ↗</span></a>
         </div>

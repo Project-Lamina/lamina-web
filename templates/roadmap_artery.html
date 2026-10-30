@@ -29,7 +29,7 @@
             <h3>What the target requires</h3>
             <div class="lmn-doc-table">
                 <p><strong>Freestanding</strong><span>No libc, no CRT startup objects, no dynamic loader. The entry point is whatever the linker script says it is.</span></p>
-                <p><strong>Soft float</strong><span>x86_64 disables MMX, SSE, and AVX; AArch64 disables NEON and requires strict alignment. Correct code without touching the vector units.</span></p>
+                <p><strong>Soft float</strong><span>x86_64 disables SSE and AVX; AArch64 disables NEON and requires strict alignment. Correct code without touching the vector units.</span></p>
                 <p><strong>No red zone</strong><span>Interrupt handling makes it unusable, so the backend must not allocate below the stack pointer.</span></p>
                 <p><strong>Abort on panic</strong><span>No unwinding, so no unwind tables are needed and none should be required.</span></p>
                 <p><strong>Linker script layout</strong><span>Section placement comes from a script, not from linker defaults.</span></p>

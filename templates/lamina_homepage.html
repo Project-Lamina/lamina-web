@@ -10,6 +10,7 @@
             <a href="#targets">Targets</a>
             <a href="#modes">Modes</a>
             <a href="/roadmap">Roadmap</a>
+            <a href="/gallery">Gallery</a>
             <a href="/docs">Docs</a>
         </nav>
         <a class="lmn-header-link" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
@@ -156,31 +157,31 @@
         <div class="lmn-section-intro">
             <p class="lmn-section-tag">Target matrix</p>
             <h2>Start with a tested target.</h2>
-            <p>x86_64 Linux, Windows and macOS pass the recorded programs in CI. AArch64, RISC-V 64 and PowerPC64 run most of them under qemu; RISC-V and PowerPC64 pass integer aggregates by value too.</p>
+            <p>Eighteen architectures emit code. Four are worth starting from; the rest are listed, with what each one refuses by name, under <a href="/docs/targets">Targets and backends</a>.</p>
         </div>
         <div class="lmn-target-grid">
             <article>
                 <p class="lmn-target-mark">x64</p>
                 <h3>x86_64</h3>
-                <p>The reference target. Inline assembly and variadic definitions are x86_64 Linux only. Aggregates by value, atomics, bit intrinsics, and the nightly JIT. Compiled, run and diffed in CI.</p>
-                <span>tested: linux + windows</span>
+                <p>The reference target, and the only one that goes from IR text to a running binary without a tool Lamina did not write. Everything the IR offers lowers: atomics, bit intrinsics, 128-bit vectors, inline assembly, variadic definitions, aggregates by value, i128.</p>
+                <span>run and checked: linux, windows</span>
             </article>
             <article>
                 <p class="lmn-target-mark">A64</p>
                 <h3>AArch64</h3>
-                <p>143 of 156 recorded programs pass under qemu. Inline assembly and variadic definitions are refused by name. macOS passes in CI.</p>
-                <span>tested: macos (CI) + linux (qemu)</span>
+                <p>AAPCS64, with NEON for 128-bit vectors. Inline assembly and variadic definitions are refused by name. macOS output is run and checked; Linux output is assembled and run under emulation by hand.</p>
+                <span>run and checked: macos</span>
             </article>
             <article>
                 <p class="lmn-target-mark">RV</p>
                 <h3>RISC-V</h3>
-                <p>Scalars, control flow, <code>callptr</code> and integer aggregates by value run on RV64: 140 of 156 recorded programs under qemu at -O0.</p>
+                <p>LP64D. The one cross target weld links by itself, for a program that needs no C library symbol, which makes it the one place the whole toolchain runs away from x86_64. Argument placement is correct where aarch64's is not.</p>
                 <span>partial: rv64</span>
             </article>
             <article>
                 <p class="lmn-target-mark">W</p>
                 <h3>WebAssembly</h3>
-                <p>WAT output. <code>wasm32_wasi</code> runs under wasmtime: 103 of 156 recorded programs match. Aggregates by value are refused.</p>
+                <p>WAT output on both pointer widths, with native 64-bit integers and indirect calls through <code>call_indirect</code>. simd128 lowers 128-bit vectors. Aggregates by value are refused.</p>
                 <span>experimental</span>
             </article>
         </div>

@@ -6,6 +6,7 @@
         </a>
         <nav class="lmn-nav" aria-label="Roadmap navigation">
             <a href="#state">Status</a>
+            <a href="#gaps">Gaps</a>
             <a href="#milestones">Milestones</a>
             <a href="#testing">Testing</a>
             <a href="#design">Decisions</a>
@@ -26,171 +27,203 @@
             <p class="lmn-section-tag">Direction</p>
             <h1>Roadmap</h1>
             <p class="lmn-manual-lead">
-                Where the toolchain is, and what each milestone has to be true before it closes.
+                What works in the toolchain, what does not, and what each milestone still has to do.
+                Every status on this page is <strong>Done</strong>, <strong>In progress</strong>, or <strong>Not started</strong>.
+                Statuses describe the development tree, which is ahead of the latest tagged release.
                 Milestones are sets of outcomes, not dates. Versions give the ordering, not a schedule.
             </p>
 
             <nav class="lmn-roadmap-toc" aria-label="On this page">
                 <a href="#state">Status</a>
+                <a href="#gaps">What does not work</a>
                 <a href="#milestones">Milestones</a>
-                <a href="#testing">Testing and CI</a>
+                <a href="#testing">Testing</a>
                 <a href="#design">Decisions</a>
                 <a href="#artery">Artery</a>
                 <a href="#non-goals">Non-goals</a>
             </nav>
 
             <h2 id="state">The toolchain today</h2>
-            <p>Four repositories make up the toolchain. The C bindings ship from the compiler repository with their own ABI version, kept apart from the crate version on purpose.</p>
+            <p>Three repositories make up the toolchain: <code>lamina</code> (the compiler, with the C bindings in <code>lamina-c/</code>), <code>lamina-ras</code>, and <code>lamina-weld</code>. The C bindings have their own ABI version, which is set by the crate version.</p>
             <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Component</span><span>Version</span><span>Role</span></div>
-                <p><code>lamina</code><strong>0.1.0</strong><span>IR, MIR, optimizer, code generation, compiler driver.</span></p>
-                <p><code>lamina-ras</code><strong>0.1.5</strong><span>Assembler, an alternative to <code>as</code>/GAS. Assembly source to relocatable object.</span></p>
-                <p><code>lamina-weld</code><strong>0.1.2</strong><span>Linker, an alternative to <code>ld</code>/<code>lld</code>/<code>mold</code>. ELF, Mach-O, PE.</span></p>
-                <p><code>lamina-c</code><strong>ABI 0.1.0</strong><span>C bindings, versioned apart from the crate.</span></p>
+                <div class="lmn-reference-head"><span>Component</span><span>Latest release</span><span>Role</span></div>
+                <p><code>lamina</code><strong>{{#if lamina_version}}v{{lamina_version}}{{else}}&mdash;{{/if}}</strong><span>IR, MIR, optimizer, code generation, compiler driver.</span></p>
+                <p><code>lamina-ras</code><strong>{{#if ras_version}}v{{ras_version}}{{else}}&mdash;{{/if}}</strong><span>Assembler, an alternative to <code>as</code>/GAS. Assembly source to relocatable object.</span></p>
+                <p><code>lamina-weld</code><strong>{{#if weld_version}}v{{weld_version}}{{else}}&mdash;{{/if}}</strong><span>Linker, an alternative to <code>ld</code>/<code>lld</code>/<code>mold</code>. ELF, Mach-O, PE.</span></p>
+                <p><code>lamina-c</code><strong>{{#if lamina_version}}ABI {{lamina_version}}{{else}}&mdash;{{/if}}</strong><span>C bindings. Their ABI version is the crate version.</span></p>
+            </div>
+            <p>The release column is the newest tag on each repository. The working tree runs ahead of it.</p>
+
+            <h3>Features</h3>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Feature</span><span>Status</span><span>Notes</span></div>
+                <p><strong>Typed, block-based IR</strong><span><strong>Done</strong></span><span>Text form and IRBuilder API. The builders reject what the parser rejects.</span></p>
+                <p><strong>Machine-level IR (MIR)</strong><span><strong>Done</strong></span><span>Kept separate from the IR, so target concerns stay out of the front-end-facing layer.</span></p>
+                <p><strong>Optimizer, <code>-O0</code> to <code>-O3</code></strong><span><strong>Done</strong></span><span>Control flow, constant folding and propagation, copy propagation, CSE, dead code, peephole, addressing, memory, strength reduction, tail calls, loop optimization, inlining. The pipeline runs on one SSA form, and CSE and LICM run on it. Passes that need alias analysis are not started; see below.</span></p>
+                <p><strong>Native code generation without LLVM or Cranelift</strong><span><strong>Done</strong></span><span>Emits assembly for the targets in the table below.</span></p>
+                <p><strong>Pointer width as a target property</strong><span><strong>Done</strong></span><span>Sizes and offsets follow the target. The IR path that parses without a target still defaults to 64-bit pointers.</span></p>
+                <p><strong>External function declarations</strong><span><strong>Done</strong></span><span><code>@extern</code> declares a function the module does not define. The I/O builtins are still built into the backends; see the 0.1 milestone.</span></p>
+                <p><strong>Assembler <code>ras</code> and linker <code>weld</code> as the default on x86_64 Linux</strong><span><strong>Done</strong></span><span>The verbose driver output shows <code>ras</code> and <code>weld</code> being run. The <code>--help</code> text describes a GNU <code>as</code>/<code>ld</code> fallback with a warning.</span></p>
+                <p><strong><code>ras</code> DWARF line tables</strong><span><strong>Done</strong></span><span><code>-g</code> emits <code>.debug_line</code> through <code>ras</code>. Row-for-row match with GNU <code>as</code> was checked on x86_64, AArch64 and RISC-V 64, by hand.</span></p>
+                <p><strong>Source lines for <code>-g</code></strong><span><strong>Done</strong></span><span>On the <code>ras</code> path, <code>.loc</code> carries the line of the <code>.lamina</code> source. Checked on x86_64. The i686 path does not do this; see the target table.</span></p>
+                <p><strong><code>weld</code> keeps <code>.debug_*</code> sections</strong><span><strong>Done</strong></span><span>gdb can read a binary linked by <code>weld</code>.</span></p>
+                <p><strong><code>weld</code> shared objects</strong><span><strong>Done</strong></span><span><code>-shared</code> produces an ELF shared object.</span></p>
+                <p><strong><code>weld</code> archive input</strong><span><strong>Done</strong></span><span>Members of a <code>.a</code> archive are pulled in on demand when named with <code>-l</code> or given as a file.</span></p>
+                <p><strong>C bindings with explicit ownership</strong><span><strong>Done</strong></span><span>Stable and nightly archives are published separately, so a stable consumer cannot reach an experimental entry point by accident.</span></p>
+                <p><strong>JIT (<code>--jit</code>)</strong><span><strong>In progress</strong></span><span>Compiles and runs in the current process. <code>--sandbox</code> encodes single-block functions only. The JIT does not check that the host supports the selected CPU level.</span></p>
             </div>
 
-            <h3>Shipped</h3>
-            <p>A typed, block-based IR with a text form and an IRBuilder API. A separate machine-level IR, so target concerns stay out of the front-end-facing layer. An optimization pipeline from <code>-O0</code> to <code>-O3</code> covering control flow, constant folding and propagation, copy propagation, CSE, dead code, peephole, addressing, memory, strength reduction, tail calls, loop optimization, and inlining. Native code generation with no LLVM and no Cranelift. An assembler and a linker of our own. C bindings with explicit ownership. Nightly JIT compilation into executable memory.</p>
-
-            <h3 id="targets">Target support</h3>
+            <h3>Target support</h3>
+            <p>Target names are the ones the driver accepts. A name the driver recognizes is not a support claim; <a href="/docs/targets">Targets and backends</a> has the full list and what each one does. The driver accepts nineteen architectures in a default build and eighteen of them emit code. The table below is the shorter question of which are finished.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Target</span><span>Status</span><span>Notes</span></div>
-                <p><code>x86_64_linux</code><strong>Tested</strong><span>Reference path. Everything lands here first. SysV: integer aggregates up to 16 bytes in registers, bigger ones in memory, return pointer in <code>rdi</code>. CI compiles, runs and diffs every recorded program.</span></p>
-                <p><code>x86_64_windows</code><strong>Tested</strong><span>Same programs, run by CI on Windows. Win64 takes aggregates of 1, 2, 4 or 8 bytes by value and passes everything else by reference. Return pointer goes in <code>rcx</code> and pushes the other arguments along.</span></p>
-                <p><code>aarch64_macos</code><strong>Tested</strong><span>Apple Silicon, run by CI. AAPCS64: integer aggregates up to 16 bytes in registers, bigger ones returned through <code>x8</code>.</span></p>
-                <p><code>aarch64_linux</code><strong>Tested</strong><span>Same ABI as macOS. Cross-executed under qemu at <code>-O0</code> through <code>-O3</code>, through the assembler. The direct binary encoder still misses <code>IntConvert</code> and <code>Copy</code>.</span></p>
-                <p><code>riscv64_unknown</code><strong>Partial</strong><span>Scalars, control flow and <code>callptr</code> run under qemu. No aggregate ABI yet, so a module passing or returning one by value is refused at lowering instead of guessed at. RV64 only.</span></p>
-                <p><code>ppc64_linux</code><strong>Partial</strong><span>ELFv2, same aggregate gap as RISC-V. Locals sit above the 64 byte parameter save area, because <code>printf</code> spills its register arguments there.</span></p>
-                <p><code>aarch64_windows riscv32_unknown</code><strong>Experimental</strong><span>Assembly comes out. Nothing has assembled, linked or run it.</span></p>
-                <p><code>wasm32_unknown wasm64_unknown</code><strong>Experimental</strong><span>Text output only. No aggregates, and <code>callptr</code> is refused because nothing emits a function table yet.</span></p>
-                <p><code>arx64_unknown</code><strong>Experimental</strong><span>Bare metal. Integer scalar subset.</span></p>
-                <p><code>*_artery</code><strong>Planned</strong><span>The OS name parses. Nothing else is wired yet.</span></p>
+                <p><code>x86_64_linux</code><strong>Done</strong><span>Reference target. Every testcase program compiles, runs and produces the expected output, natively, through a toolchain that is Lamina&#8217;s own end to end.</span></p>
+                <p><code>x86_64_windows</code><strong>Done</strong><span>Win64. The testcase programs compile, link to a <code>.exe</code> and run on Windows. A variadic definition is refused.</span></p>
+                <p><code>aarch64_macos</code><strong>Done</strong><span>Apple Silicon, AAPCS64. The testcase programs compile, link to Mach-O and run. A variadic definition is refused.</span></p>
+                <p><code>aarch64_linux</code><strong>In progress</strong><span>Lowers everything except a variadic function definition and inline assembly. Run under QEMU by hand, not as part of any checked suite.</span></p>
+                <p><code>riscv64_unknown</code><strong>In progress</strong><span>Lowers everything except a variadic function definition and inline assembly, aggregates by value included. The one cross target weld links on its own, for a program that needs no C library symbol. Run under QEMU by hand.</span></p>
+                <p><code>ppc64le_linux</code><strong>In progress</strong><span>Both byte orders now: <code>ppc64le</code> and <code>ppc64</code>, ELFv2 either way. Lowers everything except a variadic definition, inline assembly and vectors. <code>weld</code> links the objects that need no libc or libgcc symbol; the rest fall back to GNU <code>ld</code>. Run under QEMU by hand.</span></p>
+                <p><code>ppc64_linux</code><strong>In progress</strong><span>Big-endian POWER, ELFv2, the same backend as <code>ppc64le_linux</code>. Compiled and assembled by GNU <code>as</code>. Not run.</span></p>
+                <p><code>s390x_linux</code><strong>In progress</strong><span>The first big-endian target. Scalars, aggregates by value, indirect and variadic calls. No register allocator: every virtual register lives in a frame slot, and a global allocator is refused rather than ignored. Atomics, bit intrinsics, rotates, vectors, inline assembly and variadic definitions are refused. Compiled only.</span></p>
+                <p><code>mips64_linux</code>, <code>mips64el_linux</code><strong>In progress</strong><span>N64, both byte orders. The same feature set and the same refusal list as s390x. Compiled only.</span></p>
+                <p><code>thumbv6m</code>, <code>thumbv7m</code><strong>In progress</strong><span>Cortex-M, bare-metal ELF, Thumb only. 32-bit integers, aggregates by value, indirect calls. No floating point, no 64-bit integers, no atomics, no vectors; ARMv6-M also refuses division and unaligned access. Nothing here assembles Thumb, so assembly text only.</span></p>
+                <p><code>loongarch64_linux</code><strong>In progress</strong><span>Integer, floating point, aggregates and control flow lower. <code>ras</code> cannot assemble LoongArch. The driver needs a GNU <code>as</code> for it (<code>loongarch64-linux-gnu-as</code>) and reports an error when none is installed.</span></p>
+                <p><code>armv7_linux</code><strong>In progress</strong><span>Hard float, AAPCS-VFP. Atomics, vectors, inline assembly and the <code>va_*</code> family are refused. Structs of 5 to 8 bytes are returned in registers where AAPCS requires memory. <code>-g</code> is refused.</span></p>
+                <p><code>i686_linux</code><strong>In progress</strong><span>cdecl with x87 floats. A 64-bit integer return is refused, along with <code>FloatToInt</code>, atomics, vectors, inline assembly and variadic definitions. An <code>i32</code> program builds and runs. <code>-g</code> numbers instructions, not source lines.</span></p>
+                <p><code>riscv32_linux</code><strong>In progress</strong><span>64-bit integers are legalized into 32-bit register pairs, and division calls the compiler runtime helpers <code>__divdi3</code> and <code>__udivdi3</code>. <code>riscv32_unknown</code> is freestanding and has no C library to supply those helpers, so it refuses the division rather than emit a call that cannot link. That one difference decides whether a program builds at all.</span></p>
+                <p><code>wasm32_unknown</code><strong>In progress</strong><span>A 64-bit integer returned from <code>@main</code> is currently refused, which is a regression under repair. The extern pointer parameter bug is in the gaps table.</span></p>
+                <p><code>wasm64_unknown</code><strong>In progress</strong><span>Emits WebAssembly text. No object output. No aggregates by value.</span></p>
+                <p><code>nvptx64_cuda</code>, <code>amdgcn_amdhsa</code><strong>In progress</strong><span>Emits PTX and AMDGCN for single-block void kernels with no parameters and no stack storage. Everything else is refused.</span></p>
+                <p><code>aarch64_windows</code><strong>Not started</strong><span><code>writebyte</code> has no Windows implementation, so programs using it are refused.</span></p>
+                <p><code>*_artery</code><strong>Not started</strong><span>The OS name parses behind the <code>nightly</code> feature and the driver accepts no target using it. Nothing else is wired. See <a href="#artery">Artery</a>.</span></p>
             </div>
-            <p>The driver recognizes more identifiers than this table lists. Recognition is not a support claim: parsing, code generation, assembly, and linking are separate stages, and a recognized triple does not promise a working end-to-end path. See <a href="/docs/targets">targets and backends</a> for the full picture.</p>
+
+            <h2 id="gaps">What does not work</h2>
+            <p>These are gaps a user can hit today. Milestone work is listed under <a href="#milestones">Milestones</a>; this table holds the rest.</p>
+            <div class="lmn-reference-table">
+                <div class="lmn-reference-head"><span>Gap</span><span>Status</span><span>Notes</span></div>
+                <p><strong>Alias analysis</strong><span><strong>In progress</strong></span><span>Implemented, and the vectorizer is gated on it: a loop is widened only where the analysis proves the load and the store cover the same bytes. GVN, SCCP and DSE still depend on it and are not started.</span></p>
+                <p><strong>Aggregate value typing (M1)</strong><span><strong>Not started</strong></span><span>Definite assignment is done. Aggregates are still passed as implicit pointers: <code>call @sum(%ptr)</code> into a <code>!Pair</code> parameter is accepted and runs. It is the largest remaining item for the surface freeze.</span></p>
+                <p><strong><code>getfieldptr.!Struct</code> required (M2)</strong><span><strong>Not started</strong></span><span>The policy is decided: a layout type is always required. The 8-byte fallback for an unknown struct type is still in place.</span></p>
+                <p><strong><code>copy.T</code> and removal of <code>phi</code> (M3)</strong><span><strong>Done</strong></span><span>The trailing I/O result forms are gone, <code>copy</code> is in, and <code>phi</code> and its lowering path are out of the IR and the printer. The parser rejects the spelling.</span></p>
+                <p><strong><code>--assembler</code> and <code>-c</code> accept unknown names</strong><span><strong>Not started</strong></span><span>An unknown value is not rejected. The build goes ahead with the default <code>ras</code> and <code>weld</code>. Checked with <code>--assembler bogus</code> and <code>-c bogus</code>.</span></p>
+                <p><strong><code>-g</code> with <code>--gc-sections</code></strong><span><strong>Not started</strong></span><span>The link succeeds and the program runs, but the output has no <code>.debug_*</code> sections. No error is printed.</span></p>
+                <p><strong>Unwind information</strong><span><strong>Not started</strong></span><span>Emitted code carries <code>.cfi</code> directives. A target that aborts on panic should not need them.</span></p>
+                <p><strong>wasm32 extern pointer parameters</strong><span><strong>Not started</strong></span><span>User <code>extern</code> functions with pointer parameters are declared as <code>i64</code>. A wasm32 host expects <code>i32</code>. WASI helpers are unaffected.</span></p>
+                <p><strong>Register clobbers on x86_64</strong><span><strong>Not started</strong></span><span><code>ctlz</code>/<code>cttz</code> may clobber <code>%rcx</code>, and multiplication by a constant may clobber <code>%rdx</code>. Passing programs may pass by register allocation luck. A targeted test is needed.</span></p>
+                <p><strong>Library API output</strong><span><strong>Not started</strong></span><span>Object bytes are available. Debug line information is not, because <code>ras</code> refuses <code>.loc</code> through the API. MIR is still formatted to assembly text and parsed again by <code>ras</code>. Errors are strings, not structured values.</span></p>
+                <p><strong>Prebuilt <code>lamina-c</code> archive</strong><span><strong>Not started</strong></span><span>The archive in <code>lamina-c/dist</code> is the{{#if lamina_version}} {{lamina_version}}{{/if}} release, older than the source. It must be rebuilt.</span></p>
+            </div>
 
             <h2 id="milestones">Milestones</h2>
             <p>A milestone is a set of outcomes. Versions give the ordering, not a schedule.</p>
             <div class="lmn-reference-table">
                 <div class="lmn-reference-head"><span>Version</span><span>Theme</span><span>The one thing it has to prove</span></div>
-                <p><code>0.1</code><strong>Correct on the targets we claim</strong><span>Every target labeled Tested is verified by CI on that operating system.</span></p>
+                <p><code>0.1</code><strong>Correct on the targets we claim</strong><span>Every target listed as done in the target table is compiled, run and checked against an expected result on a machine of that architecture.</span></p>
                 <p><code>0.2</code><strong>A backend you can add a target to</strong><span>Adding an architecture touches one module and a registration line.</span></p>
                 <p><code>0.3</code><strong>Depth</strong><span>A regression in generated code fails a check instead of going unnoticed.</span></p>
                 <p><code>0.4</code><strong>Freestanding targets</strong><span>A program runs with no operating system under it and no libc in it.</span></p>
                 <p><code>1.0</code><strong>Stable IR and ABI</strong><span>The IR and the C ABI can be depended on.</span></p>
             </div>
 
-            <h3>0.1 — Correct on the targets we claim <span class="lmn-shipped">Shipped</span></h3>
-            <p>The target table used to make claims nothing verified. It no longer does: every target labeled Tested is compiled, run, and diffed by CI on that operating system, and the self-built toolchain is a first-class path.</p>
+            <h3>0.1 — Correct on the targets we claim <span class="lmn-status lmn-status-planned">In progress</span></h3>
+            <p>The targets that are done are the ones whose output is run and checked. The targets that are in progress compile, and their output is read or assembled and not run.</p>
 
             <h4>Correctness</h4>
             <div class="lmn-doc-table">
-                <p><strong>Windows output</strong><span>Done. <code>writebyte</code> no longer falls through to a Linux <code>syscall</code>, the PE emitter resolves C runtime imports instead of assuming <code>kernel32.dll</code>, and Windows links request a CRT. Win64 aggregate passing and the hidden return pointer in <code>rcx</code> followed.</span></p>
-                <p><strong>RV64G from the RISC-V backend</strong><span>Done enough to run. Register use follows the ABI split, and the recorded programs run correctly under qemu except the aggregate ones, which the backend refuses instead of miscompiling.</span></p>
-                <p><strong>PowerPC64 ELFv2</strong><span>Runs under qemu, same aggregate gap. Locals moved above the parameter save area, where <code>printf</code> had been overwriting them.</span></p>
-                <p><strong>Deterministic output on every backend</strong><span>Fixed on x86_64 by ordering register sets. The other backends still need the same audit, because hash-ordered emission is invisible to a test that only compares program output.</span></p>
+                <p><strong>Windows output</strong><span><strong>Done</strong> for x86_64 Windows. <code>writebyte</code> no longer falls through to a Linux <code>syscall</code>, the PE emitter resolves C runtime imports, and Windows links request a CRT. Win64 aggregate passing and the hidden return pointer in <code>rcx</code> are implemented.</span></p>
+                <p><strong>RV64G from the RISC-V backend</strong><span><strong>In progress</strong>. Scalars, control flow and calls are lowered. Programs that pass or return an aggregate by value are refused, not miscompiled.</span></p>
+                <p><strong>PowerPC64 ELFv2</strong><span><strong>In progress</strong>. Locals sit above the parameter save area. Aggregates by value are refused, as on RISC-V.</span></p>
+                <p><strong>Deterministic output on every backend</strong><span><strong>In progress</strong>. Fixed on x86_64 by ordering register sets. The other backends have not been audited for hash-ordered emission.</span></p>
             </div>
 
             <h4>Language</h4>
             <div class="lmn-doc-table">
-                <p><strong>External function declarations</strong><span>Done. A module can declare a function it does not define, which is what lets the I/O builtins stop being per-backend intrinsics with a Linux-shaped fallback.</span></p>
+                <p><strong>External function declarations</strong><span><strong>Done</strong>. See Features above.</span></p>
             </div>
 
             <h4>Toolchain</h4>
             <div class="lmn-doc-table">
-                <p><strong>Split the toolchain flags</strong><span>Done. <code>--assembler</code> and <code>--linker</code> are separate choices, <code>--compiler</code> stays as a toolchain alias, and an unknown value is an error rather than a silent fallback.</span></p>
-                <p><strong>Move driver work out of weld</strong><span>Open. weld still supplies CRT objects and invents an interpreter path; that belongs in the Lamina driver, derived from the target, the way <code>gcc</code> does before invoking <code>ld</code>. See <a href="#design">the reasoning</a>.</span></p>
-                <p><strong>ras and weld as the default on x86_64 Linux</strong><span>Open. Both work under <code>--assembler ras -c weld</code>. Making them the default is why they were written.</span></p>
+                <p><strong>Split the toolchain flags</strong><span><strong>In progress</strong>. <code>--assembler</code> chooses the assembler (<code>ras</code>, <code>gas</code>, <code>clang</code>). <code>-c</code>, or <code>--compiler</code>, chooses the toolchain (<code>gnu</code>, <code>clang</code>, <code>msvc</code>, <code>lamina</code>) or a linker alone (<code>ld</code>, <code>lld</code>, <code>mold</code>, <code>weld</code>, <code>link</code>, <code>cl</code>). There is no <code>--linker</code> flag. Unknown values are not rejected; see the gaps table.</span></p>
+                <p><strong>Move driver work out of weld</strong><span><strong>In progress</strong>. The driver computes startup objects and the dynamic linker for its own GNU-style path. On the default <code>ras</code> and <code>weld</code> path, <code>weld</code> still supplies them, and it falls back to a hardcoded interpreter path when none is given. See <a href="#design">the reasoning</a>.</span></p>
+                <p><strong><code>ras</code> and <code>weld</code> as the default on x86_64 Linux</strong><span><strong>Done</strong>. See Features above.</span></p>
             </div>
 
             <h4>Testing</h4>
             <div class="lmn-doc-table">
-                <p><strong>Testcase suite in CI on three platforms</strong><span>Done. Every recorded program is compiled, run and diffed on Linux, Windows and macOS, and they all pass. AArch64, RISC-V and PowerPC64 run under qemu on top of that, by hand so far, no job yet.</span></p>
-                <p><strong>CI for ras, weld, and lamina-web</strong><span>ras has test, clippy, fmt, and commit-lint jobs. weld and lamina-web still have none.</span></p>
+                <p><strong>Testcase suite on three platforms</strong><span><strong>Done</strong>. Every program in <code>testcases/</code> and <code>benchmarks/</code> compiles, runs and produces the expected output on Linux, Windows and macOS.</span></p>
+                
             </div>
 
             <h4>Release and docs</h4>
             <div class="lmn-doc-table">
-                <p><strong>First C bindings release</strong><span>Done. Stable and nightly archives build in CI with checksums, a C example is rebuilt so exports and headers cannot drift, and the install page is live.</span></p>
-                <p><strong>One story everywhere</strong><span>Open. The README still sells four architectures as flat capabilities while this table separates tested from experimental. This table is right.</span></p>
+                <p><strong>First C bindings release</strong><span><strong>Done</strong>. Stable and nightly C SDK archives are published, and the install page documents them.</span></p>
+                <p><strong>One story everywhere</strong><span><strong>Not started</strong>. The README describes the supported architectures as one list, without the done, in-progress and not-started split. The target table on this page is the reference.</span></p>
             </div>
 
-            <h3>0.2 — A backend you can add a target to</h3>
+            <h3>0.2 — A backend you can add a target to <span class="lmn-status lmn-status-planned">In progress</span></h3>
             <p>Adding an architecture should mean implementing a trait, not editing a dozen match statements.</p>
             <div class="lmn-doc-table">
-                <p><strong>A codegen trait</strong><span>One interface for what a backend can do: assembly output, binary output, supported options. Target selection stops being hard-coded.</span></p>
-                <p><strong>Calling conventions in MIR</strong><span>Conventions vary enough between targets to belong in the machine IR as data rather than in per-backend code.</span></p>
-                <p><strong>AArch64 binary emission</strong><span>Assembly workflows work. The direct binary path is still unimplemented.</span></p>
-                <p><strong>ld command-line parity in weld</strong><span>A drop-in has to accept what it is a drop-in for. <code>-T</code> and <code>-static</code> come first, since the freestanding work depends on them. Done when a build that works with <code>ld</code> works with <code>weld</code> by substituting the binary and changing nothing else.</span></p>
-                <p><strong>Archive support in weld</strong><span><code>-l</code> is only meaningful if <code>.a</code> archives can be read and their members pulled in on demand, with the usual ordering and grouping rules.</span></p>
-                <p><strong>Mach-O objects from ras</strong><span>The Mach-O writer is a stub, so macOS still needs the system assembler.</span></p>
-                <p><strong>Relocation parity in weld</strong><span>Equal coverage across ELF, Mach-O, and PE rather than the current ELF-first depth, and a PE path with a real import table.</span></p>
-                <p><strong>Differential testing against the originals</strong><span>Assemble with ras and with as, link with weld and with ld, compare. The bar is a program that behaves the same way, not one built from identical bytes. Without it, drop-in is just a claim.</span></p>
+                <p><strong>A codegen trait</strong><span><strong>In progress</strong>. A <code>Codegen</code> trait exists in the MIR code generator. Target selection is not yet driven by it, and adding a target has not been measured against the one-module bar.</span></p>
+                <p><strong>Calling conventions in MIR</strong><span><strong>Not started</strong>. Conventions are still written per backend.</span></p>
+                <p><strong>AArch64 binary emission</strong><span><strong>In progress</strong>. The assembly path works. The direct binary encoder still misses <code>IntConvert</code> and <code>Copy</code>.</span></p>
+                <p><strong><code>ld</code> command-line parity in weld</strong><span><strong>In progress</strong>. Accepted: <code>-o</code>, <code>-e</code>, <code>-l</code>, <code>-L</code>, <code>-m</code>, <code>--dynamic-linker</code>, <code>-shared</code>, <code>-static</code>, <code>-nostdlib</code>, <code>--gc-sections</code>, <code>-z</code>, <code>-rpath</code>, <code>--Map</code>, <code>--start-group</code>/<code>--end-group</code>, and response files (<code>@file</code>). Shared objects, <code>--Map</code> output, response files and groups were checked to produce output. Not accepted: <code>-T</code>, <code>--whole-archive</code>, <code>--defsym</code>, <code>--wrap</code>. A build that works with <code>ld</code> does not yet work with <code>weld</code> unchanged.</span></p>
+                <p><strong>Archive support in weld</strong><span><strong>Done</strong>. See Features above.</span></p>
+                <p><strong>Mach-O objects from <code>ras</code></strong><span><strong>In progress</strong>. <code>ras</code> writes arm64 Mach-O objects, including the ones the macOS path uses. Other Mach-O targets have not been checked.</span></p>
+                <p><strong>Relocation parity in weld</strong><span><strong>In progress</strong>. Mach-O relocation handling exists in <code>ras</code>. The ELF path has the most depth. A PE import table is not yet complete.</span></p>
+                <p><strong>Differential testing against the originals</strong><span><strong>In progress</strong>. The <code>ras</code> DWARF output has been compared with GNU <code>as</code> by hand. No automated job compares <code>ras</code> with <code>as</code> or <code>weld</code> with <code>ld</code>.</span></p>
             </div>
 
-            <h3>0.3 — Depth: optimization, debugging, measurement</h3>
+            <h3>0.3 — Depth: optimization, debugging, measurement <span class="lmn-status lmn-status-planned">In progress</span></h3>
             <div class="lmn-doc-table">
-                <p><strong>Register allocation everywhere</strong><span>Linear-scan and graph-coloring allocation on every backend, with the difference measured.</span></p>
-                <p><strong>Debug information</strong><span>DWARF line tables, enough to step through a program and attribute profiler samples.</span></p>
-                <p><strong>Vectorization with results</strong><span>The passes exist. They stay off by default until they show measured wins on the benchmark suite.</span></p>
-                <p><strong>Optimization-level equivalence in CI</strong><span>Every program in the suite must produce identical output at every optimization level. The cheapest check on the list, and it catches a pass that changes behavior instead of speed.</span></p>
-                <p><strong>Emulated execution</strong><span>RISC-V and AArch64 Linux output run under QEMU, so those targets can be verified rather than eyeballed.</span></p>
-                <p><strong>Regressions visible in CI</strong><span>Compile time, generated-code performance, and binary size tracked per commit.</span></p>
+                <p><strong>Register allocation everywhere</strong><span><strong>In progress</strong>. Three allocators exist (<code>--regalloc incremental|linear|graph</code>). The <code>linear</code> default at <code>-O1</code> and above applies only to x86_64. The difference is not measured on every backend.</span></p>
+                <p><strong>Debug information on every target</strong><span><strong>In progress</strong>. Line tables are done through <code>ras</code> on x86_64, AArch64 and RISC-V 64. i686 numbers instructions instead of source lines. armv7 refuses <code>-g</code>. Stepping and profiler attribution are not checked end to end on every target.</span></p>
+                <p><strong>Vectorization with results</strong><span><strong>In progress</strong>. Two separate things now exist. Vectors are in the surface IR and lower on x86_64, AArch64 and WebAssembly, in a default build &#8212; a frontend can emit them and they are not experimental. The auto-vectorizer, which finds them for you, is behind the <code>nightly</code> feature, runs on x86_64 at <code>-O3</code> only, and widens one loop shape: a self-looping element-wise block whose load and store the alias analysis proves cover the same bytes, with a constant trip count divisible by the lane count. Anything else stays scalar. The only measured result so far is negative, for i64 on Zen 3.</span></p>
+                <p><strong>Optimization-level equivalence</strong><span><strong>Not started</strong>. Each testcase program is run at the default level only, so a pass that changes behavior rather than speed would not be caught.</span></p>
+                <p><strong>Emulated execution</strong><span><strong>In progress</strong>. AArch64, RISC-V 64 and PowerPC64 output has been run under QEMU by hand. The other cross targets are not run at all, for want of their C libraries rather than for want of an emulator.</span></p>
+                <p><strong>Regressions visible</strong><span><strong>In progress</strong>. Codegen metrics are compared against a committed baseline and a change in them is reported. Compile time and binary size are not tracked.</span></p>
             </div>
 
-            <h3>0.4 — Freestanding and operating-system targets</h3>
-            <p>Compiling for an environment the backend does not already assume: no libc, no C runtime startup objects, no host to fall back on. Today freestanding is approximated by <code>*_unknown</code>, which is a gap in the vocabulary rather than a supported mode.</p>
+            <h3>0.4 — Freestanding and operating-system targets <span class="lmn-status">Not started</span></h3>
+            <p>Compiling for an environment the backend does not already assume: no libc, no C runtime startup objects, no host to fall back on. Today a freestanding target is named with <code>*_unknown</code>, which is a naming convention and not a mode. The driver does not yet treat it as one.</p>
             <div class="lmn-doc-table">
-                <p><strong>Hosted and freestanding as a target property</strong><span>A hosted target gets CRT objects, default libraries, and an interpreter path. A freestanding target gets none of them, and asking for them is an error rather than a silent default.</span></p>
-                <p><strong>Soft float</strong><span>For targets that disable the vector units entirely, floating-point lowers to a support layer and the ABI passes floats in integer registers.</span></p>
-                <p><strong>No red zone, strict alignment</strong><span>Backend options honored everywhere: never use memory below the stack pointer, never emit an unaligned access.</span></p>
-                <p><strong>No unwinding</strong><span>Under abort-on-panic there are no unwind tables to produce and none should be required by the emitted code or the link.</span></p>
-                <p><strong>Linker scripts</strong><span>Section placement, load addresses, and the entry symbol from a script rather than from built-in defaults.</span></p>
+                <p><strong>Hosted and freestanding as a target property</strong><span><strong>Not started</strong>. A freestanding target would get no CRT objects, no default libraries and no interpreter path, and asking for them would be an error.</span></p>
+                <p><strong>Soft float</strong><span><strong>Not started</strong>. Floating point is not lowered to a support layer for targets that disable vector units.</span></p>
+                <p><strong>No red zone, strict alignment</strong><span><strong>Not started</strong>. <code>@no_red_zone</code> is accepted by the parser. No backend reads it. Strict alignment is not enforced.</span></p>
+                <p><strong>Linker scripts</strong><span><strong>Not started</strong>. <code>weld</code> does not accept <code>-T</code>.</span></p>
             </div>
             <p>Done when Lamina can build a program that runs with no operating system underneath it and no C library linked into it. <a href="#artery">Artery</a> is the driving case.</p>
 
-            <h3>1.0 — A stable IR and a stable ABI</h3>
+            <h3>1.0 — A stable IR and a stable ABI <span class="lmn-status">Not started</span></h3>
             <p>A compatibility promise, and one that should not be made early. The IR text form and IRBuilder API stable with a documented deprecation policy. A stable C ABI. Every tested target with an end-to-end path and no system toolchain required. A correctness suite, differential testing against an established toolchain, and malformed-IR testing. Debugger integration on more than one platform.</p>
 
-            <h2 id="testing">Testing and CI</h2>
-            <p>This runs through every milestone rather than sitting inside one, so it gets its own section.</p>
-            <p>One workflow builds and tests on <code>ubuntu-latest</code>. Clippy and rustfmt run there too. The C SDK job has a matrix with exactly one entry. <code>ras</code>, <code>weld</code>, and <code>lamina-web</code> have no CI at all. Two gaps matter more than the rest.</p>
-            <div class="lmn-doc-table">
-                <p><strong>The suite that would catch a miscompilation never runs</strong><span><code>cargo test</code> runs the unit tests and nothing else. The <code>testcases/</code> directory holds 70 Lamina programs with recorded expected output and a runner that knows how to compile, run, and diff them. CI never calls it.</span></p>
-                <p><strong>Nothing runs on Windows or macOS</strong><span>The target table calls <code>x86_64_windows</code> tested and <code>aarch64_macos</code> partially tested, but no job has ever executed a Lamina program on either. Tested currently means someone tried it by hand once. The Windows defect below survived because of this.</span></p>
-            </div>
-            <p>One smaller thing: the rustfmt job runs <code>cargo fmt</code> and commits the result instead of running <code>cargo fmt --check</code> and failing. A formatting job that rewrites the branch hides the thing it is supposed to report.</p>
+            <h2 id="testing">Testing</h2>
+            <p>Testing runs through every milestone rather than sitting inside one, so it gets its own section.</p>
 
             <h3>The rule this section exists to enforce</h3>
-            <p><strong>A target may be labeled Tested only if a CI job on that operating system compiles and runs the recorded programs.</strong> No exceptions, and the label comes off if the job goes away. That makes the target table above a report on CI rather than a statement of intent.</p>
+            <p><strong>A target is Done only if its output is compiled, run and checked against an expected result on a machine of that architecture.</strong> Targets whose output is only read, or only assembled, are In progress or Not started, whatever they emit. Reading assembly catches a malformed instruction and nothing else; it does not catch a wrong answer.</p>
 
             <h3>Test tiers, added in order</h3>
             <p>Each tier is cheap to add once the one before it exists, and each catches a class of bug the earlier ones cannot.</p>
             <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Tier</span><span>Milestone</span><span>What it does, and what it catches</span></div>
-                <p><code>T0</code><strong>Have it</strong><span>Unit tests across the workspace. Logic errors inside a function.</span></p>
-                <p><code>T1</code><strong>0.1</strong><span>Testcase suite: compile, run, and diff the 70 recorded programs. Miscompilation, ABI mistakes, bad codegen.</span></p>
-                <p><code>T2</code><strong>0.2</strong><span>Toolchain matrix: the same programs through as+ld, clang+lld, and ras+weld. Divergence between our tools and the ones they replace.</span></p>
-                <p><code>T3</code><strong>0.2</strong><span>Differential against a C program built by clang or gcc doing the same thing. Wrong answers that are self-consistently wrong.</span></p>
-                <p><code>T4</code><strong>0.1</strong><span>Determinism: compile twice, compare the assembly bytes. Hash-ordered emission and other irreproducibility.</span></p>
-                <p><code>T5</code><strong>0.3</strong><span>Optimization equivalence: every level must produce identical program output. Passes that change behavior instead of speed.</span></p>
-                <p><code>T6</code><strong>0.2</strong><span>Cross-compilation smoke: emit assembly for every recognized triple. Panics in targets nobody exercises.</span></p>
-                <p><code>T7</code><strong>0.3</strong><span>Emulated execution under QEMU. Correctness on targets with no native runner.</span></p>
-                <p><code>T8</code><strong>1.0</strong><span>Malformed input: fuzz the parser and the IR validator. Panics on untrusted input.</span></p>
-                <p><code>T9</code><strong>0.3</strong><span>Performance and size tracked per commit. Slow regressions nobody notices.</span></p>
+                <div class="lmn-reference-head"><span>Tier</span><span>Status</span><span>What it does, and what it catches</span></div>
+                <p><code>T0</code><strong>Done</strong><span>Unit tests across the workspace. Logic errors inside a function.</span></p>
+                <p><code>T1</code><strong>Done</strong><span>Testcase suite: compile, run and diff the programs in <code>testcases/</code>. Miscompilation, ABI mistakes, bad codegen. The benchmark programs run alongside them.</span></p>
+                <p><code>T2</code><strong>Not started</strong><span>Toolchain matrix: the same programs through GNU <code>as</code> and <code>ld</code>, through clang and <code>lld</code>, and through <code>ras</code> and <code>weld</code>. Divergence between our tools and the ones they replace.</span></p>
+                <p><code>T3</code><strong>Not started</strong><span>Differential against a C program doing the same thing. Wrong answers that are self-consistently wrong.</span></p>
+                <p><code>T4</code><strong>In progress</strong><span>Determinism: compile twice, compare the assembly bytes. Fixed on x86_64. The other backends are not audited.</span></p>
+                <p><code>T5</code><strong>Not started</strong><span>Optimization equivalence: every level must produce identical program output. Passes that change behavior instead of speed.</span></p>
+                <p><code>T6</code><strong>Not started</strong><span>Cross-compilation smoke: emit assembly for every recognized target name. Panics in backends nobody exercises.</span></p>
+                <p><code>T7</code><strong>In progress</strong><span>Emulated execution under QEMU. Run by hand, for aarch64, riscv64 and ppc64le. The other cross targets are not run at all.</span></p>
+                <p><code>T8</code><strong>Not started</strong><span>Malformed input: fuzz the parser and the IR validator. Panics on untrusted input.</span></p>
+                <p><code>T9</code><strong>In progress</strong><span>Performance and size tracked per commit. Codegen metrics are tracked. Timing and binary size are not.</span></p>
             </div>
-            <p>T5 deserves a note. It is the cheapest tier on the list and it catches the most embarrassing class of bug, because an optimization pass that changes a program's output is always wrong and is otherwise invisible until a user reports it.</p>
 
-            <h3>Platform matrix</h3>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Runner</span><span>Status</span><span>Covers</span></div>
-                <p><code>ubuntu-latest</code><strong>Exists</strong><span>x86_64 Linux, the reference target. Needs T1.</span></p>
-                <p><code>windows-latest</code><strong>Missing</strong><span>x86_64 Windows.</span></p>
-                <p><code>macos-latest</code><strong>Missing</strong><span>AArch64 macOS, Apple Silicon.</span></p>
-                <p><code>ubuntu + QEMU</code><strong>Missing</strong><span>RISC-V 64 and AArch64 Linux, via T7.</span></p>
-            </div>
+            <h3>What stops the cross targets being run</h3>
+            <p>It is not the emulator. QEMU user-mode is installed for every architecture here. What is missing is the cross C libraries, so most programs never link far enough to hand QEMU anything, and a freestanding program that does link has no startup code and faults when its entry function returns. The targets that do run under emulation are the ones whose cross libc is present.</p>
 
             <h3>Growing the suite</h3>
-            <p>The 70 recorded programs cover arithmetic, control flow, calls, memory, composites, and a set of regression cases named after the bugs that produced them. That last group is the pattern to keep: <strong>every bug fixed gets a testcase named after it, added in the same change as the fix.</strong> The suite grows from real defects rather than from guesses about what might break.</p>
+            <p>The programs in <code>testcases/</code> cover arithmetic, control flow, calls, memory, composites, I/O, and a set of regression cases named after the bugs that produced them. That last group is the pattern to keep: <strong>every bug fixed gets a testcase named after it, added in the same change as the fix.</strong> The suite grows from real defects rather than from guesses about what might break.</p>
             <p>Beyond that, in rough order of value: programs that mix floating point with calls, programs that stress the register allocator until it spills, deep recursion, large stack frames, structs passed and returned by value across the ABI boundary, and programs built from several translation units so linking gets exercised rather than assumed.</p>
 
             <h2 id="design">Decisions behind the milestones</h2>
@@ -203,17 +236,18 @@
             <p><code>ras</code> is an alternative to <code>as</code>/GAS. <code>weld</code> is an alternative to <code>ld</code>, <code>lld</code>, and <code>mold</code>. A drop-in replacement is judged against the thing it replaces: where the original has a flag, a behavior, or a diagnostic, the replacement matches it instead of inventing a nicer version, and where the original declines to do something, the replacement declines too.</p>
             <p><code>ras</code> is already built this way; its option set mirrors GAS closely. <code>weld</code> is further from parity in two ways.</p>
             <div class="lmn-doc-table">
-                <p><strong>Missing most of the ld command line</strong><span>Present: <code>-o</code>, <code>-e</code>, <code>-L</code>, <code>-l</code>, <code>--dynamic-linker</code>, <code>-nostdlib</code>, plus ld64 options for Mach-O. Absent: <code>-T</code>, <code>-static</code>, <code>-shared</code>, <code>--gc-sections</code>, <code>-z</code>, <code>-rpath</code>, <code>--start-group</code>, <code>--whole-archive</code>, <code>--Map</code>, <code>--defsym</code>, <code>--wrap</code>, and response files. <code>-T</code> supplies a linker script and <code>-static</code> links without a dynamic loader. Both are required by the freestanding work, so this gap and the Artery target are the same gap.</span></p>
-                <p><strong>Doing the driver's job</strong><span><code>ld</code> and <code>lld</code> never link libc themselves. The driver does: <code>gcc</code> and <code>clang</code> add <code>crt1.o</code>, <code>-lc</code>, the dynamic-linker path, and the search paths before <code>ld</code> runs. Bare <code>ld hello.o -o hello</code> gives an unresolved <code>printf</code>, and that is correct behavior. <code>weld</code> currently supplies startup objects and hardcodes an interpreter path regardless of architecture.</span></p>
+                <p><strong>Missing part of the ld command line</strong><span><strong>In progress</strong>. Most common options are accepted; the list is in the table under 0.2. Not accepted: <code>-T</code>, <code>--whole-archive</code>, <code>--defsym</code>, <code>--wrap</code>. <code>-T</code> supplies a linker script and is needed by the freestanding work, so this gap and the Artery target are the same gap.</span></p>
+                <p><strong>Doing the driver's job</strong><span><strong>In progress</strong>. <code>ld</code> and <code>lld</code> never link libc themselves. The driver does: <code>gcc</code> and <code>clang</code> add <code>crt1.o</code>, <code>-lc</code>, the dynamic-linker path, and the search paths before <code>ld</code> runs. Bare <code>ld hello.o -o hello</code> gives an unresolved <code>printf</code>, and that is correct behavior. On the default path, <code>weld</code> still supplies startup objects and a default interpreter path.</span></p>
             </div>
-            <p>The correction: <code>weld</code> links what it is given and nothing more, Lamina's own driver assembles the CRT objects, libraries, and interpreter path from the target, and nothing changes for the user because the driver supplies what the driver should have been supplying. A freestanding link then stops being a special case. It is simply a target whose driver adds neither, handed to a linker that never added them on its own.</p>
+            <p>The intended end state: <code>weld</code> links what it is given and nothing more, and the Lamina driver assembles the CRT objects, libraries, and interpreter path from the target. A freestanding link then stops being a special case. It is simply a target whose driver adds neither, handed to a linker that never added them on its own.</p>
 
             <h3>Where do the I/O builtins go?</h3>
-            <p>The old debug instruction and <code>writebyte</code> were intrinsics that each backend expands inline, with a per-OS match and a fallback arm. That design is the direct cause of the Windows defect below, and it cannot express a target like Artery at all. The destination is an IR with no built-in I/O: a program declares what it calls, the target decides what that resolves to, and the backend emits an ordinary call. That one change unblocks the Windows fix, WebAssembly, and Artery together.</p>
+            <p>The old debug instruction and <code>writebyte</code> were intrinsics that each backend expands inline, with a per-OS match and a fallback arm. That design caused the Windows defect in 0.1, and it cannot express a target like Artery at all. The destination is an IR with no built-in I/O: a program declares what it calls, the target decides what that resolves to, and the backend emits an ordinary call.</p>
+            <p><strong>In progress.</strong> <code>@extern</code> is done. <code>writebyte</code> is still a per-target builtin, and it has no implementation for <code>aarch64_windows</code>.</p>
 
             <h2 id="artery">Artery</h2>
-            <p>Artery is a from-scratch Rust kernel built alongside Lamina, and the reason milestone 0.4 exists. Supporting it means compiling for an environment with no libc, no startup objects, and no host underneath.</p>
-            <p><code>TargetOperatingSystem::Artery</code> exists behind the nightly feature. The driver reads <code>artery</code> as an OS name and prints it back. That is all of it so far.</p>
+            <p><strong>Not started.</strong> Artery is a from-scratch Rust kernel built alongside Lamina, and the reason milestone 0.4 exists. Supporting it means compiling for an environment with no libc, no startup objects, and no host underneath.</p>
+            <p>The driver parses <code>artery</code> as an OS name behind the nightly feature and prints it back. There is no code generation, no object emission and no linking path for it yet.</p>
             <p>The constraints it imposes, the binary format, how system calls are reached, and the work items to get there are on their own page.</p>
             <div class="lmn-manual-next"><span>Read on</span><a href="/roadmap/artery">The Artery target</a></div>
 
