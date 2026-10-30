@@ -83,13 +83,22 @@ impl TemplateEngine {
             .get(template_name)
             .ok_or_else(|| format!("Template '{template_name}' not found"))?;
 
+        // Component versions reach every template from one place, so no page
+        // carries a version literal and no handler has to remember to pass one.
+        let mut scope = crate::versions::template_variables();
+        for (key, value) in variables {
+            scope.insert(key.clone(), value.clone());
+        }
+
         let mut result = template.clone();
 
         // Replace variables in the format {{variable_name}}
-        for (key, value) in variables {
+        for (key, value) in &scope {
             let placeholder = format!("{{{{{key}}}}}");
             result = result.replace(&placeholder, value);
         }
+
+        result = resolve_conditionals(&result, &scope);
 
         // Handle shared components after variable substitution.
         result = self.process_includes(&result, variables)?;
@@ -154,5 +163,104 @@ impl TemplateEngine {
         variables.insert("additional_css".to_string(), css_link);
 
         self.render("base.html", &variables)
+    }
+}
+
+/// Resolve `{{#if name}}…{{else}}…{{/if}}`, where a variable counts as set only
+/// when it is present and not empty. Blocks do not nest.
+///
+/// This is what keeps an unavailable version off the page: the whole sentence,
+/// filename, or table cell that would have carried a number drops out instead of
+/// rendering a gap or a stale literal.
+fn resolve_conditionals(content: &str, variables: &HashMap<String, String>) -> String {
+    const OPEN: &str = "{{#if ";
+    const ELSE: &str = "{{else}}";
+    const CLOSE: &str = "{{/if}}";
+
+    let mut out = String::with_capacity(content.len());
+    let mut rest = content;
+
+    while let Some(start) = rest.find(OPEN) {
+        let after_open = &rest[start + OPEN.len()..];
+        let Some(name_end) = after_open.find("}}") else {
+            break;
+        };
+        let name = after_open[..name_end].trim();
+        let body = &after_open[name_end + 2..];
+        let Some(close) = body.find(CLOSE) else {
+            break;
+        };
+
+        let block = &body[..close];
+        let (when_set, when_unset) = match block.find(ELSE) {
+            Some(split) => (&block[..split], &block[split + ELSE.len()..]),
+            None => (block, ""),
+        };
+
+        out.push_str(&rest[..start]);
+        let is_set = variables.get(name).is_some_and(|value| !value.is_empty());
+        out.push_str(if is_set { when_set } else { when_unset });
+        rest = &body[close + CLOSE.len()..];
+    }
+
+    out.push_str(rest);
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scope(pairs: &[(&str, &str)]) -> HashMap<String, String> {
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn a_set_variable_keeps_its_block() {
+        let vars = scope(&[("lamina_version", "0.1.0")]);
+        assert_eq!(
+            resolve_conditionals(
+                "release{{#if lamina_version}} 0.1.0{{/if}}, see below",
+                &vars
+            ),
+            "release 0.1.0, see below"
+        );
+    }
+
+    #[test]
+    fn an_empty_variable_drops_its_block() {
+        let vars = scope(&[("ras_version", "")]);
+        assert_eq!(
+            resolve_conditionals("release{{#if ras_version}} 0.1.5{{/if}}, see below", &vars),
+            "release, see below"
+        );
+    }
+
+    #[test]
+    fn a_missing_variable_takes_the_else_branch() {
+        let vars = scope(&[]);
+        assert_eq!(
+            resolve_conditionals("{{#if weld_version}}v1{{else}}&mdash;{{/if}}", &vars),
+            "&mdash;"
+        );
+    }
+
+    #[test]
+    fn several_blocks_resolve_independently() {
+        let vars = scope(&[("a", "1"), ("b", "")]);
+        assert_eq!(
+            resolve_conditionals("{{#if a}}A{{/if}}-{{#if b}}B{{else}}no B{{/if}}-end", &vars),
+            "A-no B-end"
+        );
+    }
+
+    #[test]
+    fn an_unterminated_block_is_left_alone() {
+        let vars = scope(&[("a", "1")]);
+        let input = "{{#if a}}A";
+        assert_eq!(resolve_conditionals(input, &vars), input);
     }
 }

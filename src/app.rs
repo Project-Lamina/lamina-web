@@ -20,6 +20,7 @@ pub async fn init_app(config: &Config) -> Result<(), Box<dyn error::Error>> {
     info!("Templates loaded from {}", config.template_dir);
 
     crate::releases::spawn_refresh_task();
+    crate::versions::spawn_refresh_task();
 
     info!("Application initialization completed successfully");
     Ok(())

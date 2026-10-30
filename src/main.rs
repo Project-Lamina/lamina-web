@@ -7,6 +7,7 @@ mod releases;
 mod routes;
 mod server;
 mod templates;
+mod versions;
 
 use log::{debug, error, info};
 use logger::Logger;
