@@ -62,6 +62,16 @@ pub async fn roadmap() -> Html<String> {
     )
 }
 
+/// Gallery handler
+pub async fn gallery() -> Html<String> {
+    info!("Serving gallery request");
+    render_simple_page(
+        "gallery.html",
+        "Lamina Gallery",
+        "Languages and projects that compile through Lamina as their primary chain, and what each one uses the backend for.",
+    )
+}
+
 /// Render a variable-free template inside the base layout.
 fn render_simple_page(template: &str, title: &str, description: &str) -> Html<String> {
     let template_engine = get_template_engine();
@@ -116,7 +126,7 @@ pub async fn docs() -> Html<String> {
     render_docs_template(
         "docs_index.html",
         "Lamina Documentation",
-        "Documentation for the Lamina compiler and its IR, ras, weld, camina, and the lamina-c C bindings.",
+        "Documentation for the Lamina compiler and its IR, ras, weld, and the lamina-c C bindings.",
         "home",
     )
 }
@@ -261,7 +271,6 @@ fn render_docs_template(
         "ir_instructions",
         "runtime",
         "lumir",
-        "camina",
         "output",
         "targets",
         "abi",

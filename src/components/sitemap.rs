@@ -85,6 +85,13 @@ impl SitemapGenerator {
             priority: 0.7,
         });
 
+        entries.push(SitemapEntry {
+            url: format!("{}/gallery", self.base_url),
+            last_modified: now,
+            change_frequency: ChangeFrequency::Weekly,
+            priority: 0.7,
+        });
+
         // Official documentation
         entries.push(SitemapEntry {
             url: format!("{}/docs", self.base_url),
@@ -107,7 +114,6 @@ impl SitemapGenerator {
             "targets",
             "ras",
             "weld",
-            "camina",
             "c-bindings",
             "c-bindings/install",
             "c-bindings/usage",

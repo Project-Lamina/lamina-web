@@ -1,0 +1,93 @@
+<main class="lamina-home lmn-manual-page">
+    <header class="lmn-header">
+        <a class="lmn-brand" href="/" aria-label="Lamina home">
+            <img src="/static/assets/image/projects/lamina_logo.webp" alt="" width="42" height="42">
+            <span>Lamina</span>
+        </a>
+        <nav class="lmn-nav" aria-label="Gallery navigation">
+            <a href="/gallery">Gallery</a>
+            <a href="/roadmap">Roadmap</a>
+            <a href="/docs">Docs</a>
+        </nav>
+        <a class="lmn-header-link" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
+            GitHub
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/>
+            </svg>
+        </a>
+    </header>
+
+    <div class="lmn-manual-layout lmn-roadmap-layout">
+        <article class="lmn-manual-article">
+            <nav class="lmn-doc-breadcrumbs"><a href="/">Home</a><span>/</span><strong>Gallery</strong></nav>
+            <p class="lmn-section-tag">Users</p>
+            <h1>Gallery</h1>
+            <p class="lmn-manual-lead">
+                Languages and projects whose own source hands code generation to Lamina. A project is
+                listed when its code calls Lamina to produce the output that users run. The call has to be
+                in a public repository you can read, so every entry here can be checked. Being listed says
+                nothing about how finished a project is or how many people use it.
+            </p>
+
+            <nav class="lmn-roadmap-toc" aria-label="On this page">
+                <a href="#frontends">Frontends</a>
+                <a href="#demonstrations">Demonstrations</a>
+                <a href="#evaluating">Evaluating</a>
+                <a href="#adding">Adding a project</a>
+            </nav>
+
+            <h2 id="frontends">Frontends</h2>
+            <p>Projects that compile their own source language through Lamina.</p>
+            <div class="lmn-manual-card-grid">
+                <a href="https://github.com/Nukleus-Language/nukleus" target="_blank" rel="noopener">
+                    <small>Language, early development</small>
+                    <h3>Nukleus</h3>
+                    <p>A programming language implemented in Rust. Its README marks it as in early development. The compiler has its own lexer and AST stage, then lowers the program to Lamina IR.</p>
+                    <span>Lamina is the default AOT backend, and the driver selects it unless told otherwise. The <code>codegen</code> crate calls <code>compile_lamina_ir_to_assembly</code>, or <code>compile_lamina_ir_to_target_assembly</code> when a target is named. Cranelift is available only behind an optional <code>jit</code> feature.</span>
+                </a>
+            </div>
+
+            <h2 id="demonstrations">Demonstrations</h2>
+            <p>
+                A complete compiler for a small language, written to show the Lamina pipeline from source to
+                executable. It is a real code path and a useful reference, but it is an example of use, not a
+                production frontend.
+            </p>
+            <div class="lmn-manual-card-grid">
+                <a href="https://github.com/SkuldNorniern/brainfuck-lamina" target="_blank" rel="noopener">
+                    <small>Demonstration, Brainfuck</small>
+                    <h3>brainfuck-lamina</h3>
+                    <p>A Brainfuck compiler. It parses the source to an AST, builds Lamina IR for the whole program, and compiles that IR to a native executable.</p>
+                    <span>Lamina turns the IR into assembly with <code>compile_lamina_ir_to_assembly</code>. The system <code>gcc</code> assembles and links the result with <code>-no-pie</code>, so <code>weld</code> is not on the link path. Its README describes the project as a demonstration of compiler construction, and its test results were recorded against an earlier Lamina release.</span>
+                </a>
+            </div>
+
+            <h2 id="evaluating">Evaluating</h2>
+            <p>
+                Rok, a language developed outside this project, has asked for Lamina as a backend and
+                sent a list of what it would need. It is not compiling through Lamina today: the
+                integration it wants starts with a library call that returns object bytes in memory, and
+                that call does not exist yet. The request is tracked, and Rok moves to the list above
+                if and when it ships against Lamina.
+            </p>
+
+            <h2 id="adding">Adding a project</h2>
+            <p>An entry is added after its call site has been read. To be listed, a project needs:</p>
+            <ul>
+                <li>A public repository that contains the call into Lamina. A dependency declared in <code>Cargo.toml</code> that nothing calls does not count.</li>
+                <li>Lamina producing the output users run by default. A secondary path, or a JIT tier that hands work back to another engine, does not count as the chain.</li>
+                <li>A project that exists in code. A plan, or a mention in documentation, does not count.</li>
+            </ul>
+            <p>
+                Open an issue on the <a href="https://github.com/SkuldNorniern/lamina/issues" target="_blank" rel="noopener">Lamina repository</a>
+                with the link, the Lamina entry point the project calls, the targets it builds for, whether it
+                compiles ahead of time or at run time, and any part still handled by another toolchain. Rust
+                projects call the <a href="/docs/rust">Rust crate</a> directly. Projects in other languages can use the
+                <a href="/docs/c-bindings">C bindings</a>. A demonstration is listed under Demonstrations.
+            </p>
+
+            <div class="lmn-manual-next"><span>Related</span><a href="/roadmap">The roadmap</a></div>
+        </article>
+    </div>
+</main>
+{{footer}}

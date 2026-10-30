@@ -28,6 +28,7 @@ pub fn build_app(config: &Config) -> Router {
         .route("/healthz", get(handlers::health))
         .route("/roadmap", get(handlers::roadmap))
         .route("/roadmap/artery", get(handlers::roadmap_artery))
+        .route("/gallery", get(handlers::gallery))
         .route("/docs", get(handlers::docs))
         .route("/docs/{page}", get(handlers::docs_page))
         .route(
@@ -54,7 +55,7 @@ pub fn build_app(config: &Config) -> Router {
                 .layer(CompressionLayer::new()),
         );
 
-    info!("Router configured with {} routes", 9);
+    info!("Router configured with {} routes", 10);
     router
 }
 
@@ -147,6 +148,7 @@ mod tests {
         "/",
         "/roadmap",
         "/roadmap/artery",
+        "/gallery",
         "/docs",
         "/docs/getting-started",
         "/docs/ir",
