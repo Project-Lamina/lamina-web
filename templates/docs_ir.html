@@ -5,7 +5,7 @@
             <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">IR language</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · Reference</p>
             <h1>IR language</h1>
-            <p class="lmn-manual-lead">Lamina IR is a text format for typed functions made of named blocks. This page covers the model, the lexical rules, types, declarations and annotations. Every instruction is in <a href="/docs/ir-instructions">IR instructions</a>.</p>
+            <p class="lmn-manual-lead">Lamina IR is a text format for typed functions made of named blocks. This page covers the model, the lexical rules, types, declarations and annotations. Every instruction is in <a href="/docs/ir-instructions">IR instructions</a>. What the syntax on this page <em>means</em> &#8212; what each operation computes, what traps, and which targets refuse it &#8212; is stated clause by clause in the <a href="https://github.com/SkuldNorniern/lamina/wiki/IR-semantics">IR semantics</a>, which is normative where this page and it disagree.</p>
 
             <h2 id="not-ssa">This is not SSA</h2>
             <p>If you come from LLVM, read this section first. The text has no SSA form and no merge instruction. A name such as <code>%total</code> is a <strong>mutable slot</strong> for the whole function. Its first assignment defines it and fixes its type. Later assignments, on any path, must give a value of that same type.</p>
@@ -151,7 +151,7 @@ fn @main() -&gt; i64 {
 }</code></pre>
 
             <h3>External functions</h3>
-            <p>A function the module does not define is declared with <code>@extern</code> and no body. A declaration ending in <code>...</code> is variadic, and so is a function with a body. On x86_64 Linux the body reads the extra arguments with <code>va_start</code> and <code>va_arg</code>; the other targets refuse <code>va_start</code> by name. The <code>...</code> must be the last parameter.</p>
+            <p>A function the module does not define is declared with <code>@extern</code> and no body. Giving it a body is an error: drop the body to declare the function, or drop <code>@extern</code> to define it here. A declaration ending in <code>...</code> is variadic, and so is a function with a body. On x86_64 Linux the body reads the extra arguments with <code>va_start</code> and <code>va_arg</code>; the other targets refuse <code>va_start</code> by name. The <code>...</code> must be the last parameter.</p>
             <pre><code class="language-lamina">@extern
 fn @printf(ptr %fmt, ...) -&gt; i32
 
@@ -171,7 +171,7 @@ fn @main() -&gt; i64 {
                 <thead><tr><th scope="col">Annotation</th><th scope="col">Applies to</th><th scope="col">Effect</th></tr></thead>
                 <tbody>
                     <tr><th scope="row" data-label="Annotation"><strong><code>@export</code></strong></th><td data-label="Applies to"><code>fn, global</code></td><td data-label="Effect"><span>Exports the symbol. Cannot be combined with <code>internal</code>, <code>private</code> or <code>@extern</code>.</span></td></tr>
-                    <tr><th scope="row" data-label="Annotation"><strong><code>@extern</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Declaration only, with no body. Supports <code>...</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@extern</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Declaration only. A function carrying it may not have a body; one that does is rejected. Supports <code>...</code>.</span></td></tr>
                     <tr><th scope="row" data-label="Annotation"><strong><code>@inline</code> <code>@noinline</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Inlining hints. Cannot be combined with each other.</span></td></tr>
                     <tr><th scope="row" data-label="Annotation"><strong><code>@hot</code> <code>@cold</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Placement and optimization hints. Cannot be combined with each other.</span></td></tr>
                     <tr><th scope="row" data-label="Annotation"><strong><code>@noreturn</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>The function does not return.</span></td></tr>

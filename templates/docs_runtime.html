@@ -5,38 +5,33 @@
             <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">Runtime and libc</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · Reference</p>
             <h1>Runtime and libc</h1>
-            <p class="lmn-manual-lead">Lamina needs no C library. A program compiled from Lamina IR calls nothing you did not write, with one exception: some 128-bit operations call compiler runtime routines. Lamina ships those routines and compiles them for your target. You can also supply your own, or redirect each one to a symbol of your choice.</p>
+            <p class="lmn-manual-lead">Lamina needs no C library and no <code>libgcc</code>. A program compiled from Lamina IR calls nothing you did not write, with one exception: some wide-integer and conversion operations call compiler runtime routines. Lamina ships those routines and compiles them for your target. You can also supply your own, or redirect each one to a symbol of your choice.</p>
 
             <h2 id="no-libc">No libc</h2>
             <p>The compiler emits no call into libc. Instructions such as <code>writebyte</code>, <code>write</code>, <code>read</code>, <code>stackalloc</code> and the arithmetic and memory instructions are lowered to machine code or to system calls. A program that uses none of the <code>@extern</code> declarations has no external symbol to resolve.</p>
             <p>If you want libc, declare what you need with <code>@extern</code> and call it. The compiler then links the symbol the way any C object would. <a href="/docs/output">Output and I/O</a> shows both routes.</p>
 
             <h2 id="builtins">Compiler runtime routines</h2>
-            <p>Some operations have no single machine instruction on the target. The compiler implements them with a call to a compiler runtime routine. These are the only external calls the compiler emits that you did not write:</p>
+            <p>Some operations have no single machine instruction on the target. The compiler implements them with a call to a compiler runtime routine. These are the only external calls the compiler emits that you did not write. Each family comes in a 128-bit form and a 64-bit one; the 64-bit form is what an architecture whose integer registers hold 32 bits reaches for, because it splits every <code>i64</code> into a register pair.</p>
             <table class="lmn-reference-table">
-                <thead><tr><th scope="col">Routine</th><th scope="col">Used for</th><th scope="col">Emitted when</th></tr></thead>
+                <thead><tr><th scope="col">Family</th><th scope="col">Routines</th><th scope="col">Emitted when</th></tr></thead>
                 <tbody>
-                    <tr><th scope="row" data-label="Routine"><strong><code>__divti3</code></strong></th><td data-label="Used for"><span>Signed 128-bit division</span></td><td data-label="Emitted when"><span><code>div.i128</code></span></td></tr>
-                    <tr><th scope="row" data-label="Routine"><strong><code>__udivti3</code></strong></th><td data-label="Used for"><span>Unsigned 128-bit division</span></td><td data-label="Emitted when"><span><code>div.u128</code></span></td></tr>
-                    <tr><th scope="row" data-label="Routine"><strong><code>__modti3</code></strong></th><td data-label="Used for"><span>Signed 128-bit remainder</span></td><td data-label="Emitted when"><span><code>rem.i128</code></span></td></tr>
-                    <tr><th scope="row" data-label="Routine"><strong><code>__umodti3</code></strong></th><td data-label="Used for"><span>Unsigned 128-bit remainder</span></td><td data-label="Emitted when"><span><code>rem.u128</code></span></td></tr>
-                    <tr><th scope="row" data-label="Routine"><strong><code>__floattidf</code></strong></th><td data-label="Used for"><span>Signed 128-bit integer to <code>f64</code></span></td><td data-label="Emitted when"><span>an <code>inttofp</code> from <code>i128</code> to <code>f64</code></span></td></tr>
-                    <tr><th scope="row" data-label="Routine"><strong><code>__floatuntidf</code></strong></th><td data-label="Used for"><span>Unsigned 128-bit integer to <code>f64</code></span></td><td data-label="Emitted when"><span>an <code>inttofp</code> from <code>u128</code> to <code>f64</code></span></td></tr>
-                    <tr><th scope="row" data-label="Routine"><strong><code>__fixdfti</code></strong></th><td data-label="Used for"><span><code>f64</code> to signed 128-bit integer</span></td><td data-label="Emitted when"><span>an <code>fptoint</code> from <code>f64</code> to <code>i128</code></span></td></tr>
-                    <tr><th scope="row" data-label="Routine"><strong><code>__fixunsdfti</code></strong></th><td data-label="Used for"><span><code>f64</code> to unsigned 128-bit integer</span></td><td data-label="Emitted when"><span>an <code>fptoint</code> from <code>f64</code> to <code>u128</code></span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Signed division and remainder</strong></th><td data-label="Routines"><code>__divti3 __modti3 __divdi3 __moddi3</code></td><td data-label="Emitted when"><span><code>div.i128</code>, <code>rem.i128</code>, and <code>div.i64</code> or <code>rem.i64</code> where the target has no 64-bit divide</span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Unsigned division and remainder</strong></th><td data-label="Routines"><code>__udivti3 __umodti3 __udivdi3 __umoddi3</code></td><td data-label="Emitted when"><span>the same for <code>u128</code> and <code>u64</code></span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Integer to float</strong></th><td data-label="Routines"><code>__floattidf __floattisf __floatuntidf __floatuntisf __floatdidf __floatdisf __floatundidf __floatundisf</code></td><td data-label="Emitted when"><span>an <code>inttofp</code> from a 128-bit or 64-bit integer, signed or unsigned, to <code>f64</code> or <code>f32</code></span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Float to integer</strong></th><td data-label="Routines"><code>__fixdfti __fixsfti __fixunsdfti __fixunssfti __fixdfdi __fixsfdi __fixunsdfdi __fixunssfdi</code></td><td data-label="Emitted when"><span>an <code>fptoint</code> from <code>f64</code> or <code>f32</code> to a 128-bit or 64-bit integer, signed or unsigned</span></td></tr>
                 </tbody>
             </table>
-            <p>Conversions between <code>f32</code> and 128-bit integers use four more routines of the same kind: <code>__floattisf</code>, <code>__floatuntisf</code>, <code>__fixsfti</code> and <code>__fixunssfti</code>. They are emitted only for those conversions. A program that uses no 128-bit operations emits none of these.</p>
-            <p>Each routine is referenced by name. Nothing else is emitted without your asking.</p>
+            <p>A program that reaches none of them emits none of them. Each routine is referenced by name, and nothing else is emitted without your asking.</p>
 
             <h2 id="shipped">Lamina ships them</h2>
-            <p>All twelve routines are written in Lamina IR and live in <code>builtins/</code> in the compiler's own source tree. When a module calls one of the names above, leaves it undefined, and has not redirected it, the driver compiles that routine — and everything it calls — for the requested target and puts the objects on the link line ahead of <code>-lc</code>. A program that reaches none of the twelve builds exactly as it did before.</p>
+            <p>Every routine above is written in Lamina IR and lives in <code>builtins/</code> in the compiler's own source tree. When a module calls one of the names, leaves it undefined, and has not redirected it, the driver compiles that routine &#8212; and everything it calls &#8212; for the requested target and puts the objects on the link line ahead of <code>-lc</code>.</p>
             <p>The driver names what it built under <code>-v</code>:</p>
             <pre><code class="language-shell">$ lamina div128.lamina -o div128 -v
 [VERBOSE] Compiler runtime for x86_64_linux: divti3, udivti3
-[VERBOSE] Linking with weld: ["div128.o", "div128.lamina-runtime/divti3.o", "div128.lamina-runtime/udivti3.o", "-lc", "-o", "div128"]</code></pre>
-            <p>The routines are ordinary IR functions with no special ABI: a 128-bit argument or result uses the same two-word convention every <code>i128</code> function boundary uses. A routine the target's backend cannot compile is left out, and the symbol is resolved from the host compiler runtime instead.</p>
-            <p><code>--jit</code> does not compile them. A program that reaches a 128-bit helper takes the fallback path, which writes an executable to the cache directory and runs it, so <code>--jit</code> on such a program is an ahead-of-time build with an extra step.</p>
+[VERBOSE] Linking with weld: ["div128.o", "div128.lamina-runtime/divti3.o", "div128.lamina-runtime/udivti3.o", "--dynamic-linker", "/lib64/ld-linux-x86-64.so.2", "-lc", "-o", "div128"]</code></pre>
+            <p>The routines are ordinary IR functions with no special ABI: a 128-bit argument or result uses the same two-word convention every <code>i128</code> function boundary uses. A routine the target's backend cannot compile is left out, and the symbol is resolved from the host compiler runtime instead, where the host has one.</p>
+            <p><code>--jit</code> does not compile them. A program that reaches a helper takes the fallback path, which writes an executable to the cache directory and runs it, so <code>--jit</code> on such a program is an ahead-of-time build with an extra step.</p>
 
             <h2 id="defined-corners">Where these differ from libgcc</h2>
             <p>Float-to-integer conversion is undefined in libgcc for out-of-range and NaN inputs. It is defined here, and the definition is the same one the scalar <code>fptoint</code> contract names, so a 128-bit conversion and a 64-bit one agree.</p>
@@ -46,11 +41,12 @@
                 <p><strong>Unsigned, out of range</strong><span><code>__fixunsdfti</code> and <code>__fixunssfti</code> give 0 for any negative value including -0.0, and <code>u128::MAX</code> at or above 2<sup>128</sup> and for +inf.</span></p>
                 <p><strong>Division by zero</strong><span>Traps, as the compiler's inline 128-bit division does. <code>__divti3(MIN, -1)</code> and <code>__modti3(MIN, -1)</code> trap too; libgcc returns the wrapped value.</span></p>
             </div>
+            <p>The 64-bit routines answer the same way at the same corners, which is what lets i686 and rv32 agree with every other backend on an <code>fptoint</code> rather than returning the x87 integer indefinite.</p>
             <p>Integer-to-float rounds to nearest, ties to even, in a single rounding, and agrees with libgcc on every input. The routines were checked against an independent arbitrary-precision oracle over the tie cases, the powers of two around each rounding boundary, NaN payloads, infinities and negative zero.</p>
 
-            <h2 id="libgcc">Where libgcc is still required</h2>
-            <p><code>builtins/</code> holds 128-bit routines and no 64-bit ones. An architecture whose integer registers are narrower than 64 bits splits every <code>i64</code> into a register pair and needs the <code>__divdi3</code> family, which is not ours. On those targets the host toolchain's <code>libgcc.a</code> is required beside the shipped routines, and a link that cannot find it is an error naming the compiler it looked in: <code>i686</code>, <code>armv7</code>, <code>thumbv6m</code>, <code>thumbv7m</code> and <code>riscv32</code>.</p>
-            <p>On a 64-bit target nothing from libgcc is required. <code>x86_64_linux</code> links a 128-bit program with weld alone.</p>
+            <h2 id="libgcc">libgcc is not required</h2>
+            <p>No target needs it. <code>builtins/</code> covers the 64-bit routines as well as the 128-bit ones, so an architecture that splits every <code>i64</code> into a register pair &#8212; <code>i686</code>, <code>armv7</code>, <code>thumbv6m</code>, <code>thumbv7m</code>, <code>riscv32</code> &#8212; gets its <code>__divdi3</code> family from the same place a 64-bit target gets <code>__divti3</code>. <code>x86_64_linux</code> links a 128-bit program with weld alone; <code>i686_linux</code> divides a 64-bit integer through <code>divdi3.o</code> and <code>udivdi3.o</code> the driver built for it.</p>
+            <p>Where the host does happen to have a <code>libgcc.a</code> for the target, the GNU link path still names it, after the compiled objects. That is opportunistic. A missing one is not an error, and nothing is resolved from it that the shipped routines already define.</p>
 
             <h2 id="example">What a call looks like</h2>
             <p>This is what <code>div.i128</code> lowers to. The module below divides a 128-bit value and returns the low 64 bits:</p>
@@ -68,6 +64,12 @@
             <p>Set <code>LAMINA_BUILTINS</code> to a comma-separated list of <code>name=symbol</code> pairs. The name is the routine the compiler would call, and the symbol is the name it calls instead. The routine's C name is the key; the symbol is any function your program defines or links.</p>
             <pre><code class="language-shell">$ LAMINA_BUILTINS=__divti3=my_div lamina div128.lamina --emit-asm -o div128.s</code></pre>
             <p>The emitted code calls <code>my_div</code> where it would have called <code>__divti3</code>. The table also covers <code>malloc</code>, <code>free</code> and <code>exit</code>, and the C block-copy and block-fill routines: an <code>@extern</code> declaration of one of these names is called through the symbol you give it.</p>
+            <p>An override the compiler cannot use is an error rather than something skipped. A name that is not a routine the compiler calls is refused with the list of names that are, and an entry that is not <code>name=symbol</code> is refused as malformed:</p>
+            <pre><code class="language-text">$ LAMINA_BUILTINS=__nope=my_div lamina div128.lamina --emit-asm -o div128.s
+Error: Validation Error: LAMINA_BUILTINS names `__nope`, which is not a runtime helper this compiler calls; the names are __divdi3, __divti3, __fixdfdi, &#8230;
+
+$ LAMINA_BUILTINS=my_div lamina div128.lamina --emit-asm -o div128.s
+Error: Validation Error: LAMINA_BUILTINS entry `my_div` is not `name=symbol`</code></pre>
 
             <h2 id="no-os">Freestanding targets</h2>
             <p>A target whose environment is <code>none</code> links no C runtime and no compiler runtime, the shipped routines included. That is what freestanding means here: the link adds nothing the module did not ask for. A module that calls one of the routines above must define it itself, or name a replacement with <code>LAMINA_BUILTINS</code>. The compiler checks this at compile time and names the symbol in its error, instead of leaving the failure to the linker.</p>

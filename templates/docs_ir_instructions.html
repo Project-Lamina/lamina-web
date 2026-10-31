@@ -15,7 +15,7 @@
             <table class="lmn-reference-table">
                 <thead><tr><th scope="col">Instruction</th><th scope="col">Form</th><th scope="col">Meaning</th></tr></thead>
                 <tbody>
-                    <tr><th scope="row" data-label="Instruction"><strong>Binary</strong></th><td data-label="Form"><code>add sub mul div rem and or xor shl shr</code></td><td data-label="Meaning"><span>Operands and result have the suffix type. <code>add sub mul div</code> take floats as well as integers. <code>rem and or xor shl shr</code> are integer-only. <code>div</code>, <code>rem</code> and <code>shr</code> are signed or unsigned according to the suffix type.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Binary</strong></th><td data-label="Form"><code>add sub mul div rem and or xor shl shr</code></td><td data-label="Meaning"><span>Operands and result have the suffix type. <code>add sub mul div</code> take floats as well as integers. <code>rem and or xor shl shr</code> are integer-only. <code>div</code>, <code>rem</code> and <code>shr</code> are signed or unsigned according to the suffix type. A shift by a constant count outside the operand's width is a compile error; a count computed at run time is masked to the width.</span></td></tr>
                     <tr><th scope="row" data-label="Instruction"><strong>Rotate</strong></th><td data-label="Form"><code>rotl rotr</code></td><td data-label="Meaning"><span>Integer only. Rotate left or right.</span></td></tr>
                     <tr><th scope="row" data-label="Instruction"><strong>Negate</strong></th><td data-label="Form"><code>neg</code></td><td data-label="Meaning"><span>Any numeric type. Two's complement negation for integers.</span></td></tr>
                     <tr><th scope="row" data-label="Instruction"><strong>Bitwise not</strong></th><td data-label="Form"><code>not</code></td><td data-label="Meaning"><span>Integer only.</span></td></tr>
@@ -129,7 +129,7 @@ fn @main() -&gt; i64 {
                     <tr><th scope="row" data-label="Instruction"><strong>Element address</strong></th><td data-label="Form"><code>%p = getelem.T ptr, index</code></td><td data-label="Meaning"><span>Address of element <code>index</code> of an array or of a sequence of <code>T</code>. The index is scaled by the size of <code>T</code>, so the suffix is required. The index may be a value of any integer type.</span></td></tr>
                     <tr><th scope="row" data-label="Instruction"><strong>Field address</strong></th><td data-label="Form"><code>%p = getfieldptr.!Name ptr, N</code></td><td data-label="Meaning"><span>Address of field <code>N</code> of the named struct. The suffix names the layout type and is required. <code>N</code> is an integer literal.</span></td></tr>
                     <tr><th scope="row" data-label="Instruction"><strong>Pointer to integer</strong></th><td data-label="Form"><code>%n = ptrtoint.T ptr</code></td><td data-label="Meaning"><span>Converts an address to an integer of type <code>T</code>.</span></td></tr>
-                    <tr><th scope="row" data-label="Instruction"><strong>Integer to pointer</strong></th><td data-label="Form"><code>%p = inttoptr.T value</code></td><td data-label="Meaning"><span>Converts an integer of type <code>T</code> to a pointer.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Integer to pointer</strong></th><td data-label="Form"><code>%p = inttoptr.T value</code></td><td data-label="Meaning"><span>Converts an integer of type <code>T</code> to a pointer. The suffix names the integer end, not the result, and it must be an integer type: <code>inttoptr.ptr</code>, <code>inttoptr.f64</code> and <code>inttoptr.bool</code> are refused. The result is always <code>ptr</code>.</span></td></tr>
                 </tbody>
             </table>
             <pre><code class="language-lamina">global $tab: [3 x i64] = [10, 20, 30]
@@ -218,7 +218,7 @@ fn @main() -&gt; i64 {
     %s = call @add(i64 %r, 0)
     ret.i64 %s
 }</code></pre>
-            <p>A call to a function the module does not define needs an <code>@extern</code> declaration first. Calling an undeclared name is an error.</p>
+            <p>A call to a function the module does not define needs an <code>@extern</code> declaration first. Calling an undeclared name is an error, and so is <code>@extern</code> on a function that has a body: the annotation says the symbol is defined elsewhere, so drop the body to declare it or drop the annotation to define it.</p>
 
             <h2 id="asm">Inline assembly</h2>
             <p><code>%r = asm.T "template", operands, clobber(names)</code> runs the template as x86_64 assembly and gives the result type <code>T</code>. <code>asm.void "template", clobber(names)</code> has no result. In the template, <code>$0</code>, <code>$1</code> and so on name the operands in order, and <code>$$</code> is a literal dollar sign, so <code>$$7</code> is the immediate 7 in AT&amp;T syntax.</p>
@@ -288,7 +288,7 @@ fn @main() -&gt; i64 {
             <p><code>readbyte</code> takes no operand, so <code>%b = readbyte %x</code> is an error: <code>%x</code> starts the next statement.</p>
 
             <h2 id="removed">Removed spellings</h2>
-            <p>These spellings are rejected with a hint that names their replacement.</p>
+            <p>These spellings are rejected with a hint that names their replacement, in assignment form (<code>%a = zext.i8.i64 1</code>) as well as in statement form.</p>
             <div class="lmn-doc-table">
                 <p><strong><code>print</code></strong><span>Removed. Write bytes with <code>writebyte</code>, or call a printf-style function declared with <code>@extern</code>.</span></p>
                 <p><strong><code>heapalloc</code>, <code>heapfree</code></strong><span>Removed. Declare <code>@extern fn @malloc(i64 %n) -&gt; ptr</code> and <code>@extern fn @free(ptr %p) -&gt; void</code>, then call them.</span></p>
