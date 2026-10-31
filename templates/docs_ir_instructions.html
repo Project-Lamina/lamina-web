@@ -1,9 +1,8 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>IR instructions</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">IR instructions</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · Reference</p>
             <h1>IR instructions</h1>
             <p class="lmn-manual-lead">Every instruction form the parser accepts, with its operands and result. Read <a href="/docs/ir">IR language</a> first for the slot model and the lexical rules.</p>
@@ -13,15 +12,17 @@
             <p>Operands are values (<code>%name</code>, a global <code>$name</code>, or a literal) except where a bare label or a bare name is required. Literals are range-checked against the suffix type.</p>
 
             <h2 id="arithmetic">Integer and float arithmetic</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
-                <p><strong>Binary</strong><code>add sub mul div rem and or xor shl shr</code><span>Operands and result have the suffix type. <code>add sub mul div</code> take floats as well as integers. <code>rem and or xor shl shr</code> are integer-only. <code>div</code>, <code>rem</code> and <code>shr</code> are signed or unsigned according to the suffix type.</span></p>
-                <p><strong>Rotate</strong><code>rotl rotr</code><span>Integer only. Rotate left or right.</span></p>
-                <p><strong>Negate</strong><code>neg</code><span>Any numeric type. Two's complement negation for integers.</span></p>
-                <p><strong>Bitwise not</strong><code>not</code><span>Integer only.</span></p>
-                <p><strong>Bit counts</strong><code>popcount ctlz cttz bswap</code><span>Integer only. Count set bits, leading zeros, trailing zeros, or byte-swap. Compile on x86_64, aarch64, riscv64, ppc64le and armv7. loongarch64 and riscv32 refuse them by name.</span></p>
-                <p><strong>Square root</strong><code>sqrt</code><span><code>f32</code> and <code>f64</code> only.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Instruction</th><th scope="col">Form</th><th scope="col">Meaning</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Instruction"><strong>Binary</strong></th><td data-label="Form"><code>add sub mul div rem and or xor shl shr</code></td><td data-label="Meaning"><span>Operands and result have the suffix type. <code>add sub mul div</code> take floats as well as integers. <code>rem and or xor shl shr</code> are integer-only. <code>div</code>, <code>rem</code> and <code>shr</code> are signed or unsigned according to the suffix type.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Rotate</strong></th><td data-label="Form"><code>rotl rotr</code></td><td data-label="Meaning"><span>Integer only. Rotate left or right.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Negate</strong></th><td data-label="Form"><code>neg</code></td><td data-label="Meaning"><span>Any numeric type. Two's complement negation for integers.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Bitwise not</strong></th><td data-label="Form"><code>not</code></td><td data-label="Meaning"><span>Integer only.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Bit counts</strong></th><td data-label="Form"><code>popcount ctlz cttz bswap</code></td><td data-label="Meaning"><span>Integer only. Count set bits, leading zeros, trailing zeros, or byte-swap. Compile on x86_64, aarch64, riscv64, ppc64le and armv7. loongarch64 and riscv32 refuse them by name.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Square root</strong></th><td data-label="Form"><code>sqrt</code></td><td data-label="Meaning"><span><code>f32</code> and <code>f64</code> only.</span></td></tr>
+                </tbody>
+            </table>
             <pre><code class="language-lamina">fn @main() -&gt; i64 {
   entry:
     %a = sub.i64 10, 3
@@ -71,15 +72,17 @@
 }</code></pre>
 
             <h2 id="conversions">Conversions</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
-                <p><strong>Truncate</strong><code>trunc.S.D</code><span>Keeps the low bits. The target must be narrower than the source.</span></p>
-                <p><strong>Extend</strong><code>extend.S.D</code><span>Widens an integer. The source type's signedness picks sign or zero extension. The target must be wider. This is the one widening instruction; there is no separate zero or sign form.</span></p>
-                <p><strong>Bit cast</strong><code>bitcast.S.D</code><span>Reinterprets the bits. Source and target must be the same size.</span></p>
-                <p><strong>Integer to float</strong><code>inttofp.S.D</code><span>Source is an integer, target is <code>f32</code> or <code>f64</code>.</span></p>
-                <p><strong>Float to integer</strong><code>fptoint.S.D</code><span>Source is <code>f32</code> or <code>f64</code>, target is an integer. Truncates toward zero.</span></p>
-                <p><strong>Float to float</strong><code>fpcast.S.D</code><span>Between <code>f32</code> and <code>f64</code> only.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Instruction</th><th scope="col">Form</th><th scope="col">Meaning</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Instruction"><strong>Truncate</strong></th><td data-label="Form"><code>trunc.S.D</code></td><td data-label="Meaning"><span>Keeps the low bits. The target must be narrower than the source.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Extend</strong></th><td data-label="Form"><code>extend.S.D</code></td><td data-label="Meaning"><span>Widens an integer. The source type's signedness picks sign or zero extension. The target must be wider. This is the one widening instruction; there is no separate zero or sign form.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Bit cast</strong></th><td data-label="Form"><code>bitcast.S.D</code></td><td data-label="Meaning"><span>Reinterprets the bits. Source and target must be the same size.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Integer to float</strong></th><td data-label="Form"><code>inttofp.S.D</code></td><td data-label="Meaning"><span>Source is an integer, target is <code>f32</code> or <code>f64</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Float to integer</strong></th><td data-label="Form"><code>fptoint.S.D</code></td><td data-label="Meaning"><span>Source is <code>f32</code> or <code>f64</code>, target is an integer. Truncates toward zero.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Float to float</strong></th><td data-label="Form"><code>fpcast.S.D</code></td><td data-label="Meaning"><span>Between <code>f32</code> and <code>f64</code> only.</span></td></tr>
+                </tbody>
+            </table>
             <pre><code class="language-lamina">fn @main() -&gt; i64 {
   entry:
     %a = add.f64 1.5, 2.25
@@ -116,17 +119,19 @@ fn @main() -&gt; i64 {
 }</code></pre>
 
             <h2 id="memory">Memory</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
-                <p><strong>Stack allocation</strong><code>%p = stackalloc.T</code> or <code>stackalloc.T align n</code><span>Reserves storage for one <code>T</code> (or a named type or array) in the current frame, and returns its <code>ptr</code>. It is released when the function returns. <code>align n</code> sets the alignment and must be a power of two.</span></p>
-                <p><strong>Load</strong><code>%v = load.T ptr</code><span>Reads a <code>T</code> from memory.</span></p>
-                <p><strong>Store</strong><code>store.T ptr, value</code><span>Writes a <code>T</code>. The value must have type <code>T</code>.</span></p>
-                <p><strong>Volatile</strong><code>%v = volatile load.T ptr</code>, <code>volatile store.T ptr, value</code><span>Same as load and store, with the access kept in program order and not elided. Only these two may be volatile.</span></p>
-                <p><strong>Element address</strong><code>%p = getelem.T ptr, index</code><span>Address of element <code>index</code> of an array or of a sequence of <code>T</code>. The index is scaled by the size of <code>T</code>, so the suffix is required. The index may be a value of any integer type.</span></p>
-                <p><strong>Field address</strong><code>%p = getfieldptr.!Name ptr, N</code><span>Address of field <code>N</code> of the named struct. The suffix names the layout type and is required. <code>N</code> is an integer literal.</span></p>
-                <p><strong>Pointer to integer</strong><code>%n = ptrtoint.T ptr</code><span>Converts an address to an integer of type <code>T</code>.</span></p>
-                <p><strong>Integer to pointer</strong><code>%p = inttoptr.T value</code><span>Converts an integer of type <code>T</code> to a pointer.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Instruction</th><th scope="col">Form</th><th scope="col">Meaning</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Instruction"><strong>Stack allocation</strong></th><td data-label="Form"><code>%p = stackalloc.T</code> or <code>stackalloc.T align n</code></td><td data-label="Meaning"><span>Reserves storage for one <code>T</code> (or a named type or array) in the current frame, and returns its <code>ptr</code>. It is released when the function returns. <code>align n</code> sets the alignment and must be a power of two.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Load</strong></th><td data-label="Form"><code>%v = load.T ptr</code></td><td data-label="Meaning"><span>Reads a <code>T</code> from memory.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Store</strong></th><td data-label="Form"><code>store.T ptr, value</code></td><td data-label="Meaning"><span>Writes a <code>T</code>. The value must have type <code>T</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Volatile</strong></th><td data-label="Form"><code>%v = volatile load.T ptr</code>, <code>volatile store.T ptr, value</code></td><td data-label="Meaning"><span>Same as load and store, with the access kept in program order and not elided. Only these two may be volatile.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Element address</strong></th><td data-label="Form"><code>%p = getelem.T ptr, index</code></td><td data-label="Meaning"><span>Address of element <code>index</code> of an array or of a sequence of <code>T</code>. The index is scaled by the size of <code>T</code>, so the suffix is required. The index may be a value of any integer type.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Field address</strong></th><td data-label="Form"><code>%p = getfieldptr.!Name ptr, N</code></td><td data-label="Meaning"><span>Address of field <code>N</code> of the named struct. The suffix names the layout type and is required. <code>N</code> is an integer literal.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Pointer to integer</strong></th><td data-label="Form"><code>%n = ptrtoint.T ptr</code></td><td data-label="Meaning"><span>Converts an address to an integer of type <code>T</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Integer to pointer</strong></th><td data-label="Form"><code>%p = inttoptr.T value</code></td><td data-label="Meaning"><span>Converts an integer of type <code>T</code> to a pointer.</span></td></tr>
+                </tbody>
+            </table>
             <pre><code class="language-lamina">global $tab: [3 x i64] = [10, 20, 30]
 
 fn @main() -&gt; i64 {
@@ -154,27 +159,31 @@ fn @set_b(ptr %p) -&gt; void {
 
             <h2 id="vectors">Vectors</h2>
             <p>A vector is a type, not a second family of operations. An opcode already carries its type as a suffix, so <code>add.&lt;4 x i32&gt;</code> is the same <code>add</code> as <code>add.i64</code>. There is no <code>simd_add</code> and no parallel opcode table. The <a href="/docs/ir#types">type page</a> says where a <code>&lt;N x T&gt;</code> may appear; the short version is that it may be an instruction suffix and the type of a value, and nothing else.</p>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
-                <p><strong>Element-wise</strong><code>add sub mul and or xor</code><span>Both operands and the result have the suffix type. <code>div</code>, <code>rem</code>, <code>rotl</code> and <code>rotr</code> have no vector form on any target here and are refused by name.</span></p>
-                <p><strong>Shift</strong><code>%c = shl.&lt;4 x i32&gt; %a, %n</code><span>The type of the count says which shift it is. A scalar or a literal count is one count for every lane. A count vector of the same shape is one count per lane. Both readings are correct on their face, which is why the type decides rather than a second opcode. The lane type picks logical against arithmetic the way it does for scalars: <code>shr.&lt;4 x u32&gt;</code> is logical, <code>shr.&lt;4 x i32&gt;</code> arithmetic. Float lanes are refused. A count of the lane width or more gives zero, or the sign for an arithmetic right shift, on every target and in both forms.</span></p>
-                <p><strong>Splat</strong><code>%v = splat.&lt;4 x i32&gt; 7</code><span>One scalar into every lane.</span></p>
-                <p><strong>Extract a lane</strong><code>%x = extractlane.&lt;4 x i32&gt; %v, 2</code><span>Result is a scalar of the lane type. The index is part of the instruction, not an operand; writing <code>%i</code> there is a parse error naming the reason. A lane chosen at run time is a different and far more expensive operation, and accepting one silently would be a performance cliff nobody can see.</span></p>
-                <p><strong>Insert a lane</strong><code>%w = insertlane.&lt;4 x i32&gt; %v, 9, 1</code><span>Result is a vector. The index is constant, as above.</span></p>
-                <p><strong>Shuffle</strong><code>%s = shuffle.&lt;4 x i32&gt; %a, %b, [0, 5, 2, 7]</code><span>The mask holds one entry per result lane and indexes the lanes of <code>%a</code> followed by those of <code>%b</code>, so entries run from 0 to 2N-1. The mask is constant. MIR has no shuffle opcode, so this expands to a zero splat and an extract-insert pair per lane: correct everywhere, and not what a single <code>pshufd</code> would cost.</span></p>
-                <p><strong>Memory</strong><code>%v = load.&lt;4 x i32&gt; %p</code>, <code>store.&lt;4 x i32&gt; %p, %v</code><span>The ordinary load and store with a vector suffix. The pointer is a plain <code>ptr</code>, so nothing about the vector reaches a declaration.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Instruction</th><th scope="col">Form</th><th scope="col">Meaning</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Instruction"><strong>Element-wise</strong></th><td data-label="Form"><code>add sub mul and or xor</code></td><td data-label="Meaning"><span>Both operands and the result have the suffix type. <code>div</code>, <code>rem</code>, <code>rotl</code> and <code>rotr</code> have no vector form on any target here and are refused by name.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Shift</strong></th><td data-label="Form"><code>%c = shl.&lt;4 x i32&gt; %a, %n</code></td><td data-label="Meaning"><span>The type of the count says which shift it is. A scalar or a literal count is one count for every lane. A count vector of the same shape is one count per lane. Both readings are correct on their face, which is why the type decides rather than a second opcode. The lane type picks logical against arithmetic the way it does for scalars: <code>shr.&lt;4 x u32&gt;</code> is logical, <code>shr.&lt;4 x i32&gt;</code> arithmetic. Float lanes are refused. A count of the lane width or more gives zero, or the sign for an arithmetic right shift, on every target and in both forms.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Splat</strong></th><td data-label="Form"><code>%v = splat.&lt;4 x i32&gt; 7</code></td><td data-label="Meaning"><span>One scalar into every lane.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Extract a lane</strong></th><td data-label="Form"><code>%x = extractlane.&lt;4 x i32&gt; %v, 2</code></td><td data-label="Meaning"><span>Result is a scalar of the lane type. The index is part of the instruction, not an operand; writing <code>%i</code> there is a parse error naming the reason. A lane chosen at run time is a different and far more expensive operation, and accepting one silently would be a performance cliff nobody can see.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Insert a lane</strong></th><td data-label="Form"><code>%w = insertlane.&lt;4 x i32&gt; %v, 9, 1</code></td><td data-label="Meaning"><span>Result is a vector. The index is constant, as above.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Shuffle</strong></th><td data-label="Form"><code>%s = shuffle.&lt;4 x i32&gt; %a, %b, [0, 5, 2, 7]</code></td><td data-label="Meaning"><span>The mask holds one entry per result lane and indexes the lanes of <code>%a</code> followed by those of <code>%b</code>, so entries run from 0 to 2N-1. The mask is constant. MIR has no shuffle opcode, so this expands to a zero splat and an extract-insert pair per lane: correct everywhere, and not what a single <code>pshufd</code> would cost.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Memory</strong></th><td data-label="Form"><code>%v = load.&lt;4 x i32&gt; %p</code>, <code>store.&lt;4 x i32&gt; %p, %v</code></td><td data-label="Meaning"><span>The ordinary load and store with a vector suffix. The pointer is a plain <code>ptr</code>, so nothing about the vector reaches a declaration.</span></td></tr>
+                </tbody>
+            </table>
             <p>There are no vector comparisons, no reductions, no vector <code>select</code>, no masks, no gather or scatter and no conversions between vector types. x86_64, AArch64 and WebAssembly lower 128-bit vectors; every other backend refuses by name. 256-bit vectors parse and validate and no backend lowers them. The <a href="/docs/targets#features">target matrix</a> has the per-backend holes.</p>
 
             <h2 id="atomics">Atomics and fences</h2>
             <p>Atomic operations are available on x86_64, aarch64, riscv64 and ppc64le. <code>atomic_cmpxchg.T ptr, expected, desired, success, failure</code> yields one result, the value that was in memory before the operation. The exchange happened exactly when that value equals <code>expected</code>. Atomic operations take an integer or <code>ptr</code> type. Orderings are <code>relaxed</code>, <code>acquire</code>, <code>release</code>, <code>acqrel</code> and <code>seqcst</code>. <code>atomic_load</code> rejects <code>release</code> and <code>acqrel</code>. <code>atomic_store</code> rejects <code>acquire</code> and <code>acqrel</code>.</p>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
-                <p><strong>Atomic load</strong><code>%v = atomic_load.T ptr, ORD</code><span>Returns the value.</span></p>
-                <p><strong>Atomic store</strong><code>atomic_store.T ptr, value, ORD</code><span>Stores the value. No result.</span></p>
-                <p><strong>Read-modify-write</strong><code>%old = atomic_add atomic_sub atomic_and atomic_or atomic_xor atomic_exchange .T ptr, value, ORD</code><span>Applies the operation and returns the previous value. Spelled with a dot before the type: <code>atomic_add.i64</code>.</span></p>
-                <p><strong>Fence</strong><code>fence ORD</code><span>No operands and no result.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Instruction</th><th scope="col">Form</th><th scope="col">Meaning</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Instruction"><strong>Atomic load</strong></th><td data-label="Form"><code>%v = atomic_load.T ptr, ORD</code></td><td data-label="Meaning"><span>Returns the value.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Atomic store</strong></th><td data-label="Form"><code>atomic_store.T ptr, value, ORD</code></td><td data-label="Meaning"><span>Stores the value. No result.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Read-modify-write</strong></th><td data-label="Form"><code>%old = atomic_add atomic_sub atomic_and atomic_or atomic_xor atomic_exchange .T ptr, value, ORD</code></td><td data-label="Meaning"><span>Applies the operation and returns the previous value. Spelled with a dot before the type: <code>atomic_add.i64</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Fence</strong></th><td data-label="Form"><code>fence ORD</code></td><td data-label="Meaning"><span>No operands and no result.</span></td></tr>
+                </tbody>
+            </table>
             <pre><code class="language-lamina">fn @main() -&gt; i64 {
   entry:
     %cell = stackalloc.i64
@@ -188,12 +197,14 @@ fn @set_b(ptr %p) -&gt; void {
 }</code></pre>
 
             <h2 id="calls">Calls and function addresses</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
-                <p><strong>Call</strong><code>call @f(args)</code> or <code>%r = call @f(args)</code><span>Direct call. Each argument is a value, optionally preceded by its type: <code>call @f(7)</code> or <code>call @f(i64 7)</code>. A typed argument must match the parameter exactly. The result is typed by the callee; a call to a <code>void</code> function has no result.</span></p>
-                <p><strong>Function address</strong><code>%p = funcaddr @f</code><span>The address of a function, as a <code>ptr</code>.</span></p>
-                <p><strong>Indirect call</strong><code>%r = callptr.T ptr(args)</code> or <code>callptr.void ptr(args)</code><span>Calls through a pointer. The suffix is the return type and is required. Every argument must carry its type. A bare <code>...</code> may appear once, to mark the variadic tail of a call to a variadic function. The x86_64 backend does not yet act on it; see the ABI page before passing float arguments through a pointer.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Instruction</th><th scope="col">Form</th><th scope="col">Meaning</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Instruction"><strong>Call</strong></th><td data-label="Form"><code>call @f(args)</code> or <code>%r = call @f(args)</code></td><td data-label="Meaning"><span>Direct call. Each argument is a value, optionally preceded by its type: <code>call @f(7)</code> or <code>call @f(i64 7)</code>. A typed argument must match the parameter exactly. The result is typed by the callee; a call to a <code>void</code> function has no result.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Function address</strong></th><td data-label="Form"><code>%p = funcaddr @f</code></td><td data-label="Meaning"><span>The address of a function, as a <code>ptr</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Indirect call</strong></th><td data-label="Form"><code>%r = callptr.T ptr(args)</code> or <code>callptr.void ptr(args)</code></td><td data-label="Meaning"><span>Calls through a pointer. The suffix is the return type and is required. Every argument must carry its type. A bare <code>...</code> may appear once, to mark the variadic tail of a call to a variadic function. The x86_64 backend does not yet act on it; see the ABI page before passing float arguments through a pointer.</span></td></tr>
+                </tbody>
+            </table>
             <pre><code class="language-lamina">fn @add(i64 %a, i64 %b) -&gt; i64 {
   entry:
     %s = add.i64 %a, %b
@@ -223,14 +234,16 @@ entry:
   ret.i64 %t
 }</code></pre>
             <h2 id="control">Control flow</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Instruction</span><span>Form</span><span>Meaning</span></div>
-                <p><strong>Branch</strong><code>br cond, then, else</code><span><code>cond</code> must be a <code>bool</code> value. Labels are bare.</span></p>
-                <p><strong>Jump</strong><code>jmp label</code><span>Unconditional.</span></p>
-                <p><strong>Switch</strong><code>switch.T value, default, [literal, label], ...</code><span>Dispatches on an integer <code>value</code> of type <code>T</code>. Case literals are checked against <code>T</code>. The discriminant must be a value; a literal discriminant is refused.</span></p>
-                <p><strong>Return</strong><code>ret.T value</code> or <code>ret.void</code><span>The value must have the function's return type.</span></p>
-                <p><strong>Unreachable</strong><code>unreachable</code><span>Marks a block that must not be reached. It ends the block.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Instruction</th><th scope="col">Form</th><th scope="col">Meaning</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Instruction"><strong>Branch</strong></th><td data-label="Form"><code>br cond, then, else</code></td><td data-label="Meaning"><span><code>cond</code> must be a <code>bool</code> value. Labels are bare.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Jump</strong></th><td data-label="Form"><code>jmp label</code></td><td data-label="Meaning"><span>Unconditional.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Switch</strong></th><td data-label="Form"><code>switch.T value, default, [literal, label], ...</code></td><td data-label="Meaning"><span>Dispatches on an integer <code>value</code> of type <code>T</code>. Case literals are checked against <code>T</code>. The discriminant must be a value; a literal discriminant is refused.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Return</strong></th><td data-label="Form"><code>ret.T value</code> or <code>ret.void</code></td><td data-label="Meaning"><span>The value must have the function's return type.</span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Unreachable</strong></th><td data-label="Form"><code>unreachable</code></td><td data-label="Meaning"><span>Marks a block that must not be reached. It ends the block.</span></td></tr>
+                </tbody>
+            </table>
             <pre><code class="language-lamina">fn @label_for(i32 %k) -&gt; i64 {
   entry:
     switch.i32 %k, other, [0, zero], [7, seven]
@@ -251,13 +264,15 @@ fn @main() -&gt; i64 {
 
             <h2 id="io">Input and output</h2>
             <p>These four instructions move bytes to and from the process's standard streams. The assignment form binds the result to a name. The statement form, used when the result is not needed, takes a trailing bare name instead, which defines that name for the rest of the function. Each result is an integer. The full contract, including the end-of-input and error values, is on <a href="/docs/output">Output and I/O</a>.</p>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Instruction</span><span>Assignment form</span><span>Statement form</span></div>
-                <p><strong>Write</strong><code>%n = write %buf, size</code><span><code>write %buf, size, name</code></span></p>
-                <p><strong>Read</strong><code>%n = read %buf, size</code><span><code>read %buf, size, name</code></span></p>
-                <p><strong>Write byte</strong><code>%n = writebyte value</code><span><code>writebyte value, name</code></span></p>
-                <p><strong>Read byte</strong><code>%n = readbyte</code><span><code>readbyte name</code></span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Instruction</th><th scope="col">Assignment form</th><th scope="col">Statement form</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Instruction"><strong>Write</strong></th><td data-label="Assignment form"><code>%n = write %buf, size</code></td><td data-label="Statement form"><span><code>write %buf, size, name</code></span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Read</strong></th><td data-label="Assignment form"><code>%n = read %buf, size</code></td><td data-label="Statement form"><span><code>read %buf, size, name</code></span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Write byte</strong></th><td data-label="Assignment form"><code>%n = writebyte value</code></td><td data-label="Statement form"><span><code>writebyte value, name</code></span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>Read byte</strong></th><td data-label="Assignment form"><code>%n = readbyte</code></td><td data-label="Statement form"><span><code>readbyte name</code></span></td></tr>
+                </tbody>
+            </table>
             <pre><code class="language-lamina">fn @main() -&gt; i64 {
   entry:
     %p = stackalloc.[4 x i8]
@@ -289,4 +304,3 @@ fn @main() -&gt; i64 {
         </article>
     </div>
 </main>
-{{footer}}

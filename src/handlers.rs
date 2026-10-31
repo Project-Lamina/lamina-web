@@ -17,33 +17,18 @@ pub async fn homepage() -> Html<String> {
 
     info!("Homepage served successfully");
 
-    let template_engine = get_template_engine();
     let mut variables = HashMap::new();
     variables.insert(
         "homepage_release_summary".to_string(),
         homepage_release_summary(),
     );
 
-    match template_engine.render("lamina_homepage.html", &variables) {
-        Ok(content) => {
-            match template_engine.render_base_with_meta_and_css(
-                "Lamina - Typed IR compiler backend",
-                &content,
-                "Lamina compiles a compact, typed IR into machine code. Use it for native builds, nightly JIT compilation, or as the backend for a language frontend.",
-                None,
-            ) {
-                Ok(html) => Html(html),
-                Err(e) => {
-                    error!("Failed to render base template: {e}");
-                    Html(format!("<h1>Error</h1><p>Failed to render page: {e}</p>"))
-                }
-            }
-        }
-        Err(e) => {
-            error!("Failed to render homepage template: {e}");
-            Html(format!("<h1>Error</h1><p>Failed to render page: {e}</p>"))
-        }
-    }
+    render_html_page(
+        "lamina_homepage.html",
+        "Typed IR compiler backend",
+        "Lamina compiles a compact, typed IR into machine code. Use it for native builds, nightly JIT compilation, or as the backend for a language frontend.",
+        &variables,
+    )
 }
 
 /// Renders nothing on purpose: says the process is serving without touching templates,
@@ -57,7 +42,7 @@ pub async fn roadmap() -> Html<String> {
     info!("Serving roadmap request");
     render_simple_page(
         "roadmap.html",
-        "Lamina Roadmap",
+        "Roadmap",
         "Lamina toolchain roadmap: current target support, milestones from 0.1 to 1.0, and the testing that backs them.",
     )
 }
@@ -67,31 +52,29 @@ pub async fn gallery() -> Html<String> {
     info!("Serving gallery request");
     render_simple_page(
         "gallery.html",
-        "Lamina Gallery",
+        "Gallery",
         "Languages and projects that compile through Lamina as their primary chain, and what each one uses the backend for.",
     )
 }
 
-/// Render a variable-free template inside the base layout.
-fn render_simple_page(template: &str, title: &str, description: &str) -> Html<String> {
-    let template_engine = get_template_engine();
-    let variables = HashMap::new();
-
-    let content = match template_engine.render(template, &variables) {
-        Ok(content) => content,
-        Err(e) => {
-            error!("Failed to render {template}: {e}");
-            return Html(render_error_page(&e.to_string()));
-        }
-    };
-
-    match template_engine.render_base_with_meta_and_css(title, &content, description, None) {
+/// Render a page through the shared document and component layout.
+fn render_html_page(
+    template: &str,
+    title: &str,
+    description: &str,
+    variables: &HashMap<String, String>,
+) -> Html<String> {
+    match get_template_engine().render_page(template, title, description, variables) {
         Ok(html) => Html(html),
-        Err(e) => {
-            error!("Failed to render base template for {template}: {e}");
-            Html(render_error_page(&e.to_string()))
+        Err(error) => {
+            error!("Failed to render {template}: {error}");
+            Html(render_error_page(&error.to_string()))
         }
     }
+}
+
+fn render_simple_page(template: &str, title: &str, description: &str) -> Html<String> {
+    render_html_page(template, title, description, &HashMap::new())
 }
 
 /// Used when even the base template will not render. Escaped: can carry a path.
@@ -113,7 +96,7 @@ pub async fn roadmap_artery() -> Html<String> {
     info!("Serving roadmap artery request");
     render_simple_page(
         "roadmap_artery.html",
-        "Lamina on the Artery Kernel",
+        "Artery target",
         "Plan for supporting the Artery kernel as a freestanding Lamina target: the constraints it imposes on code generation, the binary format, system calls, and the work items.",
     )
 }
@@ -125,14 +108,16 @@ pub async fn docs() -> Html<String> {
 
     render_docs_template(
         "docs_index.html",
-        "Lamina Documentation",
+        "Documentation",
         "Documentation for the Lamina compiler and its IR, ras, weld, and the lamina-c C bindings.",
         "home",
     )
 }
 
 /// Focused documentation page handler
-pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusCode> {
+pub async fn docs_page(
+    Path(page): Path<String>,
+) -> Result<Html<String>, (StatusCode, Html<String>)> {
     info!("Serving Lamina documentation page: {page}");
 
     let (template, title, description, active) = match page.as_str() {
@@ -171,12 +156,6 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
             "LUMIR",
             "LUMIR, the lower intermediate form that Lamina optimizes and lowers to machine code, and how it differs from the IR text.",
             "lumir",
-        ),
-        "camina" => (
-            "docs_camina.html",
-            "camina C Compiler",
-            "camina, an early C compiler that lowers a subset of C to Lamina IR: what compiles, what does not, and the stdio gap.",
-            "camina",
         ),
         "cli" => (
             "docs_cli.html",
@@ -226,14 +205,16 @@ pub async fn docs_page(Path(page): Path<String>) -> Result<Html<String>, StatusC
             "Use the Lamina C bindings development SDK: owned IRBuilder handles, AOT assembly compilation, release status, and the nightly JIT extension.",
             "c_bindings",
         ),
-        _ => return Err(StatusCode::NOT_FOUND),
+        _ => return Err(not_found().await),
     };
 
     Ok(render_docs_template(template, title, description, active))
 }
 
 /// Focused pages for the C bindings development SDK.
-pub async fn docs_c_bindings_page(Path(page): Path<String>) -> Result<Html<String>, StatusCode> {
+pub async fn docs_c_bindings_page(
+    Path(page): Path<String>,
+) -> Result<Html<String>, (StatusCode, Html<String>)> {
     info!("Serving Lamina C bindings documentation page: {page}");
 
     let (template, title, description, active) = match page.as_str() {
@@ -249,7 +230,7 @@ pub async fn docs_c_bindings_page(Path(page): Path<String>) -> Result<Html<Strin
             "Use the Lamina C bindings development SDK: owned IRBuilder handles, module serialization, AOT assembly output, buffers, and nightly JIT boundaries.",
             "c_bindings_usage",
         ),
-        _ => return Err(StatusCode::NOT_FOUND),
+        _ => return Err(not_found().await),
     };
 
     Ok(render_docs_template(template, title, description, active))
@@ -261,47 +242,10 @@ fn render_docs_template(
     description: &str,
     active: &str,
 ) -> Html<String> {
-    let template_engine = get_template_engine();
     let mut variables = HashMap::new();
-    for page in [
-        "home",
-        "getting_started",
-        "cli",
-        "ir",
-        "ir_instructions",
-        "runtime",
-        "lumir",
-        "output",
-        "targets",
-        "abi",
-        "ras",
-        "weld",
-        "rust",
-        "irbuilder",
-        "c_bindings",
-        "c_bindings_install",
-        "c_bindings_usage",
-    ] {
-        variables.insert(format!("docs_active_{page}"), String::new());
-    }
-    variables.insert(format!("docs_active_{active}"), "is-active".to_string());
+    variables.insert(format!("docs_active_{active}"), "true".to_string());
 
-    match template_engine.render(template, &variables) {
-        Ok(content) => {
-            match template_engine.render_base_with_meta_and_css(title, &content, description, None)
-            {
-                Ok(html) => Html(html),
-                Err(e) => {
-                    error!("Failed to render documentation base template: {e}");
-                    Html(format!("<h1>Error</h1><p>Failed to render page: {e}</p>"))
-                }
-            }
-        }
-        Err(e) => {
-            error!("Failed to render documentation template: {e}");
-            Html(format!("<h1>Error</h1><p>Failed to render page: {e}</p>"))
-        }
-    }
+    render_html_page(template, title, description, &variables)
 }
 
 /// Sitemap XML handler
@@ -360,30 +304,11 @@ pub async fn not_found() -> (StatusCode, Html<String>) {
     info!("Serving 404 page");
     debug!("404 route accessed");
 
-    let template_engine = get_template_engine();
-    let variables = HashMap::new();
-
-    let html = match template_engine.render("404.html", &variables) {
-        Ok(content) => {
-            match template_engine.render_base_with_meta_and_css(
-                "Page Not Found",
-                &content,
-                "The requested Lamina page does not exist. Open the compiler documentation or return to the homepage.",
-                None,
-            ) {
-                Ok(html) => Html(html),
-                Err(e) => {
-                    error!("Failed to render 404 base template: {e}");
-                    Html(format!("<h1>404 - Page Not Found</h1><p>Failed to render page: {e}</p>"))
-                }
-            }
-        }
-        Err(e) => {
-            error!("Failed to render 404 template: {e}");
-            Html(format!("<h1>404 - Page Not Found</h1><p>Failed to render page: {e}</p>"))
-        }
-    };
-
+    let html = render_simple_page(
+        "404.html",
+        "Page not found",
+        "The requested Lamina page does not exist. Open the compiler documentation or return to the homepage.",
+    );
     (StatusCode::NOT_FOUND, html)
 }
 

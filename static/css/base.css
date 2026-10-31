@@ -1,0 +1,135 @@
+/* Design tokens and document defaults. Components and pages live alongside this file. */
+:root {
+  --lmn-ink: #15221d;
+  --lmn-muted: #586b61;
+  --lmn-line: #dbe3df;
+  --lmn-paper: #f7f9f6;
+  --lmn-panel: #fff;
+  --lmn-deep: #10231d;
+  --lmn-green: #1b694f;
+  --lmn-green-bright: #2f9b75;
+  --lmn-lime: #b7df6c;
+  --lmn-code: #101d19;
+  --lmn-code-ink: #d8e3df;
+  --lmn-warning: #805b1e;
+  --lmn-radius: 8px;
+  --lmn-width: 1440px;
+  --lmn-gutter: 5vw;
+  --lmn-serif: Georgia, "Times New Roman", serif;
+  --lmn-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --lmn-sans:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  color: var(--lmn-ink);
+  background: var(--lmn-paper);
+  font-family: var(--lmn-sans);
+  -webkit-font-smoothing: antialiased;
+}
+:where(h1, h2, h3, h4, p, pre) {
+  margin: 0;
+}
+:where(h1, h2, h3) {
+  font-family: var(--lmn-serif);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+}
+a {
+  color: var(--lmn-green);
+  text-underline-offset: 0.2em;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+}
+button,
+summary {
+  touch-action: manipulation;
+}
+button,
+summary,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+img {
+  max-width: 100%;
+}
+svg {
+  flex-shrink: 0;
+}
+code,
+pre {
+  font-family: var(--lmn-mono);
+}
+[id] {
+  scroll-margin-top: 2rem;
+}
+::selection {
+  color: var(--lmn-deep);
+  background: #d6edb2;
+}
+:focus-visible {
+  outline: 3px solid var(--lmn-green);
+  outline-offset: 4px;
+}
+.lamina-home {
+  flex: 1;
+  min-width: 0;
+  overflow: clip;
+}
+.lmn-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.lmn-skip-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--lmn-deep);
+  transform: translateY(-180%);
+}
+.lmn-skip-link:focus {
+  transform: translateY(0);
+}
+@media (max-width: 760px) {
+  :root {
+    --lmn-gutter: 1.25rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,9 +1,8 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>IR language</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">IR language</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · Reference</p>
             <h1>IR language</h1>
             <p class="lmn-manual-lead">Lamina IR is a text format for typed functions made of named blocks. This page covers the model, the lexical rules, types, declarations and annotations. Every instruction is in <a href="/docs/ir-instructions">IR instructions</a>.</p>
@@ -63,18 +62,20 @@ fn @main() -&gt; i64 {
             </div>
 
             <h2 id="types">Types</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Category</span><span>Spelling</span><span>Notes</span></div>
-                <p><strong>Signed integers</strong><code>i8 i16 i32 i64 i128</code><span>Two's complement. <code>i128</code> arithmetic works; 128-bit division and conversions call compiler-rt routines (see <a href="/docs/runtime">Runtime and libc</a>). Globals of 128-bit type are not lowered yet.</span></p>
-                <p><strong>Unsigned integers</strong><code>u8 u16 u32 u64 u128</code><span>Same widths. The signedness of an operation comes from its instruction (for example <code>div</code> and <code>rem</code> on <code>u64</code> operate unsigned), not from a separate type.</span></p>
-                <p><strong>Floats</strong><code>f32 f64</code><span>IEEE binary32 and binary64.</span></p>
-                <p><strong>Boolean</strong><code>bool</code><span>The result of every comparison. A branch condition must have type <code>bool</code>. An integer is rejected: <code>br</code> needs a comparison or a <code>bool</code> value.</span></p>
-                <p><strong>Pointer</strong><code>ptr</code><span>An address. <code>stackalloc</code> and <code>funcaddr</code> produce one. Pointers are not integers; convert with <code>ptrtoint</code> and <code>inttoptr</code>.</span></p>
-                <p><strong>Void</strong><code>void</code><span>Only as a return type. A <code>void</code> function ends with <code>ret.void</code>.</span></p>
-                <p><strong>Array</strong><code>[N x T]</code><span>A fixed number of elements of one type. Nested arrays are allowed.</span></p>
-                <p><strong>Named struct</strong><code>!Name</code><span>Declared with <code>type</code>. Field offsets come from the declared layout. Access a field with <code>getfieldptr</code> and its field index.</span></p>
-                <p><strong>Vector</strong><code>&lt;N x T&gt;</code><span>N lanes of a primitive type. The bracket tells it from an array, <code>[N x T]</code>. A vector may be the type suffix of an instruction and the type of a value, and nothing else &#8212; see below.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Category</th><th scope="col">Spelling</th><th scope="col">Notes</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Category"><strong>Signed integers</strong></th><td data-label="Spelling"><code>i8 i16 i32 i64 i128</code></td><td data-label="Notes"><span>Two's complement. <code>i128</code> arithmetic works; 128-bit division and conversions call compiler-rt routines (see <a href="/docs/runtime">Runtime and libc</a>). Globals of 128-bit type are not lowered yet.</span></td></tr>
+                    <tr><th scope="row" data-label="Category"><strong>Unsigned integers</strong></th><td data-label="Spelling"><code>u8 u16 u32 u64 u128</code></td><td data-label="Notes"><span>Same widths. The signedness of an operation comes from its instruction (for example <code>div</code> and <code>rem</code> on <code>u64</code> operate unsigned), not from a separate type.</span></td></tr>
+                    <tr><th scope="row" data-label="Category"><strong>Floats</strong></th><td data-label="Spelling"><code>f32 f64</code></td><td data-label="Notes"><span>IEEE binary32 and binary64.</span></td></tr>
+                    <tr><th scope="row" data-label="Category"><strong>Boolean</strong></th><td data-label="Spelling"><code>bool</code></td><td data-label="Notes"><span>The result of every comparison. A branch condition must have type <code>bool</code>. An integer is rejected: <code>br</code> needs a comparison or a <code>bool</code> value.</span></td></tr>
+                    <tr><th scope="row" data-label="Category"><strong>Pointer</strong></th><td data-label="Spelling"><code>ptr</code></td><td data-label="Notes"><span>An address. <code>stackalloc</code> and <code>funcaddr</code> produce one. Pointers are not integers; convert with <code>ptrtoint</code> and <code>inttoptr</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Category"><strong>Void</strong></th><td data-label="Spelling"><code>void</code></td><td data-label="Notes"><span>Only as a return type. A <code>void</code> function ends with <code>ret.void</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Category"><strong>Array</strong></th><td data-label="Spelling"><code>[N x T]</code></td><td data-label="Notes"><span>A fixed number of elements of one type. Nested arrays are allowed.</span></td></tr>
+                    <tr><th scope="row" data-label="Category"><strong>Named struct</strong></th><td data-label="Spelling"><code>!Name</code></td><td data-label="Notes"><span>Declared with <code>type</code>. Field offsets come from the declared layout. Access a field with <code>getfieldptr</code> and its field index.</span></td></tr>
+                    <tr><th scope="row" data-label="Category"><strong>Vector</strong></th><td data-label="Spelling"><code>&lt;N x T&gt;</code></td><td data-label="Notes"><span>N lanes of a primitive type. The bracket tells it from an array, <code>[N x T]</code>. A vector may be the type suffix of an instruction and the type of a value, and nothing else &#8212; see below.</span></td></tr>
+                </tbody>
+            </table>
             <p>There is no <code>char</code> and no <code>tuple</code>. Use <code>i8</code> for a signed byte or <code>u8</code> for an unsigned one. Use a struct with named fields where a tuple would go.</p>
 
             <h3>Vectors are a suffix type</h3>
@@ -166,21 +167,23 @@ fn @main() -&gt; i64 {
 
             <h2 id="annotations">Annotations</h2>
             <p>Annotations go on the line before the declaration they modify. Several may stack. Conflicting or repeated annotations are errors.</p>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Annotation</span><span>Applies to</span><span>Effect</span></div>
-                <p><strong><code>@export</code></strong><code>fn, global</code><span>Exports the symbol. Cannot be combined with <code>internal</code>, <code>private</code> or <code>@extern</code>.</span></p>
-                <p><strong><code>@extern</code></strong><code>fn</code><span>Declaration only, with no body. Supports <code>...</code>.</span></p>
-                <p><strong><code>@inline</code> <code>@noinline</code></strong><code>fn</code><span>Inlining hints. Cannot be combined with each other.</span></p>
-                <p><strong><code>@hot</code> <code>@cold</code></strong><code>fn</code><span>Placement and optimization hints. Cannot be combined with each other.</span></p>
-                <p><strong><code>@noreturn</code></strong><code>fn</code><span>The function does not return.</span></p>
-                <p><strong><code>@pure</code></strong><code>fn</code><span>Optimization hints about side effects.</span></p>
-                <p><strong><code>@internal</code> <code>@private</code> <code>@hidden</code> <code>@protected</code></strong><code>fn</code><span>Symbol visibility. Any two of these conflict.</span></p>
-                <p><strong><code>@weak</code></strong><code>fn</code><span>Weak symbol binding.</span></p>
-                <p><strong><code>@section("name")</code></strong><code>fn</code><span>Places the function in a named section. The name must be non-empty and contain no backslash.</span></p>
-                <p><strong><code>@align(n)</code></strong><code>fn, global</code><span><code>n</code> is a power of two. On a global it sets the alignment of the object.</span></p>
-                <p><strong><code>@kernel</code></strong><code>fn</code><span>GPU kernel. Refused on a CPU target with <code>GPU kernels and intrinsics require a GPU target</code>.</span></p>
-                <p><strong><code>@pic</code> <code>@pie</code></strong><code>module</code><span>Nightly only. Changes code generation on x86_64 Linux: external addresses are loaded through the GOT. <code>@pic</code> and <code>@pie</code> cannot be combined with each other or repeated. They are not available in the default build.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Annotation</th><th scope="col">Applies to</th><th scope="col">Effect</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@export</code></strong></th><td data-label="Applies to"><code>fn, global</code></td><td data-label="Effect"><span>Exports the symbol. Cannot be combined with <code>internal</code>, <code>private</code> or <code>@extern</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@extern</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Declaration only, with no body. Supports <code>...</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@inline</code> <code>@noinline</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Inlining hints. Cannot be combined with each other.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@hot</code> <code>@cold</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Placement and optimization hints. Cannot be combined with each other.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@noreturn</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>The function does not return.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@pure</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Optimization hints about side effects.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@internal</code> <code>@private</code> <code>@hidden</code> <code>@protected</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Symbol visibility. Any two of these conflict.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@weak</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Weak symbol binding.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@section("name")</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>Places the function in a named section. The name must be non-empty and contain no backslash.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@align(n)</code></strong></th><td data-label="Applies to"><code>fn, global</code></td><td data-label="Effect"><span><code>n</code> is a power of two. On a global it sets the alignment of the object.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@kernel</code></strong></th><td data-label="Applies to"><code>fn</code></td><td data-label="Effect"><span>GPU kernel. Refused on a CPU target with <code>GPU kernels and intrinsics require a GPU target</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Annotation"><strong><code>@pic</code> <code>@pie</code></strong></th><td data-label="Applies to"><code>module</code></td><td data-label="Effect"><span>Nightly only. Changes code generation on x86_64 Linux: external addresses are loaded through the GOT. <code>@pic</code> and <code>@pie</code> cannot be combined with each other or repeated. They are not available in the default build.</span></td></tr>
+                </tbody>
+            </table>
             <p>Nightly build only. The default build rejects <code>@pie</code>.</p>
             <pre><code class="language-lamina">@pie
 @section(".text.hot")
@@ -195,4 +198,3 @@ fn @main() -&gt; i64 {
         </article>
     </div>
 </main>
-{{footer}}

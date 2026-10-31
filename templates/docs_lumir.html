@@ -1,9 +1,8 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>LUMIR</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">LUMIR</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · Concepts</p>
             <h1>LUMIR</h1>
             <p class="lmn-manual-lead">Lamina has two intermediate forms. You write the first, the IR. The compiler lowers it to the second, LUMIR, and all optimization and code generation happen there. This page explains the second form and why it exists.</p>
@@ -14,15 +13,17 @@
             <p>IR is the text you write, parsed into named types, aggregates and high-level instructions. LUMIR is the lower form. Its values are virtual registers, its types are machine types, and its merges are copies placed on control-flow edges. Every backend reads LUMIR.</p>
 
             <h2 id="difference">What differs</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Aspect</span><span>IR</span><span>LUMIR</span></div>
-                <p><strong>Values</strong><span>Named locals such as <code>%x</code>, each a slot with one type</span><span>Virtual registers such as <code>v0</code>, numbered per function</span></p>
-                <p><strong>Types</strong><span>Named types, aggregates and <code>!Name</code> structs</span><span>Scalar and vector machine types</span></p>
-                <p><strong>Merges</strong><span>Assignment to the same name on each path</span><span>Copies placed on the edges between blocks</span></p>
-                <p><strong>Addresses</strong><span><code>getelem</code> and <code>getfieldptr</code> with a layout</span><span>Base plus offset, or base plus index times scale</span></p>
-                <p><strong>Calls</strong><span>Typed arguments</span><span>Arguments classified by the target ABI, with stack slots assigned</span></p>
-                <p><strong>Target decisions</strong><span>None</span><span>Made here, per target</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Aspect</th><th scope="col">IR</th><th scope="col">LUMIR</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Aspect"><strong>Values</strong></th><td data-label="IR"><span>Named locals such as <code>%x</code>, each a slot with one type</span></td><td data-label="LUMIR"><span>Virtual registers such as <code>v0</code>, numbered per function</span></td></tr>
+                    <tr><th scope="row" data-label="Aspect"><strong>Types</strong></th><td data-label="IR"><span>Named types, aggregates and <code>!Name</code> structs</span></td><td data-label="LUMIR"><span>Scalar and vector machine types</span></td></tr>
+                    <tr><th scope="row" data-label="Aspect"><strong>Merges</strong></th><td data-label="IR"><span>Assignment to the same name on each path</span></td><td data-label="LUMIR"><span>Copies placed on the edges between blocks</span></td></tr>
+                    <tr><th scope="row" data-label="Aspect"><strong>Addresses</strong></th><td data-label="IR"><span><code>getelem</code> and <code>getfieldptr</code> with a layout</span></td><td data-label="LUMIR"><span>Base plus offset, or base plus index times scale</span></td></tr>
+                    <tr><th scope="row" data-label="Aspect"><strong>Calls</strong></th><td data-label="IR"><span>Typed arguments</span></td><td data-label="LUMIR"><span>Arguments classified by the target ABI, with stack slots assigned</span></td></tr>
+                    <tr><th scope="row" data-label="Aspect"><strong>Target decisions</strong></th><td data-label="IR"><span>None</span></td><td data-label="LUMIR"><span>Made here, per target</span></td></tr>
+                </tbody>
+            </table>
 
             <h2 id="why">Why it is separate</h2>
             <p>A text format you write by hand should be readable, stable from one release to the next, and free of machine detail. An intermediate form that the optimizer and the backends work on should say exactly which register, which addressing mode, and what the calling convention does with a 16-byte struct. Forcing one form to do both makes each worse. The split keeps the text stable while the lower form changes.</p>
@@ -58,4 +59,3 @@ $ lamina digit.lamina --emit-mir --opt-level 3</code></pre>
         </article>
     </div>
 </main>
-{{footer}}

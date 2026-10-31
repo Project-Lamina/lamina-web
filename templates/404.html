@@ -1,17 +1,5 @@
 <main class="lamina-home lmn-error-page">
-    <header class="lmn-header">
-        <a class="lmn-brand" href="/" aria-label="Lamina home">
-            <img src="/static/assets/image/projects/lamina_logo.webp" alt="" width="42" height="42">
-            <span>Lamina</span>
-        </a>
-        <nav class="lmn-nav" aria-label="Error page navigation">
-            <a href="/docs">Docs</a>
-            <a href="/#pipeline">Pipeline</a>
-        </nav>
-        <a class="lmn-header-link" href="https://docs.rs/lamina" target="_blank" rel="noopener">Rust API</a>
-    </header>
-
-    <div class="error-page">
+    <div class="error-page" id="main-content" tabindex="-1">
     <div class="error-container">
         <div class="error-header">
             <h1 class="error-code">404</h1>
@@ -23,13 +11,13 @@
         </div>
         
         <div class="error-actions">
-            <a href="/" class="btn btn-primary">
+            <a href="/" class="lmn-button lmn-button-primary">
                 <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                 </svg>
                 Lamina Home
             </a>
-            <a href="/docs" class="btn btn-secondary">
+            <a href="/docs" class="lmn-button lmn-button-quiet">
                 <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                     <polyline points="14,2 14,8 20,8"/>

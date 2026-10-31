@@ -156,7 +156,6 @@ mod tests {
         "/docs/output",
         "/docs/runtime",
         "/docs/lumir",
-        "/docs/camina",
         "/docs/cli",
         "/docs/rust",
         "/docs/irbuilder",
@@ -212,7 +211,11 @@ mod tests {
         let cases = SERVED_PAGES
             .iter()
             .map(|path| (*path, StatusCode::OK))
-            .chain([("/no-such-page", StatusCode::NOT_FOUND)]);
+            .chain([
+                ("/no-such-page", StatusCode::NOT_FOUND),
+                ("/docs/no-such-page", StatusCode::NOT_FOUND),
+                ("/docs/c-bindings/no-such-page", StatusCode::NOT_FOUND),
+            ]);
 
         let mut failures = Vec::new();
         for (path, expected) in cases {
@@ -232,6 +235,21 @@ mod tests {
             }
             if let Some(marker) = unresolved_placeholder(&html) {
                 failures.push(format!("{path}: unresolved placeholder {marker}"));
+            }
+            for marker in [
+                "<header class=\"lmn-header\">",
+                "<footer class=\"footer\">",
+                "<main ",
+                "<h1",
+                "id=\"main-content\"",
+                "aria-label=\"Main navigation\"",
+            ] {
+                if html.matches(marker).count() != 1 {
+                    failures.push(format!("{path}: expected one {marker}"));
+                }
+            }
+            if html.contains("{{#if") || html.contains("{{/if}}") {
+                failures.push(format!("{path}: unresolved conditional"));
             }
         }
 

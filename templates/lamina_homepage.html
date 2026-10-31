@@ -1,44 +1,23 @@
 
 <main class="lamina-home">
-    <header class="lmn-header">
-        <a class="lmn-brand" href="/" aria-label="Lamina home">
-            <img src="/static/assets/image/projects/lamina_logo.webp" alt="" width="42" height="42">
-            <span>Lamina</span>
-        </a>
-        <nav class="lmn-nav" aria-label="Homepage navigation">
-            <a href="#pipeline">Pipeline</a>
-            <a href="#targets">Targets</a>
-            <a href="#modes">Modes</a>
-            <a href="/roadmap">Roadmap</a>
-            <a href="/gallery">Gallery</a>
-            <a href="/docs">Docs</a>
-        </nav>
-        <a class="lmn-header-link" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
-            GitHub
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-                <path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/>
-            </svg>
-        </a>
-    </header>
-
-    <section class="lmn-hero" id="home">
+    <section class="lmn-hero" id="main-content" tabindex="-1">
         <div class="lmn-hero-copy">
             <p class="lmn-kicker"><span></span> Typed IR compiler backend</p>
-            <h1>Follow the compiler <em>from IR to machine code.</em></h1>
+            <h1>Your language.<br><em>Native possibilities.</em></h1>
             <p class="lmn-lede">
                 Lamina compiles a compact, typed IR.
                 Use it to build native executables, try nightly runtime compilation, or give a new language frontend a backend.
             </p>
             <div class="lmn-actions">
-                <a class="lmn-button lmn-button-primary" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
-                    Browse the source
+                <a class="lmn-button lmn-button-primary" href="/docs/getting-started">
+                    Compile your first program
                     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 3.5 13 8l-4.5 4.5"/></svg>
                 </a>
-                <a class="lmn-button lmn-button-quiet" href="#pipeline">See the pipeline</a>
+                <a class="lmn-button lmn-button-quiet" href="/docs/ir">Explore the IR <span aria-hidden="true">↗</span></a>
             </div>
-            <div class="lmn-install" aria-label="Install Lamina with Cargo">
-                <span>$</span>
-                <code>cargo add lamina</code>
+            <div class="lmn-install" aria-label="Install the Lamina driver with Cargo">
+                <span aria-hidden="true">$</span>
+                <code>cargo install lamina</code>
             </div>
             {{homepage_release_summary}}
             <ul class="lmn-facts" aria-label="Project facts">
@@ -264,13 +243,11 @@
     <section class="lmn-cta">
         <div>
             <p class="lmn-section-tag">Build a frontend</p>
-            <h2>Bring a frontend. Use Lamina for the backend.</h2>
+            <h2>Your next language starts here.</h2>
         </div>
-        <a class="lmn-button lmn-button-light" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
-            Start with the source
+        <a class="lmn-button lmn-button-light" href="/docs/getting-started">
+            Get started with Lamina
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 3.5 13 8l-4.5 4.5"/></svg>
         </a>
     </section>
 </main>
-
-{{footer}}

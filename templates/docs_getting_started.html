@@ -1,9 +1,8 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Getting started</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">Getting started</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · Guide</p>
             <h1>Getting started</h1>
             <p class="lmn-manual-lead">Install the Lamina driver, compile a small module written in Lamina IR, and run it. The compiler is the <code>lamina</code> binary. The rest of the toolchain, <code>ras</code> and <code>weld</code>, is optional.</p>
@@ -64,4 +63,3 @@ $ lamina answer.lamina --target x86_64_linux -o answer</code></pre>
         </article>
     </div>
 </main>
-{{footer}}

@@ -1,22 +1,23 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Output and I/O</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">Output and I/O</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · Guide</p>
             <h1>Output and I/O</h1>
             <p class="lmn-manual-lead">A Lamina program writes output in one of two ways. It can write bytes itself with <code>writebyte</code> and <code>write</code>, which need no libc. Or it can declare a C function such as <code>printf</code> with <code>@extern</code> and call it, which links libc.</p>
 
             <h2 id="contract">The I/O contract</h2>
             <p>The four I/O instructions return an integer. The value tells you what happened:</p>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Instruction</span><span>Success</span><span>End of input</span><span>Error</span></div>
-                <p><strong>write</strong><span>Number of bytes written</span><span>not applicable</span><span><code>-2</code></span></p>
-                <p><strong>read</strong><span>Number of bytes read. <code>0</code> when the size is <code>0</code>.</span><span><code>-1</code>, when no bytes were available</span><span><code>-2</code></span></p>
-                <p><strong>writebyte</strong><span><code>1</code></span><span>not applicable</span><span><code>-2</code></span></p>
-                <p><strong>readbyte</strong><span>The byte, <code>0</code> to <code>255</code>. A zero byte is data, not end of input.</span><span><code>-1</code></span><span><code>-2</code></span></p>
-            </div>
+            <table class="lmn-reference-table lmn-reference-four-columns">
+                <thead><tr><th scope="col">Instruction</th><th scope="col">Success</th><th scope="col">End of input</th><th scope="col">Error</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Instruction"><strong>write</strong></th><td data-label="Success"><span>Number of bytes written</span></td><td data-label="End of input"><span>not applicable</span></td><td data-label="Error"><span><code>-2</code></span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>read</strong></th><td data-label="Success"><span>Number of bytes read. <code>0</code> when the size is <code>0</code>.</span></td><td data-label="End of input"><span><code>-1</code>, when no bytes were available</span></td><td data-label="Error"><span><code>-2</code></span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>writebyte</strong></th><td data-label="Success"><span><code>1</code></span></td><td data-label="End of input"><span>not applicable</span></td><td data-label="Error"><span><code>-2</code></span></td></tr>
+                    <tr><th scope="row" data-label="Instruction"><strong>readbyte</strong></th><td data-label="Success"><span>The byte, <code>0</code> to <code>255</code>. A zero byte is data, not end of input.</span></td><td data-label="End of input"><span><code>-1</code></span></td><td data-label="Error"><span><code>-2</code></span></td></tr>
+                </tbody>
+            </table>
             <p>The values are integers. The surface does not state their width; treat them as 64-bit signed. Builds that predate this contract may return different values for end of input and for errors, so check for <code>-1</code> and <code>-2</code> only with a build that implements it.</p>
 
             <h2 id="bytes">Writing bytes</h2>
@@ -106,4 +107,3 @@ entry:
         </article>
     </div>
 </main>
-{{footer}}

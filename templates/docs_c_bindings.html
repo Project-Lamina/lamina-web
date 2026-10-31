@@ -1,9 +1,8 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>C bindings</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">C bindings</strong></nav>
             <p class="lmn-section-tag">Development SDK</p>
             <h1>C bindings progress</h1>
             <p class="lmn-manual-lead"><code>lamina-c</code> wraps Lamina's IRBuilder, module serialization, AOT assembly output, diagnostics, and cleanup rules for C programs. A separate nightly header adds the experimental JIT interface.</p>
@@ -30,12 +29,14 @@
             </ul>
 
             <h2 id="published-shape">Published archive shape</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Surface</span><span>Header</span><span>Contract</span></div>
-                <p><strong>AOT C API</strong><code>lamina.h</code><span>Owned builders, modules, assembly output, status codes, and explicit cleanup.</span></p>
-                <p><strong>Nightly extension</strong><code>lamina_nightly.h</code><span>Additive JIT handles and call helpers. No stable ABI guarantee.</span></p>
-                <p><strong>Downloads</strong><code>GitHub Releases</code><span>Linux x86_64 development bundles are available now. Additional platforms follow after packaged smoke coverage.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Surface</th><th scope="col">Header</th><th scope="col">Contract</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Surface"><strong>AOT C API</strong></th><td data-label="Header"><code>lamina.h</code></td><td data-label="Contract"><span>Owned builders, modules, assembly output, status codes, and explicit cleanup.</span></td></tr>
+                    <tr><th scope="row" data-label="Surface"><strong>Nightly extension</strong></th><td data-label="Header"><code>lamina_nightly.h</code></td><td data-label="Contract"><span>Additive JIT handles and call helpers. No stable ABI guarantee.</span></td></tr>
+                    <tr><th scope="row" data-label="Surface"><strong>Downloads</strong></th><td data-label="Header"><code>GitHub Releases</code></td><td data-label="Contract"><span>Linux x86_64 development bundles are available now. Additional platforms follow after packaged smoke coverage.</span></td></tr>
+                </tbody>
+            </table>
 
             <h2 id="read-next">Read the C guides</h2>
             <div class="lmn-doc-table">
@@ -46,4 +47,3 @@
         </article>
     </div>
 </main>
-{{footer}}

@@ -1,9 +1,8 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><a href="/docs/c-bindings">C bindings</a><span>/</span><strong>Install</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><a href="/docs/c-bindings">C bindings</a><span>/</span><strong aria-current="page">Install</strong></nav>
             <p class="lmn-section-tag">C bindings development SDK</p>
             <h1>Install the C bindings</h1>
             <p class="lmn-manual-lead">The rolling development release publishes Linux x86_64 SDK archives for the AOT API and the optional nightly JIT extension. Each archive contains headers, static and shared libraries, examples, pkg-config metadata, and a license.</p>
@@ -21,11 +20,13 @@
 
             <h2 id="download">Download the Linux SDK</h2>
             <p>Choose the AOT archive for non-JIT integration. Download the nightly archive only when you need the experimental JIT API.</p>
-{{#if lamina_version}}            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Channel</span><span>Archive</span><span>Use it for</span></div>
-                <p><strong>AOT</strong><a href="https://github.com/SkuldNorniern/lamina/releases/download/latest/lamina-c-{{lamina_version}}-stable-x86_64-linux.tar.gz"><code>lamina-c-{{lamina_version}}-stable-x86_64-linux.tar.gz</code></a><span><code>lamina.h</code>, shared and static libraries, AOT builder example, and raw IR example.</span></p>
-                <p><strong>Nightly JIT</strong><a href="https://github.com/SkuldNorniern/lamina/releases/download/latest/lamina-c-{{lamina_version}}-nightly-x86_64-linux.tar.gz"><code>lamina-c-{{lamina_version}}-nightly-x86_64-linux.tar.gz</code></a><span>Stable files plus <code>lamina_nightly.h</code> and the JIT example.</span></p>
-            </div>
+{{#if lamina_version}}            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Channel</th><th scope="col">Archive</th><th scope="col">Use it for</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Channel"><strong>AOT</strong></th><td data-label="Archive"><a href="https://github.com/SkuldNorniern/lamina/releases/download/latest/lamina-c-{{lamina_version}}-stable-x86_64-linux.tar.gz"><code>lamina-c-{{lamina_version}}-stable-x86_64-linux.tar.gz</code></a></td><td data-label="Use it for"><span><code>lamina.h</code>, shared and static libraries, AOT builder example, and raw IR example.</span></td></tr>
+                    <tr><th scope="row" data-label="Channel"><strong>Nightly JIT</strong></th><td data-label="Archive"><a href="https://github.com/SkuldNorniern/lamina/releases/download/latest/lamina-c-{{lamina_version}}-nightly-x86_64-linux.tar.gz"><code>lamina-c-{{lamina_version}}-nightly-x86_64-linux.tar.gz</code></a></td><td data-label="Use it for"><span>Stable files plus <code>lamina_nightly.h</code> and the JIT example.</span></td></tr>
+                </tbody>
+            </table>
             <pre><code class="language-shell">$ curl -LO https://github.com/SkuldNorniern/lamina/releases/download/latest/lamina-c-{{lamina_version}}-stable-x86_64-linux.tar.gz
 $ tar -xzf lamina-c-{{lamina_version}}-stable-x86_64-linux.tar.gz
 $ cd lamina-c-{{lamina_version}}-stable-x86_64-linux
@@ -44,12 +45,14 @@ $ ./builder_aot</code></pre>
 $ cd lamina
 $ cargo build --manifest-path lamina-c/Cargo.toml --release</code></pre>
             <div class="lmn-manual-note"><strong>Does not build from a clean clone</strong><p>This command fails today. <code>lamina-c/Cargo.toml</code> patches only <code>lamina-platform</code> and <code>lamina-mir</code>, so cargo looks for <code>lamina-ras</code> and <code>lamina-codegen</code> at the source tree version on crates.io, where it does not exist. Adding <code>lamina-ras</code> (a checkout of <code>ras</code> next to <code>lamina</code>) and <code>lamina-codegen</code> to its patch table makes it build. The fix belongs in <code>lamina-c/Cargo.toml</code>. With those two patches added, the build succeeded and <code>builder_aot.c</code> ran; <code>raw_ir.c</code> exited with status 1 (see below).</p></div>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Platform</span><span>Shared library</span><span>Static library</span></div>
-                <p><strong>Linux</strong><code>lamina-c/target/release/liblamina_c.so</code><code>lamina-c/target/release/liblamina_c.a</code></p>
-                <p><strong>Windows</strong><code>lamina-c/target/release/lamina_c.dll</code><code>lamina-c/target/release/lamina_c.lib</code></p>
-                <p><strong>macOS</strong><code>lamina-c/target/release/liblamina_c.dylib</code><code>lamina-c/target/release/liblamina_c.a</code></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Platform</th><th scope="col">Shared library</th><th scope="col">Static library</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Platform"><strong>Linux</strong></th><td data-label="Shared library"><code>lamina-c/target/release/liblamina_c.so</code></td><td data-label="Static library"><code>lamina-c/target/release/liblamina_c.a</code></td></tr>
+                    <tr><th scope="row" data-label="Platform"><strong>Windows</strong></th><td data-label="Shared library"><code>lamina-c/target/release/lamina_c.dll</code></td><td data-label="Static library"><code>lamina-c/target/release/lamina_c.lib</code></td></tr>
+                    <tr><th scope="row" data-label="Platform"><strong>macOS</strong></th><td data-label="Shared library"><code>lamina-c/target/release/liblamina_c.dylib</code></td><td data-label="Static library"><code>lamina-c/target/release/liblamina_c.a</code></td></tr>
+                </tbody>
+            </table>
             <div class="lmn-manual-note"><strong>Source tree examples</strong><p>The <code>raw_ir.c</code> example in the source tree passes IR that uses <code>alloc.ptr.stack</code>. The current parser rejects <code>alloc</code> and suggests <code>stackalloc.&lt;type&gt;</code>, so that example exits with status 1 against the current source. The released archive accepts it. Not fixed here: the example lives in the lamina repository.</p></div>
             <div class="lmn-manual-note"><strong>Apple Silicon macOS</strong><p>The <code>aarch64_macos</code> compiler path has received partial testing. Treat macOS C binding builds as preview work until release coverage is broader.</p></div>
             <h2 id="nightly">Build the nightly JIT extension</h2>
@@ -60,15 +63,16 @@ $ cargo build --manifest-path lamina-c/Cargo.toml --release</code></pre>
 
             <h2 id="release-shape">Archive availability</h2>
             <p>GitHub Releases hold the SDK archives. This website documents the supported surface and links to the current rolling downloads.</p>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Archive</span><span>Status</span><span>Contents</span></div>
-                <p><code>lamina-c-{{#if lamina_version}}{{lamina_version}}{{else}}&lt;version&gt;{{/if}}-stable-x86_64-linux.tar.gz</code><strong>Available</strong><span><code>lamina.h</code>, Linux libraries, examples, metadata, license, and checksum companion.</span></p>
-                <p><code>lamina-c-{{#if lamina_version}}{{lamina_version}}{{else}}&lt;version&gt;{{/if}}-nightly-x86_64-linux.tar.gz</code><strong>Available</strong><span>Stable files plus additive <code>lamina_nightly.h</code> JIT declarations and example.</span></p>
-                <p><code>lamina-c-{version}-{channel}-{target}</code><strong>Planned</strong><span>Windows and Apple Silicon macOS archives follow after packaged smoke coverage.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Archive</th><th scope="col">Status</th><th scope="col">Contents</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Archive"><code>lamina-c-{{#if lamina_version}}{{lamina_version}}{{else}}&lt;version&gt;{{/if}}-stable-x86_64-linux.tar.gz</code></th><td data-label="Status"><strong>Available</strong></td><td data-label="Contents"><span><code>lamina.h</code>, Linux libraries, examples, metadata, license, and checksum companion.</span></td></tr>
+                    <tr><th scope="row" data-label="Archive"><code>lamina-c-{{#if lamina_version}}{{lamina_version}}{{else}}&lt;version&gt;{{/if}}-nightly-x86_64-linux.tar.gz</code></th><td data-label="Status"><strong>Available</strong></td><td data-label="Contents"><span>Stable files plus additive <code>lamina_nightly.h</code> JIT declarations and example.</span></td></tr>
+                    <tr><th scope="row" data-label="Archive"><code>lamina-c-{version}-{channel}-{target}</code></th><td data-label="Status"><strong>Planned</strong></td><td data-label="Contents"><span>Windows and Apple Silicon macOS archives follow after packaged smoke coverage.</span></td></tr>
+                </tbody>
+            </table>
 
             <div class="lmn-manual-next"><span>Next</span><a href="/docs/c-bindings/usage">Use the C API</a></div>
         </article>
     </div>
 </main>
-{{footer}}

@@ -1,9 +1,8 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>IRBuilder</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">IRBuilder</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · Rust embedding</p>
             <h1>IRBuilder reference</h1>
             <p class="lmn-manual-lead"><code>IRBuilder</code> constructs typed modules without writing IR text by hand. Start a function, append instructions to the active block, then call <code>build()</code>.</p>
@@ -20,19 +19,21 @@ let module = builder.build();</code></pre>
             <div class="lmn-manual-note"><strong>Borrowed names</strong><p><code>IRBuilder&lt;'a&gt;</code> stores borrowed names and string values. Keep the backing strings alive until the module is finished. The C API uses an owned builder wrapper so C callers do not need to manage Rust lifetimes.</p></div>
             <h2 id="families">Method families</h2>
             <p>The builder methods follow the instructions in <a href="/docs/ir-instructions">IR instructions</a>. Names here are the Rust method names.</p>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Family</span><span>Methods</span><span>Purpose</span></div>
-                <p><strong>Lifecycle</strong><code>new build temp_var</code><span>Create a module, finish it, and generate temporary names.</span></p>
-                <p><strong>Functions</strong><code>function function_with_params param external_function</code><span>Define functions, parameters, and external declarations.</span></p>
-                <p><strong>Blocks and control flow</strong><code>block set_entry_block branch jump switch call callptr ret ret_void unreachable</code><span>Build blocks, branches, switches, calls, and returns.</span></p>
-                <p><strong>Arithmetic</strong><code>binary cmp neg not rotl rotr popcount ctlz cttz bswap sqrt</code><span>Typed arithmetic, comparisons and bit operations.</span></p>
-                <p><strong>Conversions</strong><code>trunc bitcast inttofp fptoint fpcast select</code><span>Convert between representations, and select a value.</span></p>
-                <p><strong>Memory</strong><code>stackalloc store load volatile_load volatile_store getelem getfieldptr_typed ptrtoint inttoptr</code><span>Allocate stack storage, access memory, compute element and field addresses, and convert addresses.</span></p>
-                <p><strong>Function addresses</strong><code>funcaddr</code><span>The address of a function, as a pointer.</span></p>
-                <p><strong>Atomics and fences</strong><code>atomic_load atomic_store atomic_binary fence</code><span>Atomic operations with explicit ordering.</span></p>
-                <p><strong>I/O</strong><code>write read write_byte read_byte</code><span>Raw byte I/O. Output goes through <code>write_byte</code> or <code>write</code>.</span></p>
-                <p><strong>Metadata</strong><code>inline export external hot cold pure const_fn no_return cc_c section align pic pie</code><span>Attach visibility, optimization, calling-convention and module annotations.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Family</th><th scope="col">Methods</th><th scope="col">Purpose</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Family"><strong>Lifecycle</strong></th><td data-label="Methods"><code>new build temp_var</code></td><td data-label="Purpose"><span>Create a module, finish it, and generate temporary names.</span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Functions</strong></th><td data-label="Methods"><code>function function_with_params param external_function</code></td><td data-label="Purpose"><span>Define functions, parameters, and external declarations.</span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Blocks and control flow</strong></th><td data-label="Methods"><code>block set_entry_block branch jump switch call callptr ret ret_void unreachable</code></td><td data-label="Purpose"><span>Build blocks, branches, switches, calls, and returns.</span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Arithmetic</strong></th><td data-label="Methods"><code>binary cmp neg not rotl rotr popcount ctlz cttz bswap sqrt</code></td><td data-label="Purpose"><span>Typed arithmetic, comparisons and bit operations.</span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Conversions</strong></th><td data-label="Methods"><code>trunc bitcast inttofp fptoint fpcast select</code></td><td data-label="Purpose"><span>Convert between representations, and select a value.</span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Memory</strong></th><td data-label="Methods"><code>stackalloc store load volatile_load volatile_store getelem getfieldptr_typed ptrtoint inttoptr</code></td><td data-label="Purpose"><span>Allocate stack storage, access memory, compute element and field addresses, and convert addresses.</span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Function addresses</strong></th><td data-label="Methods"><code>funcaddr</code></td><td data-label="Purpose"><span>The address of a function, as a pointer.</span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Atomics and fences</strong></th><td data-label="Methods"><code>atomic_load atomic_store atomic_binary fence</code></td><td data-label="Purpose"><span>Atomic operations with explicit ordering.</span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>I/O</strong></th><td data-label="Methods"><code>write read write_byte read_byte</code></td><td data-label="Purpose"><span>Raw byte I/O. Output goes through <code>write_byte</code> or <code>write</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Family"><strong>Metadata</strong></th><td data-label="Methods"><code>inline export external hot cold pure const_fn no_return cc_c section align pic pie</code></td><td data-label="Purpose"><span>Attach visibility, optimization, calling-convention and module annotations.</span></td></tr>
+                </tbody>
+            </table>
             <div class="lmn-manual-note"><strong>Formatting</strong><p>The builder has no method that formats a value. Write bytes with <code>write_byte()</code> or <code>write()</code>, or declare a C function with an external declaration and call it.</p></div>
             <h2 id="blocks">Functions and blocks</h2>
             <p><code>function()</code> creates an <code>entry</code> block and selects it as the active block. Call <code>block()</code> to add another block and make it active. Use <code>set_entry_block()</code> only when a different block should run first.</p>
@@ -42,4 +43,3 @@ let module = builder.build();</code></pre>
         </article>
     </div>
 </main>
-{{footer}}

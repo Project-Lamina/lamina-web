@@ -1,9 +1,8 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Rust API</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">Rust API</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · Embedding</p>
             <h1>Rust API guide</h1>
             <p class="lmn-manual-lead">Use the library helpers to compile IR from Rust. For exact types and item signatures, open the generated docs on docs.rs.</p>
@@ -79,4 +78,3 @@ assert_eq!(add(&amp;[20, 22]), Some(42));</code></pre>
         </article>
     </div>
 </main>
-{{footer}}

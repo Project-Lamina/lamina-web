@@ -12,10 +12,18 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/static/assets/favicon/favicon-16x16.png">
     <link rel="manifest" href="/static/assets/favicon/site.webmanifest">
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-    <link rel="stylesheet" href="/static/css/lamina.css?v=6">
-    {{additional_css}}
+    <meta name="theme-color" content="#f7f9f6">
+    <link rel="stylesheet" href="/static/css/base.css?v=9">
+    <link rel="stylesheet" href="/static/css/components.css?v=9">
+    <link rel="stylesheet" href="/static/css/docs.css?v=9">
+    <link rel="stylesheet" href="/static/css/home.css?v=9">
+    <link rel="stylesheet" href="/static/css/error.css?v=9">
+    <script type="module" src="/static/js/site.js?v=2"></script>
 </head>
 <body>
+    <a class="lmn-skip-link" href="#main-content">Skip to content</a>
+    {{header}}
     {{content}}
+    {{footer}}
 </body>
 </html>

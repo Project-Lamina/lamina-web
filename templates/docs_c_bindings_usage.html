@@ -1,24 +1,25 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><a href="/docs/c-bindings">C bindings</a><span>/</span><strong>Usage</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><a href="/docs/c-bindings">C bindings</a><span>/</span><strong aria-current="page">Usage</strong></nav>
             <p class="lmn-section-tag">C bindings development SDK</p>
             <h1>Use Lamina from C</h1>
             <p class="lmn-manual-lead">The AOT API uses owned handles: create a builder, construct or provide Lamina IR, emit assembly, then release every returned resource explicitly.</p>
             <div class="lmn-manual-note lmn-manual-note-planned"><strong>Development ABI</strong><p>The examples use the hand-maintained <code>lamina.h</code> shipped in the rolling Linux SDK archive. Review the header before integrating it because symbol names and typedefs may still change before the stable SDK release.</p></div>
 
             <h2 id="stable-surface">Implemented AOT surface</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Area</span><span>Functions</span><span>Purpose</span></div>
-                <p><strong>Information</strong><code>lia_version lia_host_target</code><span>Read the C crate version and detected host target.</span></p>
-                <p><strong>Builder</strong><code>lia_builder_create lia_builder_function lia_builder_binary lia_builder_return lia_builder_finish lia_builder_free</code><span>Build owned Lamina IR modules without retaining caller-owned strings.</span></p>
-                <p><strong>Types and values</strong><code>lia_type_i64 lia_value_i64 lia_value_var lia_type_free lia_value_free</code><span>Create temporary handles. Builder calls clone their contents.</span></p>
-                <p><strong>Modules</strong><code>lia_module_emit_ir lia_module_compile_to_assembly lia_compile_ir_to_assembly lia_module_free</code><span>Inspect generated IR or compile module handles and raw IR text to assembly.</span></p>
-                <p><strong>Buffers</strong><code>lia_buffer_free</code><span>Release byte buffers returned by module and compiler operations.</span></p>
-                <p><strong>Errors</strong><code>lia_last_error lia_clear_error</code><span>Thread-local diagnostics return a NUL-terminated borrowed C string valid until the next API call on that thread.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Area</th><th scope="col">Functions</th><th scope="col">Purpose</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Area"><strong>Information</strong></th><td data-label="Functions"><code>lia_version lia_host_target</code></td><td data-label="Purpose"><span>Read the C crate version and detected host target.</span></td></tr>
+                    <tr><th scope="row" data-label="Area"><strong>Builder</strong></th><td data-label="Functions"><code>lia_builder_create lia_builder_function lia_builder_binary lia_builder_return lia_builder_finish lia_builder_free</code></td><td data-label="Purpose"><span>Build owned Lamina IR modules without retaining caller-owned strings.</span></td></tr>
+                    <tr><th scope="row" data-label="Area"><strong>Types and values</strong></th><td data-label="Functions"><code>lia_type_i64 lia_value_i64 lia_value_var lia_type_free lia_value_free</code></td><td data-label="Purpose"><span>Create temporary handles. Builder calls clone their contents.</span></td></tr>
+                    <tr><th scope="row" data-label="Area"><strong>Modules</strong></th><td data-label="Functions"><code>lia_module_emit_ir lia_module_compile_to_assembly lia_compile_ir_to_assembly lia_module_free</code></td><td data-label="Purpose"><span>Inspect generated IR or compile module handles and raw IR text to assembly.</span></td></tr>
+                    <tr><th scope="row" data-label="Area"><strong>Buffers</strong></th><td data-label="Functions"><code>lia_buffer_free</code></td><td data-label="Purpose"><span>Release byte buffers returned by module and compiler operations.</span></td></tr>
+                    <tr><th scope="row" data-label="Area"><strong>Errors</strong></th><td data-label="Functions"><code>lia_last_error lia_clear_error</code></td><td data-label="Purpose"><span>Thread-local diagnostics return a NUL-terminated borrowed C string valid until the next API call on that thread.</span></td></tr>
+                </tbody>
+            </table>
 
             <h2 id="ownership">Ownership rules</h2>
             <div class="lmn-doc-table">
@@ -96,4 +97,3 @@ lia_buffer_free(&amp;assembly);</code></pre>
         </article>
     </div>
 </main>
-{{footer}}

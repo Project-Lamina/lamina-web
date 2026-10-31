@@ -1,9 +1,8 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>camina</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">camina</strong></nav>
             <p class="lmn-section-tag">Front end · Early</p>
             <h1>camina, a C compiler for Lamina</h1>
             <p class="lmn-manual-lead">camina reads a C file and lowers it to Lamina IR, then calls Lamina to produce an executable. It compiles a useful subset of C. It is early work. Programs it accepts run correctly in the cases tested here. Much of C is not supported yet, and the parts that are supported are not complete.</p>
@@ -61,4 +60,3 @@ int main(void) {
         </article>
     </div>
 </main>
-{{footer}}

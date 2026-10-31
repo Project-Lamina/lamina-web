@@ -3,6 +3,8 @@ use log::{debug, error};
 use std::collections::HashMap;
 use std::{error, fs};
 
+const COMPONENTS: &[&str] = &["header", "footer", "docs_sidebar"];
+
 /// Simple template engine for HTML templates
 pub struct TemplateEngine {
     templates: HashMap<String, String>,
@@ -30,7 +32,6 @@ impl TemplateEngine {
             "docs_output.html",
             "docs_runtime.html",
             "docs_lumir.html",
-            "docs_camina.html",
             "docs_cli.html",
             "docs_rust.html",
             "docs_irbuilder.html",
@@ -42,12 +43,17 @@ impl TemplateEngine {
             "docs_c_bindings_install.html",
             "docs_c_bindings_usage.html",
             "404.html",
-            "components/footer.html",
-            "components/docs_header.html",
-            "components/docs_sidebar.html",
         ];
 
-        for template_name in template_files.iter() {
+        let component_files: Vec<String> = COMPONENTS
+            .iter()
+            .map(|name| format!("components/{name}.html"))
+            .collect();
+        for template_name in template_files
+            .iter()
+            .copied()
+            .chain(component_files.iter().map(String::as_str))
+        {
             let template_path = format!("{template_dir}/{template_name}");
             match fs::read_to_string(&template_path) {
                 Ok(content) => {
@@ -115,20 +121,12 @@ impl TemplateEngine {
     ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
         let mut result = content.to_string();
 
-        // Replace {{footer}} with footer component
-        if result.contains("{{footer}}") {
-            let footer_content = self.render_component("footer", &HashMap::new())?;
-            result = result.replace("{{footer}}", &footer_content);
-        }
-
-        if result.contains("{{docs_header}}") {
-            let header_content = self.render_component("docs_header", variables)?;
-            result = result.replace("{{docs_header}}", &header_content);
-        }
-
-        if result.contains("{{docs_sidebar}}") {
-            let sidebar_content = self.render_component("docs_sidebar", variables)?;
-            result = result.replace("{{docs_sidebar}}", &sidebar_content);
+        for name in COMPONENTS {
+            let placeholder = format!("{{{{{name}}}}}");
+            if result.contains(&placeholder) {
+                let component = self.render_component(name, variables)?;
+                result = result.replace(&placeholder, &component);
+            }
         }
 
         Ok(result)
@@ -144,26 +142,36 @@ impl TemplateEngine {
         self.render(&template_name, variables)
     }
 
-    /// Render the base template with content, meta description, and optional additional CSS
-    pub fn render_base_with_meta_and_css(
+    /// Every route uses the same document, navigation, footer, and asset bundle.
+    pub fn render_page(
         &self,
+        template: &str,
         title: &str,
-        content: &str,
         meta_description: &str,
-        additional_css: Option<&str>,
+        variables: &HashMap<String, String>,
     ) -> Result<String, Box<dyn error::Error + Send + Sync>> {
-        let mut variables = HashMap::new();
+        let mut variables = variables.clone();
+        if let Some((section, current)) = navigation_state(template) {
+            variables.insert(format!("nav_{section}"), current.to_string());
+        }
+        let content = self.render(template, &variables)?;
         variables.insert("title".to_string(), title.to_string());
-        variables.insert("content".to_string(), content.to_string());
+        variables.insert("content".to_string(), content);
         variables.insert("meta_description".to_string(), meta_description.to_string());
-
-        // Add additional CSS if provided
-        let css_link = additional_css
-            .map(|css| format!("<link rel=\"stylesheet\" href=\"{css}\">"))
-            .unwrap_or_default();
-        variables.insert("additional_css".to_string(), css_link);
-
         self.render("base.html", &variables)
+    }
+}
+
+fn navigation_state(template: &str) -> Option<(&'static str, &'static str)> {
+    match template {
+        "docs_index.html" => Some(("docs", "page")),
+        "docs_getting_started.html" => Some(("guide", "page")),
+        "docs_targets.html" => Some(("targets", "page")),
+        "roadmap.html" => Some(("roadmap", "page")),
+        "roadmap_artery.html" => Some(("roadmap", "location")),
+        "gallery.html" => Some(("gallery", "page")),
+        name if name.starts_with("docs_") => Some(("docs", "location")),
+        _ => None,
     }
 }
 

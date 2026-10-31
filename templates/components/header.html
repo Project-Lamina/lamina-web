@@ -1,0 +1,17 @@
+<header class="lmn-header">
+    <a class="lmn-brand" href="/" aria-label="Lamina home">
+        <img src="/static/assets/image/projects/lamina_logo.webp" alt="" width="42" height="42">
+        <span>Lamina</span>
+    </a>
+    <nav class="lmn-nav" aria-label="Main navigation">
+        <a href="/docs"{{#if nav_docs}} aria-current="{{nav_docs}}"{{/if}}>Docs</a>
+        <a href="/docs/getting-started"{{#if nav_guide}} aria-current="{{nav_guide}}"{{/if}}>Getting started</a>
+        <a href="/docs/targets"{{#if nav_targets}} aria-current="{{nav_targets}}"{{/if}}>Targets</a>
+        <a href="/roadmap"{{#if nav_roadmap}} aria-current="{{nav_roadmap}}"{{/if}}>Roadmap</a>
+        <a href="/gallery"{{#if nav_gallery}} aria-current="{{nav_gallery}}"{{/if}}>Gallery</a>
+    </nav>
+    <a class="lmn-header-link" href="https://github.com/SkuldNorniern/lamina" target="_blank" rel="noopener">
+        GitHub
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg>
+    </a>
+</header>

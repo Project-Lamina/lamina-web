@@ -1,12 +1,11 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>weld linker</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">weld linker</strong></nav>
             <p class="lmn-section-tag">weld · Linker</p>
             <h1>weld, the linker</h1>
-            <p class="lmn-manual-lead">weld links relocatable objects into an executable, in place of <code>ld</code>, <code>lld</code> or <code>mold</code>. Dynamic executables on x86_64 Linux work through the gcc driver today. Static glibc, shared libraries and dynamic linking on the other architectures do not.</p>
+            <p class="lmn-manual-lead">weld links relocatable objects into an executable, in place of <code>ld</code>, <code>lld</code> or <code>mold</code>. Dynamic executables on x86_64 Linux work through the gcc driver today. Static glibc does not, and dynamic linking on the other architectures does not.</p>
 
             <h2 id="install">Install</h2>
             <p>The crate is <code>lamina-weld</code>; the binary it installs is <code>weld</code>. The newest release{{#if weld_version}}, {{weld_version}},{{/if}} is older than the source this page describes, so <code>cargo install lamina-weld</code> does not get the current behavior. That source needs Rust 1.88 (its manifest sets <code>rust-version = "1.88"</code>). From a checkout, run <code>cargo install --path weld</code>. There are no feature flags.</p>
@@ -25,41 +24,47 @@ $ gcc -B"$PWD/toolchain/" hello.c -O2 -o hello</code></pre>
 
             <h2 id="flags">Flags it accepts</h2>
             <p>Everything gcc's <code>collect2</code> passes on a normal Linux link is accepted, which is why the <code>-B</code> route works at all.</p>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Flag</span><span>Behavior</span><span>Notes</span></div>
-                <p><strong><code>-o -e -l -L</code></strong><span>Taken</span><span>Output, entry symbol, library, library path. Joined and separate forms both parse.</span></p>
-                <p><strong><code>-static</code></strong><span>Taken</span><span>Resolves archives only. Produces <code>ET_EXEC</code> with no interpreter and no dynamic symbols.</span></p>
-                <p><strong><code>-pie -no-pie</code></strong><span>Taken</span><span>Accepted on all three architectures. On aarch64 the PIE names <code>/lib/ld-linux-aarch64.so.1</code> as its interpreter, which was not run here. <code>-static -pie</code> together is an error.</span></p>
-                <p><strong><code>--start-group --end-group</code></strong><span>Taken</span><span>Archive cycles resolve to a fixed point.</span></p>
-                <p><strong><code>-rpath --dynamic-linker</code></strong><span>Taken</span><span>rpath entries join into one <code>DT_RUNPATH</code>.</span></p>
-                <p><strong><code>--gc-sections -s -Map</code></strong><span>Taken</span><span>Section GC, strip, map file.</span></p>
-                <p><strong><code>--as-needed --eh-frame-hdr --hash-style= -z -plugin</code></strong><span>Parsed, no effect</span><span>Accepted so a driver's command line does not fail. <code>-z</code> takes its value separately, so <code>-z now</code> parses and <code>-zrelro</code> does not.</span></p>
-                <p><strong><code>-shared -r --relocatable</code></strong><span>Error</span><span><code>is not supported yet</code>. weld cannot produce a shared object.</span></p>
-                <p><strong>anything else</strong><span>Error</span><span><code>unrecognized option</code>. This catches <code>-T</code>, <code>-soname</code>, <code>--sysroot</code>, <code>-export-dynamic</code> and <code>--no-undefined</code>.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Flag</th><th scope="col">Behavior</th><th scope="col">Notes</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Flag"><strong><code>-o -e -l -L</code></strong></th><td data-label="Behavior"><span>Taken</span></td><td data-label="Notes"><span>Output, entry symbol, library, library path. Joined and separate forms both parse.</span></td></tr>
+                    <tr><th scope="row" data-label="Flag"><strong><code>-static</code></strong></th><td data-label="Behavior"><span>Taken</span></td><td data-label="Notes"><span>Resolves archives only. Produces <code>ET_EXEC</code> with no interpreter and no dynamic symbols.</span></td></tr>
+                    <tr><th scope="row" data-label="Flag"><strong><code>-pie -no-pie</code></strong></th><td data-label="Behavior"><span>Taken</span></td><td data-label="Notes"><span>Accepted on all three architectures. On aarch64 the PIE names <code>/lib/ld-linux-aarch64.so.1</code> as its interpreter, which was not run here. <code>-static -pie</code> together is an error.</span></td></tr>
+                    <tr><th scope="row" data-label="Flag"><strong><code>--start-group --end-group</code></strong></th><td data-label="Behavior"><span>Taken</span></td><td data-label="Notes"><span>Archive cycles resolve to a fixed point.</span></td></tr>
+                    <tr><th scope="row" data-label="Flag"><strong><code>-rpath --dynamic-linker</code></strong></th><td data-label="Behavior"><span>Taken</span></td><td data-label="Notes"><span>rpath entries join into one <code>DT_RUNPATH</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Flag"><strong><code>--gc-sections -s -Map</code></strong></th><td data-label="Behavior"><span>Taken</span></td><td data-label="Notes"><span>Section GC, strip, map file.</span></td></tr>
+                    <tr><th scope="row" data-label="Flag"><strong><code>--as-needed --eh-frame-hdr --hash-style= -z -plugin</code></strong></th><td data-label="Behavior"><span>Parsed, no effect</span></td><td data-label="Notes"><span>Accepted so a driver's command line does not fail. <code>-z</code> takes its value separately, so <code>-z now</code> parses and <code>-zrelro</code> does not.</span></td></tr>
+                    <tr><th scope="row" data-label="Flag"><strong><code>-shared -r --relocatable</code></strong></th><td data-label="Behavior"><span>Taken</span></td><td data-label="Notes"><span><code>-shared</code> implies PIE and writes an <code>ET_DYN</code> object. Read from the source; no shared object built here has been loaded by a dynamic linker.</span></td></tr>
+                    <tr><th scope="row" data-label="Flag"><strong><code>--target</code></strong></th><td data-label="Behavior"><span>Taken and checked</span></td><td data-label="Notes"><span>Names the target operating system: <code>none</code>, <code>linux</code>, <code>freebsd</code>, <code>orbis</code>, <code>ps4</code>, <code>prospero</code>, <code>ps5</code>. Anything else is <code>unknown --target &lt;name&gt;, expected one of …</code> rather than a silent default.</span></td></tr>
+                    <tr><th scope="row" data-label="Flag"><strong>anything else</strong></th><td data-label="Behavior"><span>Error</span></td><td data-label="Notes"><span><code>unrecognized option</code>. This catches <code>-T</code>, <code>-soname</code>, <code>--sysroot</code>, <code>-export-dynamic</code> and <code>--no-undefined</code>.</span></td></tr>
+                </tbody>
+            </table>
 
             <h2 id="formats">Formats and architectures</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Format</span><span>Static</span><span>Dynamic</span></div>
-                <p><strong>ELF64</strong><code>x86_64 aarch64 riscv64</code><span>PLT, GOT and <code>DT_NEEDED</code> are written for <strong>x86_64 only</strong>. A <code>-l</code> on aarch64 or riscv64 ends in <code>undefined symbol</code>.</span></p>
-                <p><strong>Mach-O</strong><code>x86_64 arm64</code><span>Mach-O executables are written and checked with <code>file</code>. Whether dyld and libSystem load, and whether the output is ad-hoc codesigned, was not run: there is no macOS host here.</span></p>
-                <p><strong>PE32+</strong><code>x86_64</code><span>COFF input must be AMD64. Any COFF input produces a PE32+ executable, whatever the output name.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Format</th><th scope="col">Static</th><th scope="col">Dynamic</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Format"><strong>ELF64</strong></th><td data-label="Static"><code>x86_64 aarch64 riscv64</code></td><td data-label="Dynamic"><span>PLT, GOT and <code>DT_NEEDED</code> are written for <strong>x86_64 only</strong>. A <code>-l</code> on aarch64 or riscv64 ends in <code>undefined symbol</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Format"><strong>Mach-O</strong></th><td data-label="Static"><code>x86_64 arm64</code></td><td data-label="Dynamic"><span>Mach-O executables are written and checked with <code>file</code>. Whether dyld and libSystem load, and whether the output is ad-hoc codesigned, was not run: there is no macOS host here.</span></td></tr>
+                    <tr><th scope="row" data-label="Format"><strong>PE32+</strong></th><td data-label="Static"><code>x86_64</code></td><td data-label="Dynamic"><span>COFF input must be AMD64. Any COFF input produces a PE32+ executable, whatever the output name.</span></td></tr>
+                </tbody>
+            </table>
             <p>ELF input is ELF64 little-endian only, so <code>-m elf_i386</code> and 32-bit objects are refused.</p>
 
             <h2 id="gaps">Where it is not a drop-in</h2>
             <div class="lmn-doc-table">
                 <p><strong>Static glibc fails</strong><span><code>gcc -static</code> stops at <code>static GNU IFUNC is not supported: __new_memcpy; resolver calls require IRELATIVE relocations and startup relocation tables</code>. glibc selects its string and block-copy routines through IFUNC resolvers, and nothing emits <code>IRELATIVE</code> yet. <code>-static</code> is for freestanding objects and plain archives.</span></p>
-                <p><strong>No shared libraries</strong><span><code>-shared</code> is refused, so weld cannot build a <code>.so</code>.</span></p>
+                <p><strong>Thread-local storage works</strong><span><code>.tdata</code> and <code>.tbss</code> are laid out under <code>PT_TLS</code>, local-exec and initial-exec relocations are applied against the thread pointer, and a global-dynamic sequence relaxes to local-exec. Local-dynamic TLS, and a thread-local symbol imported from a shared library, are errors. An earlier version of this page and of weld's own README said TLS inputs fail; that is no longer true.</span></p>
+                <p><strong>Shared objects are written but not loaded</strong><span><code>-shared</code> produces an <code>ET_DYN</code> file. Nothing here has handed one to a dynamic linker, so treat it as written rather than working.</span></p>
                 <p><strong>Dynamic linking is x86_64 only</strong><span>aarch64 and riscv64 link statically and as PIE, but have no PLT or GOT construction.</span></p>
                 <p><strong>Entry point on aarch64 and riscv64</strong><span>With no <code>_start</code> defined, weld's synthetic startup stub is written for x86_64 only. The other two fall back to entering at <code>main</code>, which is wrong without a CRT.</span></p>
                 <p><strong>clang AArch64 objects with unwind tables</strong><span><code>unsupported AArch64 relocation type 261</code>, which is <code>R_AARCH64_PREL32</code> in <code>.eh_frame</code>. Building with <code>-fno-asynchronous-unwind-tables</code> gets past it.</span></p>
-                <p><strong>Quiet failures</strong><span>A failed link often prints only <code>weld: link failed</code>. An unknown <code>-e</code> symbol falls back silently, a missing <code>-l</code> is dropped without a message (checked on a static output), and <code>-v</code> needs <code>RUST_LOG=info</code> to show anything.</span></p>
-                <p><strong>Interpreter path is assumed</strong><span>Without <code>--dynamic-linker</code> weld writes the glibc path. A musl system needs it passed. The gcc driver passes it anyway. Not run on musl.</span></p>
+                <p><strong>Malformed input is bounded, not trusted</strong><span>Symbol and relocation reads in the object readers are bounds-checked, the Mach-O symbol table and the ELF <code>RELA</code> stride are validated against the section they came from, and a reservation derived from a header field cannot be unbounded. A truncated or hostile object is a link error, not a panic or an allocation the size of the file.</span></p>
+                <p><strong>Quiet failures</strong><span>A failed link reports the underlying error rather than a not-implemented placeholder, but some paths still print little. An unknown <code>-e</code> symbol falls back silently, a missing <code>-l</code> is dropped without a message (checked on a static output), and <code>-v</code> needs <code>RUST_LOG=info</code> to show anything.</span></p>
+                <p><strong>Interpreter path is assumed</strong><span>Without <code>--dynamic-linker</code> weld writes the glibc path for the architecture. A musl system needs it passed. The gcc driver passes it anyway; the Lamina driver does not when weld is the linker, which is why a <code>_musl</code> target built through weld still carries the glibc interpreter. Not run on musl.</span></p>
                 <p><strong>Archives need an index</strong><span><code>archive has no index; run ranlib to add one</code>. Taken from the source; not run in this pass.</span></p>
             </div>
             <div class="lmn-manual-next"><span>Related</span><a href="/docs/ras">The ras assembler</a></div>
         </article>
     </div>
 </main>
-{{footer}}

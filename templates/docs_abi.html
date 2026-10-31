@@ -1,30 +1,31 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Calling conventions</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">Calling conventions</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · ABI</p>
             <h1>Calling conventions</h1>
             <p class="lmn-manual-lead">A Lamina function has to agree with C on where arguments live, or nothing links. Each backend implements one platform ABI. Where a backend has no rule for something, it refuses the module and names the function instead of guessing.</p>
 
-            <div class="lmn-manual-note"><strong>How this page was checked</strong><p>The register lists and the aggregate rules were checked against the backend source, and the aggregate and variadic behavior was checked by compiling and running test programs under qemu where a target allows it. In the most recent pass, the qemu runs of the cross targets were not reproduced, and the x86_64 aggregate and variadic programs were run natively. The claims about what a C compiler does on each platform were not checked against C-generated code in this pass, and the Windows and macOS rules were not run here.</p></div>
+            <div class="lmn-manual-note"><strong>How this page was checked</strong><p>The register lists and the aggregate rules were checked against the backend source, and the aggregate and variadic behavior was checked by compiling and running test programs under qemu where a target allows it. In the most recent pass, the x86_64 aggregate and variadic programs were run natively and the s390x ones under qemu, with their output checked. No other cross target was run: their C libraries are not installed, so their programs do not link. The claims about what a C compiler does on each platform were not checked against C-generated code in this pass, and the Windows and macOS rules were not run here.</p></div>
             <h2 id="implemented">What each backend implements</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Target</span><span>Convention</span><span>Integer and float banks</span></div>
-                <p><code>x86_64</code> Linux, macOS<strong>System V AMD64</strong><span>Integers in <code>rdi rsi rdx rcx r8 r9</code>, returned in <code>rax</code> and <code>rdx</code>. Floats in <code>xmm0</code> upward, returned in <code>xmm0</code>.</span></p>
-                <p><code>x86_64</code> Windows<strong>Win64</strong><span>Integers in <code>rcx rdx r8 r9</code> with 32 bytes of shadow space. A hidden return pointer takes <code>rcx</code> and pushes the rest along.</span></p>
-                <p><code>aarch64</code><strong>AAPCS64</strong><span>Integers in <code>x0</code>–<code>x7</code>, floats in <code>d0</code>–<code>d7</code>. A hidden return pointer goes in <code>x8</code>, which is not an argument register.</span></p>
-                <p><code>riscv64</code><strong>LP64D</strong><span>Integers in <code>a0</code>–<code>a7</code>, floats in <code>fa0</code>–<code>fa7</code>. A variadic float travels in the integer bank instead.</span></p>
-                <p><code>ppc64le</code>, <code>ppc64</code><strong>ELFv2</strong><span>Integers in <code>r3</code>–<code>r10</code>, floats in <code>f1</code>–<code>f13</code>. The caller reserves a 64 byte parameter save area and the callee may spill its register arguments into it, so the callee keeps its locals above it. Both byte orders use the same convention; only the endianness differs. Elsewhere on this page <code>ppc64</code> means the backend, not one of the two.</span></p>
-                <p><code>s390x</code><strong>z/Architecture ELF</strong><span>Integers in <code>%r2</code>–<code>%r6</code>, floats in <code>%f0</code>, <code>%f2</code>, <code>%f4</code>, <code>%f6</code>. Results in <code>%r2</code> and <code>%f0</code>. Every frame opens with a 160-byte register save area. Big-endian, and the stack is 8-byte aligned at a call rather than 16.</span></p>
-                <p><code>mips64</code>, <code>mips64el</code><strong>N64</strong><span>Integers in <code>$4</code>–<code>$11</code>, floats in <code>$f12</code>–<code>$f19</code>, positionally alongside them: an argument takes the register matching its first doubleword whatever its class. Results in <code>$2</code> and <code>$f0</code>. <code>$25</code> carries the callee address, which is how a position-independent callee finds its own global pointer.</span></p>
-                <p><code>armv7</code><strong>AAPCS, VFP hard float</strong><span>Integers in <code>r0</code>–<code>r3</code>, floats in the VFP bank. A 64-bit value takes an even-odd register pair.</span></p>
-                <p><code>thumbv6m</code>, <code>thumbv7m</code><strong>AAPCS, soft float</strong><span>Integers in <code>r0</code>–<code>r3</code>. There is no float bank: floating point is refused rather than lowered to soft-float libcalls that nothing here ships.</span></p>
-                <p><code>i686</code><strong>cdecl</strong><span>Every argument on the stack, caller-cleaned. Integer results in <code>eax</code>, and <code>edx:eax</code> for 64 bits, which is the pair this backend does not yet produce. Floats come back on the x87 stack.</span></p>
-                <p><code>wasm32 wasm64</code><strong>None</strong><span>Scalar parameters and results only, as wasm value types.</span></p>
-                <p><code>amdgpu ptx</code><strong>Kernel contract</strong><span>Scalar kernel arguments. Not a C calling convention.</span></p>
-            </div>
+            <table class="lmn-reference-table lmn-reference-targets">
+                <thead><tr><th scope="col">Target</th><th scope="col">Convention</th><th scope="col">Integer and float banks</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Target"><code>x86_64</code> Linux, macOS</th><td data-label="Convention"><strong>System V AMD64</strong></td><td data-label="Integer and float banks"><span>Integers in <code>rdi rsi rdx rcx r8 r9</code>, returned in <code>rax</code> and <code>rdx</code>. Floats in <code>xmm0</code> upward, returned in <code>xmm0</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>x86_64</code> Windows</th><td data-label="Convention"><strong>Win64</strong></td><td data-label="Integer and float banks"><span>Integers in <code>rcx rdx r8 r9</code> with 32 bytes of shadow space. A hidden return pointer takes <code>rcx</code> and pushes the rest along.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>aarch64</code></th><td data-label="Convention"><strong>AAPCS64</strong></td><td data-label="Integer and float banks"><span>Integers in <code>x0</code>–<code>x7</code>, floats in <code>d0</code>–<code>d7</code>. A hidden return pointer goes in <code>x8</code>, which is not an argument register.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>riscv64</code></th><td data-label="Convention"><strong>LP64D</strong></td><td data-label="Integer and float banks"><span>Integers in <code>a0</code>–<code>a7</code>, floats in <code>fa0</code>–<code>fa7</code>. A variadic float travels in the integer bank instead.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>ppc64le</code>, <code>ppc64</code></th><td data-label="Convention"><strong>ELFv2</strong></td><td data-label="Integer and float banks"><span>Integers in <code>r3</code>–<code>r10</code>, floats in <code>f1</code>–<code>f13</code>. The caller reserves a 64 byte parameter save area and the callee may spill its register arguments into it, so the callee keeps its locals above it. Both byte orders use the same convention; only the endianness differs. Elsewhere on this page <code>ppc64</code> means the backend, not one of the two.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>s390x</code></th><td data-label="Convention"><strong>z/Architecture ELF</strong></td><td data-label="Integer and float banks"><span>Integers in <code>%r2</code>–<code>%r6</code>, floats in <code>%f0</code>, <code>%f2</code>, <code>%f4</code>, <code>%f6</code>. Results in <code>%r2</code> and <code>%f0</code>. Every frame opens with a 160-byte register save area. Big-endian, and the stack is 8-byte aligned at a call rather than 16.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>mips64</code>, <code>mips64el</code></th><td data-label="Convention"><strong>N64</strong></td><td data-label="Integer and float banks"><span>Integers in <code>$4</code>–<code>$11</code>, floats in <code>$f12</code>–<code>$f19</code>, positionally alongside them: an argument takes the register matching its first doubleword whatever its class. Results in <code>$2</code> and <code>$f0</code>. <code>$25</code> carries the callee address, which is how a position-independent callee finds its own global pointer.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>armv7</code></th><td data-label="Convention"><strong>AAPCS, VFP hard float</strong></td><td data-label="Integer and float banks"><span>Integers in <code>r0</code>–<code>r3</code>, floats in the VFP bank. A 64-bit value takes an even-odd register pair.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>thumbv6m</code>, <code>thumbv7m</code></th><td data-label="Convention"><strong>AAPCS, soft float</strong></td><td data-label="Integer and float banks"><span>Integers in <code>r0</code>–<code>r3</code>. There is no float bank: floating point is refused rather than lowered to soft-float libcalls that nothing here ships.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>i686</code></th><td data-label="Convention"><strong>cdecl</strong></td><td data-label="Integer and float banks"><span>Every argument on the stack, caller-cleaned. Integer results in <code>eax</code>, and <code>edx:eax</code> for 64 bits, which is the pair this backend does not yet produce. Floats come back on the x87 stack.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>wasm32 wasm64</code></th><td data-label="Convention"><strong>None</strong></td><td data-label="Integer and float banks"><span>Scalar parameters and results only, as wasm value types.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>amdgpu ptx</code></th><td data-label="Convention"><strong>Kernel contract</strong></td><td data-label="Integer and float banks"><span>Scalar kernel arguments. Not a C calling convention.</span></td></tr>
+                </tbody>
+            </table>
 
             <h2 id="aggregates">Aggregates</h2>
             <p>An aggregate here is a struct or array crossing a function boundary <strong>by value</strong>. A pointer to one is a scalar and works on every backend.</p>
@@ -46,22 +47,25 @@ entry:
   ret.i64 %a
 }</code></pre>
             <p>Classification differs per ABI, and there is no rule that is right everywhere. 32 bytes goes to memory on System V, AAPCS64 and LP64D, but stays in general registers on ELFv2. Two floats pack into one SSE register on System V and nowhere else. So each backend classifies for itself, and a backend without a classifier refuses rather than picking someone else's answer.</p>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Target</span><span>By value</span><span>Rule</span></div>
-                <p><code>x86_64</code> System V<strong>Yes</strong><span>Up to 16 bytes in consecutive integer registers, or on the stack when too few remain. Larger goes to memory, returned through the hidden pointer in <code>rdi</code>.</span></p>
-                <p><code>x86_64</code> Win64<strong>Yes</strong><span>Only sizes 1, 2, 4 and 8 travel by value. Every other size goes by reference, which is what Win64 requires rather than a shortcut.</span></p>
-                <p><code>aarch64</code><strong>Yes</strong><span>Up to 16 bytes in <code>x0</code>–<code>x7</code>, or whole onto the stack when the remaining registers do not hold it. Larger arguments pass the address of a copy the caller makes. Larger returns go through the caller's buffer in <code>x8</code>.</span></p>
-                <p><code>riscv64</code><strong>Yes</strong><span>Up to two doublewords in <code>a0</code>–<code>a7</code>. With one register left, the first doubleword takes it and the rest goes on the stack. Larger than two doublewords passes by reference, and a result that size returns through a hidden pointer in <code>a0</code>.</span></p>
-                <p><code>ppc64</code><strong>Yes</strong><span>Consecutive doublewords in <code>r3</code>–<code>r10</code>. When the registers run short the rest spills into the parameter save area, splitting the aggregate rather than demoting it. A result over two doublewords returns through a hidden pointer in <code>r3</code>.</span></p>
-                <p><code>wasm amdgpu ptx</code><strong>No</strong><span>Refused at lowering, naming the function: <code>Wasm64 does not yet pass aggregates by value, as @make does</code>.</span></p>
-            </div>
+            <table class="lmn-reference-table lmn-reference-targets">
+                <thead><tr><th scope="col">Target</th><th scope="col">By value</th><th scope="col">Rule</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Target"><code>x86_64</code> System V</th><td data-label="By value"><strong>Yes</strong></td><td data-label="Rule"><span>Up to 16 bytes in consecutive integer registers, or on the stack when too few remain. Larger goes to memory, returned through the hidden pointer in <code>rdi</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>x86_64</code> Win64</th><td data-label="By value"><strong>Yes</strong></td><td data-label="Rule"><span>Only sizes 1, 2, 4 and 8 travel by value. Every other size goes by reference, which is what Win64 requires rather than a shortcut.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>aarch64</code></th><td data-label="By value"><strong>Yes</strong></td><td data-label="Rule"><span>Up to 16 bytes in <code>x0</code>–<code>x7</code>, or whole onto the stack when the remaining registers do not hold it. Larger arguments pass the address of a copy the caller makes. Larger returns go through the caller's buffer in <code>x8</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>riscv64</code></th><td data-label="By value"><strong>Yes</strong></td><td data-label="Rule"><span>Up to two doublewords in <code>a0</code>–<code>a7</code>. With one register left, the first doubleword takes it and the rest goes on the stack. Larger than two doublewords passes by reference, and a result that size returns through a hidden pointer in <code>a0</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>ppc64</code></th><td data-label="By value"><strong>Yes</strong></td><td data-label="Rule"><span>Consecutive doublewords in <code>r3</code>–<code>r10</code>. When the registers run short the rest spills into the parameter save area, splitting the aggregate rather than demoting it. A result over two doublewords returns through a hidden pointer in <code>r3</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>wasm amdgpu ptx</code></th><td data-label="By value"><strong>No</strong></td><td data-label="Rule"><span>Refused at lowering, naming the function: <code>Wasm64 does not yet pass aggregates by value, as @make does</code>.</span></td></tr>
+                </tbody>
+            </table>
             <p>Two limits apply on every target, x86_64 included. An aggregate crossing a boundary must have integer fields only, so a struct holding an <code>f32</code> or <code>f64</code> is refused everywhere. An empty aggregate is refused too.</p>
 
             <h2 id="missing">What is missing</h2>
             <div class="lmn-doc-table">
                 <p><strong>Float and mixed aggregates</strong><span>Refused on every backend. System V packs two floats into one SSE register, AAPCS64 has homogeneous float aggregates, and ELFv2 splits a <code>{long, double}</code> across both banks. None of that is written yet.</span></p>
                 <p><strong>Aggregates on wasm and the GPU backends</strong><span>Not planned for the GPU kernel contract. wasm would need a layout decision first. Every other backend passes integer aggregates by value now.</span></p>
-                <p><strong>Defining a variadic function</strong><span>Calling one works on every backend in the table below. A variadic body (<code>va_start</code> and <code>va_arg</code>) is written on x86_64 System V only. aarch64, riscv64 and ppc64 refuse <code>va_start</code> by name, and Win64 refuses it too. So Lamina can call <code>printf</code> everywhere in that table, but can only be <code>printf</code> on x86_64 Linux.</span></p>
+                <p><strong>Defining a variadic function</strong><span>Calling one works on every backend in the table below. A variadic body (<code>va_start</code> and <code>va_arg</code>) is written on x86_64 System V and on s390x. aarch64, riscv64 and ppc64 refuse <code>va_start</code> by name, and Win64 refuses it too. So Lamina can call <code>printf</code> everywhere in that table, and can be <code>printf</code> on two targets.</span></p>
+                <p><strong><code>valist</code> is Lamina's, not the platform's</strong><span>The <code>valist</code> type is 24 bytes on every 64-bit target and 4 on a 32-bit one. On x86_64 System V that is also the C layout. On s390x it is not: the s390x ELF ABI defines a 32-byte <code>va_list</code>, so a Lamina <code>va_list</code> cannot be handed to a C function there and a C one cannot be handed back. Passing the arguments is unaffected; it is the cursor object that does not match.</span></p>
                 <p><strong>Tail calls</strong><span><code>callptr</code> works on x86_64, aarch64, riscv64, ppc64 and wasm. The IR has no <code>tailcall</code> instruction at all, direct or indirect; the parser rejects the spelling.</span></p>
                 <p><strong>Vector call ABI</strong><span>Vectors have arithmetic and memory operations on several backends, but no backend passes or returns one across a function boundary.</span></p>
             </div>
@@ -71,15 +75,17 @@ entry:
             <pre><code class="language-lamina">@extern
 fn @printf(ptr %fmt, ...) -&gt; i32</code></pre>
             <p>Each argument past them is promoted the way C promotes one: a float widens to <code>f64</code>, everything else travels as a word. Then each backend does what its ABI asks.</p>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Target</span><span>What the call does</span><span>Why</span></div>
-                <p><code>x86_64</code> System V<strong><code>al</code> holds the vector count</strong><span>A variadic callee reads <code>al</code> to decide whether to spill the SSE registers.</span></p>
-                <p><code>x86_64</code> Win64<strong>Nothing extra</strong><span>Win64 passes a variadic float in both the SSE and the integer register, which the positional rule already does.</span></p>
-                <p><code>aarch64</code> Darwin<strong>Stack</strong><span>Apple puts every variadic argument in an eight-byte stack slot, whichever registers are free.</span></p>
-                <p><code>aarch64</code> Linux<strong>Registers</strong><span>AAPCS64 treats a variadic argument like a named one.</span></p>
-                <p><code>ppc64</code> ELFv2<strong>Float in both banks</strong><span>The callee's <code>va_arg</code> may read either, so the bits go to the FPR and the positional GPR.</span></p>
-                <p><code>riscv64</code> LP64D<strong>Float in integer bank</strong><span>LP64D sends a variadic float through <code>a0</code>–<code>a7</code> as its bit pattern.</span></p>
-            </div>
+            <table class="lmn-reference-table lmn-reference-targets">
+                <thead><tr><th scope="col">Target</th><th scope="col">What the call does</th><th scope="col">Why</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Target"><code>x86_64</code> System V</th><td data-label="What the call does"><strong><code>al</code> holds the vector count</strong></td><td data-label="Why"><span>A variadic callee reads <code>al</code> to decide whether to spill the SSE registers.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>x86_64</code> Win64</th><td data-label="What the call does"><strong>Nothing extra</strong></td><td data-label="Why"><span>Win64 passes a variadic float in both the SSE and the integer register, which the positional rule already does.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>aarch64</code> Darwin</th><td data-label="What the call does"><strong>Stack</strong></td><td data-label="Why"><span>Apple puts every variadic argument in an eight-byte stack slot, whichever registers are free.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>aarch64</code> Linux</th><td data-label="What the call does"><strong>Registers</strong></td><td data-label="Why"><span>AAPCS64 treats a variadic argument like a named one.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>ppc64</code> ELFv2</th><td data-label="What the call does"><strong>Float in both banks</strong></td><td data-label="Why"><span>The callee's <code>va_arg</code> may read either, so the bits go to the FPR and the positional GPR.</span></td></tr>
+                    <tr><th scope="row" data-label="Target"><code>riscv64</code> LP64D</th><td data-label="What the call does"><strong>Float in integer bank</strong></td><td data-label="Why"><span>LP64D sends a variadic float through <code>a0</code>–<code>a7</code> as its bit pattern.</span></td></tr>
+                </tbody>
+            </table>
             <p>On x86_64, a callee with no declaration is treated as possibly variadic, and <code>al</code> is set.</p>
             <p><strong>Known gap: <code>callptr</code>.</strong> The IR accepts a bare <code>...</code> in a <code>callptr</code>, but the x86_64 backend ignores it and does not set <code>al</code>. So a float argument passed through a pointer to a variadic function is not safe on x86_64 yet. Call the variadic function directly through an <code>@extern</code> declaration for that case. Found by reading the x86_64 backend. A simple test call still printed the right value, so the failure does not show in a small program.</p>
 
@@ -91,4 +97,3 @@ Error: "Code generation failed: Codegen Error: Unsupported feature: Wasm32 does 
         </article>
     </div>
 </main>
-{{footer}}

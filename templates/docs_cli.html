@@ -1,47 +1,52 @@
 <main class="lamina-home lmn-manual-page">
-    {{docs_header}}
     <div class="lmn-manual-layout">
         {{docs_sidebar}}
-        <article class="lmn-manual-article">
-            <nav class="lmn-doc-breadcrumbs"><a href="/docs">Docs</a><span>/</span><strong>Compiler driver</strong></nav>
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">Compiler driver</strong></nav>
             <p class="lmn-section-tag">Lamina compiler · Reference</p>
             <h1>Compiler driver</h1>
             <p class="lmn-manual-lead">The <code>lamina</code> binary compiles one IR file. It writes an executable, assembly or LUMIR, selects a target, and chooses the assembler and linker. Options are listed here as <code>lamina --help</code> prints them.</p>
             <pre><code class="language-shell">$ lamina &lt;input.lamina&gt; [options]</code></pre>
 
             <h2 id="output">Output</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Option</span><span>Argument</span><span>Behavior</span></div>
-                <p><strong><code>-o, --output</code></strong><code>&lt;file&gt;</code><span>Name of the executable. Default: the input name without its extension.</span></p>
-                <p><strong><code>--emit-asm</code></strong><code>-</code><span>Write an assembly file and stop before assembling and linking.</span></p>
-                <p><strong><code>--emit-mir</code></strong><code>-</code><span>Write a <code>.lumir</code> file next to the input and stop. See <a href="/docs/lumir">LUMIR</a>.</span></p>
-                <p><strong><code>--jit</code></strong><code>-</code><span>Compile the module and run it in the current process; the process exits with the value <code>main</code> returns. Works in a default build. If in-memory compilation fails it falls back to building and running a temporary executable, which is reported under <code>--verbose</code>.</span></p>
-                <p><strong><code>--sandbox</code></strong><code>-</code><span>Run the JIT in a sandbox. Requires <code>--jit</code>. The sandboxed path encodes single-block functions only and does not fall back to an executable: a multi-block function fails with <code>Sandbox compilation failed</code>.</span></p>
-                <p><strong><code>-g</code></strong><code>-</code><span>Emit assembler <code>.file</code> and <code>.loc</code> directives, and minimal ELF DWARF. Works with <code>--assembler ras</code> (the default) and <code>--assembler gas</code>.</span></p>
-                <p><strong><code>-v, --verbose</code></strong><code>-</code><span>Print more about each stage.</span></p>
-                <p><strong><code>-h, --help</code></strong><code>-</code><span>Print the usage text.</span></p>
-                <p><strong><code>--version</code></strong><code>-</code><span>Print the compiler version.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Option</th><th scope="col">Argument</th><th scope="col">Behavior</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Option"><strong><code>-o, --output</code></strong></th><td data-label="Argument"><code>&lt;file&gt;</code></td><td data-label="Behavior"><span>Name of the executable. Default: the input name without its extension.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>--emit-asm</code></strong></th><td data-label="Argument"><code>-</code></td><td data-label="Behavior"><span>Write an assembly file and stop before assembling and linking.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>--emit-mir</code></strong></th><td data-label="Argument"><code>-</code></td><td data-label="Behavior"><span>Write a <code>.lumir</code> file next to the input and stop. See <a href="/docs/lumir">LUMIR</a>.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>--jit</code></strong></th><td data-label="Argument"><code>-</code></td><td data-label="Behavior"><span>Compile the module and run it in the current process; the process exits with the value <code>main</code> returns. Works in a default build. If in-memory compilation fails it falls back to building and running a temporary executable, which is reported under <code>--verbose</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>--sandbox</code></strong></th><td data-label="Argument"><code>-</code></td><td data-label="Behavior"><span>Run the JIT in a sandbox. Requires <code>--jit</code>. The sandboxed path encodes single-block functions only and does not fall back to an executable: a multi-block function fails with <code>Sandbox compilation failed</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>-g</code></strong></th><td data-label="Argument"><code>-</code></td><td data-label="Behavior"><span>Emit assembler <code>.file</code> and <code>.loc</code> directives, and minimal ELF DWARF. Works with <code>--assembler ras</code> (the default) and <code>--assembler gas</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>-v, --verbose</code></strong></th><td data-label="Argument"><code>-</code></td><td data-label="Behavior"><span>Print more about each stage.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>-h, --help</code></strong></th><td data-label="Argument"><code>-</code></td><td data-label="Behavior"><span>Print the usage text.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>--version</code></strong></th><td data-label="Argument"><code>-</code></td><td data-label="Behavior"><span>Print the compiler version.</span></td></tr>
+                </tbody>
+            </table>
 
             <h2 id="target">Target and optimization</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Option</span><span>Argument</span><span>Behavior</span></div>
-                <p><strong><code>--target</code></strong><code>&lt;arch_os&gt;</code><span>Target for code generation, such as <code>x86_64_linux</code>. Default: the host, and detection fails with a message naming the architecture or operating system when there is no backend for it rather than guessing one. A sub-architecture may be named in place of the bare architecture: <code>rv64gc</code>, <code>armv7a-neon</code>, <code>aarch64v8.2</code>, <code>ppc64le-power9</code>. See <a href="/docs/targets">Targets and backends</a>.</span></p>
-                <p><strong><code>--cpu-level</code></strong><code>&lt;v1|v2|v3|v4&gt;</code><span>The x86-64 level the output may use. Default: <code>v2</code>. At <code>v1</code>, <code>popcount</code> compiles to a SWAR sequence, because the POPCNT instruction belongs to v2. It also decides what the vector path may emit: lane access of byte, doubleword and quadword lanes needs v2, and a per-lane vector shift needs the AVX2 of v3. Only for x86_64 targets; other targets refuse the flag.</span></p>
-                <p><strong><code>--opt-level</code></strong><code>&lt;0-3&gt;</code><span>Optimization level for the LUMIR optimizer. Default: <code>1</code>. Experimental.</span></p>
-                <p><strong><code>--regalloc</code></strong><code>&lt;method&gt;</code><span><code>incremental</code>, <code>linear</code> or <code>graph</code>. Default: <code>linear</code> at level 1 and above on x86_64, <code>incremental</code> otherwise.</span></p>
-                <p><strong><code>--mcpu</code></strong><code>&lt;gpu&gt;</code><span>AMDGPU processor: <code>gfx900</code> or <code>gfx1200</code>. Default: <code>gfx1200</code>.</span></p>
-                <p><strong><code>-j, --jobs</code></strong><code>&lt;n&gt;</code><span>Number of code generation threads. Default: the available cores minus two.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Option</th><th scope="col">Argument</th><th scope="col">Behavior</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Option"><strong><code>--target</code></strong></th><td data-label="Argument"><code>&lt;arch_os[_env]&gt;</code></td><td data-label="Behavior"><span>Target for code generation, such as <code>x86_64_linux</code> or <code>x86_64_linux_musl</code>. Default: the host, and detection fails with a message naming the architecture or operating system when there is no backend for it rather than guessing one. A sub-architecture may be named in place of the bare architecture: <code>rv64gc</code>, <code>armv7a-neon</code>, <code>aarch64v8.2</code>, <code>ppc64le-power9</code>. An environment may follow the operating system: <code>gnu</code>, <code>musl</code>, <code>eabi</code>, <code>eabihf</code>, <code>none</code>. Left out, each target declares its own; a combination an architecture does not accept is refused by name. See <a href="/docs/targets">Targets and backends</a>.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>--cpu-level</code></strong></th><td data-label="Argument"><code>&lt;v1|v2|v3|v4&gt;</code></td><td data-label="Behavior"><span>The x86-64 level the output may use. Default: <code>v2</code>. At <code>v1</code>, <code>popcount</code> compiles to a SWAR sequence, because the POPCNT instruction belongs to v2. It also decides what the vector path may emit: lane access of byte, doubleword and quadword lanes needs v2, and a per-lane vector shift needs the AVX2 of v3. Only for x86_64 targets; other targets refuse the flag.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>--opt-level</code></strong></th><td data-label="Argument"><code>&lt;0-3&gt;</code></td><td data-label="Behavior"><span>Optimization level for the LUMIR optimizer. Default: <code>1</code>. Experimental.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>--regalloc</code></strong></th><td data-label="Argument"><code>&lt;method&gt;</code></td><td data-label="Behavior"><span><code>incremental</code>, <code>linear</code> or <code>graph</code>. Default: <code>linear</code> at level 1 and above on x86_64, <code>incremental</code> otherwise.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>--mcpu</code></strong></th><td data-label="Argument"><code>&lt;gpu&gt;</code></td><td data-label="Behavior"><span>AMDGPU processor: <code>gfx900</code> or <code>gfx1200</code>. Default: <code>gfx1200</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>-j, --jobs</code></strong></th><td data-label="Argument"><code>&lt;n&gt;</code></td><td data-label="Behavior"><span>Number of code generation threads. Default: the available cores minus two.</span></td></tr>
+                </tbody>
+            </table>
 
             <h2 id="toolchain">Assembler and linker</h2>
-            <div class="lmn-reference-table">
-                <div class="lmn-reference-head"><span>Option</span><span>Argument</span><span>Behavior</span></div>
-                <p><strong><code>--assembler</code></strong><code>&lt;name&gt;</code><span>Assembler to run: <code>ras</code>, <code>gas</code> or <code>clang</code>.</span></p>
-                <p><strong><code>-c, --compiler</code></strong><code>&lt;name&gt;</code><span>Toolchain: <code>gnu</code>, <code>clang</code>, <code>msvc</code> or <code>lamina</code>. Or a linker alone: <code>ld</code>, <code>lld</code>, <code>mold</code>, <code>weld</code>, <code>link</code> or <code>cl</code>.</span></p>
-                <p><strong><code>-Wl,&lt;flag&gt;</code></strong><code>-</code><span>Pass flags to the linker. Separate several with commas.</span></p>
-                <p><strong><code>-Wa,&lt;flag&gt;</code></strong><code>-</code><span>Pass flags to the assembler. Separate several with commas.</span></p>
-            </div>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Option</th><th scope="col">Argument</th><th scope="col">Behavior</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Option"><strong><code>--assembler</code></strong></th><td data-label="Argument"><code>&lt;name&gt;</code></td><td data-label="Behavior"><span>Assembler to run: <code>ras</code>, <code>gas</code> or <code>clang</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>-c, --compiler</code></strong></th><td data-label="Argument"><code>&lt;name&gt;</code></td><td data-label="Behavior"><span>Toolchain: <code>gnu</code>, <code>clang</code>, <code>msvc</code> or <code>lamina</code>. Or a linker alone: <code>ld</code>, <code>lld</code>, <code>mold</code>, <code>weld</code>, <code>link</code> or <code>cl</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>-Wl,&lt;flag&gt;</code></strong></th><td data-label="Argument"><code>-</code></td><td data-label="Behavior"><span>Pass flags to the linker. Separate several with commas.</span></td></tr>
+                    <tr><th scope="row" data-label="Option"><strong><code>-Wa,&lt;flag&gt;</code></strong></th><td data-label="Argument"><code>-</code></td><td data-label="Behavior"><span>Pass flags to the assembler. Separate several with commas.</span></td></tr>
+                </tbody>
+            </table>
             <pre><code class="language-shell">$ lamina app.lamina --assembler ras -c weld -o app
 $ lamina app.lamina --assembler gas -c ld -o app
 $ lamina app.lamina --emit-mir --opt-level 3 --regalloc graph</code></pre>
@@ -52,4 +57,3 @@ $ lamina app.lamina --emit-mir --opt-level 3 --regalloc graph</code></pre>
         </article>
     </div>
 </main>
-{{footer}}
