@@ -8,7 +8,7 @@
             <p class="lmn-manual-lead">Lamina needs no C library and no <code>libgcc</code>. A program compiled from Lamina IR calls nothing you did not write, with one exception: some wide-integer and conversion operations call compiler runtime routines. Lamina ships those routines and compiles them for your target. You can also supply your own, or redirect each one to a symbol of your choice.</p>
 
             <h2 id="no-libc">No libc</h2>
-            <p>The compiler emits no call into libc. Instructions such as <code>writebyte</code>, <code>write</code>, <code>read</code>, <code>stackalloc</code> and the arithmetic and memory instructions are lowered to machine code or to system calls. A program that uses none of the <code>@extern</code> declarations has no external symbol to resolve.</p>
+            <p>On Linux and macOS the compiler emits no call into libc. Instructions such as <code>writebyte</code>, <code>write</code>, <code>read</code>, <code>stackalloc</code> and the arithmetic and memory instructions are lowered to machine code or to system calls, and a program that uses none of the <code>@extern</code> declarations has no external symbol to resolve. Windows is the exception. It has no stable syscall numbers, so the I/O instructions call <code>_write</code> and <code>_read</code> in msvcrt, and a Windows binary always imports those.</p>
             <p>If you want libc, declare what you need with <code>@extern</code> and call it. The compiler then links the symbol the way any C object would. <a href="/docs/output">Output and I/O</a> shows both routes.</p>
 
             <h2 id="builtins">Compiler runtime routines</h2>

@@ -101,7 +101,7 @@ entry:
   ret.i32 %r
 }</code></pre>
 
-            <div class="lmn-manual-note"><strong>Output is not buffered</strong><p><code>writebyte</code>, <code>write</code> and the other I/O instructions are system calls. There is no stdio layer under them, so each call is its own write. The libc route goes through <code>printf</code>, which is buffered by libc as usual.</p></div>
+            <div class="lmn-manual-note"><strong>Output is not buffered</strong><p><code>writebyte</code>, <code>write</code> and the other I/O instructions go straight to the OS. On Linux and macOS that is a system call. On Windows it is <code>_write</code> on descriptor 1, which msvcrt does not buffer. Either way there is no stdio layer under them, so each call is its own write. The libc route goes through <code>printf</code>, which is buffered by libc as usual.</p></div>
 
             <div class="lmn-manual-next"><span>Next</span><a href="/docs/runtime">Runtime and libc</a></div>
         </article>
