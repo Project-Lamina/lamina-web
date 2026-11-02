@@ -8,10 +8,10 @@
             <p class="lmn-manual-lead">ras turns assembly into a relocatable object, in place of GNU <code>as</code>. It is what Lamina uses with <code>--assembler ras</code>, and a C toolchain can call it too. It is not a complete <code>as</code>: the list of what it does not take is near the bottom, and it is short enough to read.</p>
 
             <h2 id="install">Install</h2>
-            <p>The crate is <code>lamina-ras</code>; the binary it installs is <code>ras</code>. The newest release{{#if ras_version}}, {{ras_version}},{{/if}} is not the version this page describes, so <code>cargo install lamina-ras</code> does not get it.</p>
-            <p>The source this page describes needs Rust 1.88 or newer. It uses let chains, and Rust 1.87 refuses it. Its manifest patches <code>lamina-platform</code>, <code>lamina-mir</code> and <code>lamina-codegen</code> to a sibling <code>lamina</code> checkout, so build it from a checkout that has both directories side by side. Build it with <code>cargo install --path ras</code> from there.</p>
+            <p>The crate is <code>lamina-ras</code>; the binary it installs is <code>ras</code>. <code>cargo install lamina-ras</code> gets the newest release{{#if ras_version}}, {{ras_version}}{{/if}}.</p>
+            <p>The source needs Rust 1.88 or newer. It uses let chains, and Rust 1.87 refuses it. Every dependency resolves from crates.io, so a checkout builds on its own with <code>cargo install --path ras</code>; no sibling <code>lamina</code> directory is needed.</p>
             <p>The <code>encoder</code> feature adds the MIR-to-machine-code path used for JIT. Assembling text to an object does not need it, so the default build is enough for use as an assembler.</p>
-            <div class="lmn-manual-note"><strong>Not checked here</strong><p>Installing the published release from crates.io was not run.</p></div>
+            <div class="lmn-manual-note"><strong>Checked</strong><p><code>cargo install lamina-ras</code> was run from crates.io and the installed <code>ras</code> assembled an arm64 Mach-O object.</p></div>
             <h2 id="lamina">With the Lamina driver</h2>
             <pre><code class="language-shell">$ lamina app.lamina --assembler ras
 $ lamina app.lamina --assembler ras -c weld</code></pre>
