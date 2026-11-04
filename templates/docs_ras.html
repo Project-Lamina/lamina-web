@@ -43,9 +43,9 @@ $ gcc -B"$PWD/toolchain/" hello.c -O2 -o hello</code></pre>
             <table class="lmn-reference-table">
                 <thead><tr><th scope="col">Format</th><th scope="col">Written for</th><th scope="col">Notes</th></tr></thead>
                 <tbody>
-                    <tr><th scope="row" data-label="Format"><strong>ELF64</strong></th><td data-label="Written for"><code>x86_64 aarch64 riscv32 riscv64 ppc64le</code></td><td data-label="Notes"><span>Linux and the BSDs, plus Redox, Orbis and Prospero. riscv32 writes an ELF32 object; the rest write ELF64, little-endian. The Lamina driver routes all five here, PowerPC included. Big-endian <code>ppc64</code> is a separate architecture and has no encoder.</span></td></tr>
+                    <tr><th scope="row" data-label="Format"><strong>ELF64</strong></th><td data-label="Written for"><code>x86_64 i686 armv7 aarch64 riscv32 riscv64 ppc64le</code></td><td data-label="Notes"><span>Linux and the BSDs, plus Redox, Orbis and Prospero. i686, armv7 and riscv32 write ELF32 objects; the rest write ELF64, little-endian. The Lamina driver routes all seven here, so i686 and armv7 no longer fall back to GNU <code>as</code>. Big-endian <code>ppc64</code> is a separate architecture and has no encoder.</span></td></tr>
                     <tr><th scope="row" data-label="Format"><strong>Mach-O</strong></th><td data-label="Written for"><code>x86_64 arm64</code></td><td data-label="Notes"><span>macOS. Any other architecture is refused by name.</span></td></tr>
-                    <tr><th scope="row" data-label="Format"><strong>COFF</strong></th><td data-label="Written for"><code>x86_64</code></td><td data-label="Notes"><span>Windows. <code>aarch64_windows</code> is refused.</span></td></tr>
+                    <tr><th scope="row" data-label="Format"><strong>COFF</strong></th><td data-label="Written for"><code>x86_64 arm64</code></td><td data-label="Notes"><span>Windows. Function unwind goes out as <code>.pdata</code> and <code>.xdata</code>. A <code>.weak</code> symbol becomes an <code>IMAGE_SYM_CLASS_WEAK_EXTERNAL</code> with the auxiliary record and a named default definition; a <code>.local</code> one becomes <code>IMAGE_SYM_CLASS_STATIC</code>. COFF cannot hold a symbol that is both, and asking for one is refused by name.</span></td></tr>
                 </tbody>
             </table>
             <p>x86_64 input is AT&amp;T syntax. The bare <code>riscv32_unknown</code> and <code>riscv64_unknown</code> names are refused because they name no operating system; use the <code>_linux</code> names.</p>
@@ -72,6 +72,15 @@ $ gcc -B"$PWD/toolchain/" hello.c -O2 -o hello</code></pre>
                 <p><strong>3DNow!</strong><span>Deliberately absent. AMD removed it, and it is the one area the comparison against GNU <code>as</code> does not cover.</span></p>
             </div>
 
+            <h2 id="debug">Debug and unwind sections</h2>
+            <p>What <code>-g</code> turns into depends on the container, so it is written out per format. Each claim below was read back off an object ras wrote on this machine.</p>
+            <div class="lmn-doc-table">
+                <p><strong>ELF</strong><span><code>.debug_info</code>, <code>.debug_abbrev</code> and <code>.debug_line</code>, carrying a compile unit, a <code>DW_TAG_subprogram</code> per function with its declaration file and line, address range and return type, the base types those use, and a named formal parameter per argument. <code>llvm-dwarfdump --verify</code> reports no errors on an x86_64, aarch64 or riscv64 binary built this way. No <code>DW_AT_location</code> is written, so a debugger names a parameter and cannot show its value; that is deliberate, and <a href="/docs/ldb">ldb</a> says so rather than guessing. The i686 writer is the exception and emits no <code>.debug_*</code> at all, so a <code>-g</code> build for that target reaches a binary with nothing in it.</span></p>
+                <p><strong>Mach-O</strong><span>The same DWARF under Mach-O section names: <code>__debug_info</code>, <code>__debug_abbrev</code> and <code>__debug_line</code>. There is no dSYM path.</span></p>
+                <p><strong>COFF</strong><span>CodeView rather than DWARF: <code>.debug$S</code> and <code>.debug$T</code>. <code>lld-link</code> reads them and writes a PDB. Checked here by linking a ras-written object with <code>lld-link /debug</code>, which produced a 74 KB <code>MSVC program database ver 7.00</code>.</span></p>
+                <p><strong>Unwind</strong><span>Where the input carries CFI directives, ras turns them into the container&#8217;s own form: <code>.eh_frame</code> on ELF, <code>__compact_unwind</code> on Mach-O, and <code>.pdata</code> with <code>.xdata</code> on COFF. Input with no CFI gets none of them.</span></p>
+            </div>
+
             <h2 id="gaps">Where it is not a drop-in</h2>
             <p>Worth knowing before pointing a build at it.</p>
             <div class="lmn-doc-table">
@@ -80,7 +89,7 @@ $ gcc -B"$PWD/toolchain/" hello.c -O2 -o hello</code></pre>
                 <p><strong>No stdin in GNU mode</strong><span>Under the name <code>as</code>, <code>as -</code> and a redirect both fail with <code>missing input .s file</code>. Native <code>ras</code> reads stdin when it is redirected, but <code>ras -</code> is refused with <code>Unknown option: -</code>.</span></p>
                 <p><strong>Missing directives</strong><span>No <code>.macro</code>, <code>.org</code>, <code>.fill</code>, <code>.include</code>, <code>.incbin</code>, <code>.intel_syntax</code>, <code>.octa</code>, <code>.weakref</code>, <code>.symver</code> or <code>.lcomm</code>. Each is refused by name rather than ignored. <code>.protected</code> and <code>.internal</code> are accepted.</span></p>
                 <p><strong>Comment and separator syntax</strong><span><code>/* */</code> comments are not stripped and <code>;</code> does not separate statements. Hand-written assembly using either needs editing.</span></p>
-                <p><strong>CFI is x86_64 and aarch64 only</strong><span>Other targets report <code>CFI unsupported for target</code>. The <code>.cfi_sections</code> directive was not tested in this pass.</span></p>
+                <p><strong>CFI is x86_64, aarch64 and armv7 only</strong><span>Other targets report <code>CFI unsupported for target</code>. The <code>.cfi_sections</code> directive was not tested in this pass.</span></p>
             </div>
             <div class="lmn-manual-next"><span>Next</span><a href="/docs/weld">Link it with weld</a></div>
         </article>
