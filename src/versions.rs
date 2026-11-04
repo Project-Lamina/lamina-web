@@ -16,7 +16,7 @@ struct Component {
 const COMPONENTS: [Component; 4] = [
     Component {
         key: "lamina_version",
-        repo: "SkuldNorniern/lamina",
+        repo: "Project-Lamina/lamina",
     },
     Component {
         key: "ras_version",
