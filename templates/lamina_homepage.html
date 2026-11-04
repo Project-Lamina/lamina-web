@@ -142,19 +142,19 @@
             <article>
                 <p class="lmn-target-mark">x64</p>
                 <h3>x86_64</h3>
-                <p>The reference target, and the only one that goes from IR text to a running binary without a tool Lamina did not write. Everything the IR offers lowers: atomics, bit intrinsics, 128-bit vectors, inline assembly, variadic definitions, aggregates by value, i128.</p>
+                <p>The reference target. Everything the IR offers lowers: atomics, bit intrinsics, 128-bit vectors, inline assembly, variadic definitions, aggregates by value, i128. ras assembles it and weld links it, so it goes from IR text to a running binary with no tool Lamina did not write.</p>
                 <span>run and checked: linux, windows</span>
             </article>
             <article>
                 <p class="lmn-target-mark">A64</p>
                 <h3>AArch64</h3>
-                <p>AAPCS64, with NEON for 128-bit vectors. Inline assembly works on Linux and macOS. Variadic definitions work on macOS and are refused by name on Linux. macOS output is run and checked; Linux output is assembled and run under emulation by hand.</p>
+                <p>AAPCS64, with NEON for 128-bit vectors. Inline assembly and variadic definitions work on Linux and macOS alike. On Linux ras assembles it and weld links it dynamically against the cross glibc, so it is the second target that needs no tool Lamina did not write, and the testcase suite runs there under emulation. macOS output is run and checked in CI.</p>
                 <span>run and checked: macos</span>
             </article>
             <article>
                 <p class="lmn-target-mark">RV</p>
                 <h3>RISC-V</h3>
-                <p>LP64D. The one cross target weld links by itself, for a program that needs no C library symbol, which makes it the one place the whole toolchain runs away from x86_64. Argument placement is correct where aarch64's is not.</p>
+                <p>LP64D. Everything lowers except inline assembly, which it is the last 64-bit target to refuse. weld links it by itself for a program that needs no C library symbol; anything that prints goes to GNU ld. The testcase suite runs under emulation.</p>
                 <span>partial: rv64</span>
             </article>
             <article>
