@@ -1,0 +1,67 @@
+<main class="lamina-home lmn-manual-page">
+    <div class="lmn-manual-layout">
+        {{docs_sidebar}}
+        <article class="lmn-manual-article" id="main-content" tabindex="-1">
+            <nav class="lmn-doc-breadcrumbs" aria-label="Breadcrumb"><a href="/docs">Docs</a><span>/</span><strong aria-current="page">ldb debugger</strong></nav>
+            <p class="lmn-section-tag">ldb · Debugger</p>
+            <h1>ldb, the debugger</h1>
+            <p class="lmn-manual-lead">ldb runs a program under <code>ptrace</code>, stops it at breakpoints and prints backtraces, in place of gdb or lldb. Native Linux x86_64 ELF only. It does a small number of things and refuses the rest by name. Its DWARF reader is its own: <code>gimli</code> is not a dependency, so what ldb can read is a direct test of what Lamina writes.</p>
+
+            <h2 id="install">Install</h2>
+            <p>The crate is <code>lamina-ldb</code> and the binary it installs is <code>ldb</code>. There is no release yet, so it comes from a checkout: <code>cargo install --path ldb</code>, or <code>cargo build --release</code> in it. It needs Rust 1.88. Its only dependencies are <code>libc</code> and <code>log</code>.</p>
+
+            <h2 id="using">Using it</h2>
+            <pre><code class="language-shell">$ ldb &lt;program&gt; [program args...] [-ex &lt;command&gt;]... [-batch]</code></pre>
+            <p><code>-ex</code> runs a command before the prompt appears and <code>-batch</code> exits instead of prompting, so a session scripts the way a gdb one does.</p>
+            <pre><code class="language-shell">$ ldb ./factorial -batch -ex 'break factorial' -ex run -ex bt -ex finish
+Reading symbols from ./factorial...
+Breakpoint 1 at 0x401037: file recursive_factorial.lamina, line 4.
+Starting program: ./factorial
+
+Breakpoint 1, factorial (n=&lt;unavailable&gt;) at recursive_factorial.lamina:4
+4	    %is_zero = eq.i64 %n, 0
+#0  factorial (n=&lt;unavailable&gt;) at recursive_factorial.lamina:4
+#1  0x00000000004010ac in main () at recursive_factorial.lamina:19
+Run till exit from #0  factorial (n=&lt;unavailable&gt;) at recursive_factorial.lamina:4
+0x00000000004010ac in main () at recursive_factorial.lamina:19
+19	    %result1 = call @factorial(0)  # Should be 1
+Value returned is 1</code></pre>
+            <p>The lines it prints are lines of the <code>.lamina</code> file, because that is what <code>lamina -g</code> names in the line table. Build with <code>-g</code> or there is nothing to read.</p>
+
+            <h2 id="commands">Commands</h2>
+            <table class="lmn-reference-table">
+                <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+                <tbody>
+                    <tr><th scope="row" data-label="Command"><code>functions</code></th><td data-label="What it does"><span>Lists every function with its source file and declaration line, grouped by file.</span></td></tr>
+                    <tr><th scope="row" data-label="Command"><code>break &lt;function&gt;</code></th><td data-label="What it does"><span>Breakpoint past the prologue.</span></td></tr>
+                    <tr><th scope="row" data-label="Command"><code>break &lt;file&gt;:&lt;line&gt;</code></th><td data-label="What it does"><span>Breakpoint on a source line. A line with no code is refused with the nearest lines that have some.</span></td></tr>
+                    <tr><th scope="row" data-label="Command"><code>break *0x401037</code></th><td data-label="What it does"><span>Breakpoint on a raw address.</span></td></tr>
+                    <tr><th scope="row" data-label="Command"><code>run</code>, <code>continue</code>, <code>kill</code>, <code>quit</code></th><td data-label="What it does"><span>Start the inferior, resume it, stop it, leave.</span></td></tr>
+                    <tr><th scope="row" data-label="Command"><code>step</code></th><td data-label="What it does"><span>One source line, entering a function that has one.</span></td></tr>
+                    <tr><th scope="row" data-label="Command"><code>finish</code></th><td data-label="What it does"><span>Runs to return and reports the value.</span></td></tr>
+                    <tr><th scope="row" data-label="Command"><code>bt</code></th><td data-label="What it does"><span>Backtrace, unwound from <code>.eh_frame</code>.</span></td></tr>
+                    <tr><th scope="row" data-label="Command"><code>info args</code></th><td data-label="What it does"><span>Names the current frame's parameters. See the refusal below.</span></td></tr>
+                    <tr><th scope="row" data-label="Command"><code>info line</code>, <code>info breakpoints</code></th><td data-label="What it does"><span>The line for the current address, and the breakpoint table.</span></td></tr>
+                    <tr><th scope="row" data-label="Command"><code>delete &lt;n&gt;</code></th><td data-label="What it does"><span>Removes a breakpoint by number.</span></td></tr>
+                </tbody>
+            </table>
+
+            <h2 id="works">What it reads</h2>
+            <p><code>.debug_info</code>, <code>.debug_abbrev</code>, <code>.debug_line</code> and <code>.debug_str</code> are parsed from scratch: DWARF 2 through 5 for <code>.debug_info</code> and <code>.debug_line</code>, in both the 32- and 64-bit unit formats. <code>.eh_frame</code> CFI is interpreted far enough to unwind x86_64, covering the <code>DW_EH_PE</code> pointer encodings, the non-expression call-frame opcodes and <code>remember_state</code>/<code>restore_state</code>.</p>
+            <p>Backtraces are CFI-driven and stay correct through recursion. <code>finish</code> reads the return value through the subprogram's <code>DW_AT_type</code>: integers sign- or zero-extended by the declared byte size, <code>bool</code>, pointers, and <code>f32</code>/<code>f64</code> out of <code>xmm0</code>. Both PIE and non-PIE images work, with the load bias taken from <code>/proc/&lt;pid&gt;/maps</code>.</p>
+
+            <h2 id="refuses">What it refuses</h2>
+            <div class="lmn-doc-table">
+                <p><strong>A parameter with no recorded location</strong><span><code>info args</code> names the parameter and reports <code>&lt;unavailable&gt;</code>, because Lamina emits no <code>DW_AT_location</code> today and a guessed location would be a silent wrong answer.</span></p>
+                <p><strong>A line with no code</strong><span><code>break recursive_factorial.lamina:1</code> answers <code>Not in the debug info: recursive_factorial.lamina:1 has no code. The nearest lines that do: 4, 8, 11, 12, 13</code> rather than moving the breakpoint somewhere else.</span></p>
+                <p><strong>A form or opcode it cannot read</strong><span>An unreadable <code>DW_FORM</code> is reported by its code. A <code>DW_CFA_def_cfa_expression</code> reports that ldb has no DWARF expression evaluator. Neither is skipped.</span></p>
+            </div>
+
+            <h2 id="not-here">What is not here yet</h2>
+            <p>No <code>next</code>, no <code>up</code>/<code>down</code>/<code>frame</code>, no <code>list</code>, no watchpoints, no conditional or temporary breakpoints, no <code>print</code> of an expression, no reading of locals or globals, no disassembler, no signal-handling policy, no multi-threaded or multi-process inferiors, no core files and no <code>attach</code>. There is no remote protocol: ldb forks the program under <code>PTRACE_TRACEME</code> and drives it with <code>PTRACE_PEEKDATA</code>/<code>POKEDATA</code>, <code>PTRACE_GETREGS</code> and <code>waitpid</code>.</p>
+            <p>There is no DWARF expression evaluator, which <code>DW_AT_location</code> will need before <code>info args</code> can print a value. <code>.debug_ranges</code> and <code>.debug_rnglists</code> are not read, so a function split into non-contiguous ranges is not found. There is no <code>.debug_lamina</code> section yet; nothing is read before it is written and nothing is written before something reads it.</p>
+
+            <div class="lmn-manual-next"><span>Related</span><a href="/docs/cli">Build with <code>-g</code></a></div>
+        </article>
+    </div>
+</main>

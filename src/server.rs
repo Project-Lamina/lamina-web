@@ -163,6 +163,7 @@ mod tests {
         "/docs/abi",
         "/docs/ras",
         "/docs/weld",
+        "/docs/ldb",
         "/docs/c-bindings",
         "/docs/c-bindings/install",
         "/docs/c-bindings/usage",

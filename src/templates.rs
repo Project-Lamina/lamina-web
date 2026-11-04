@@ -39,6 +39,7 @@ impl TemplateEngine {
             "docs_abi.html",
             "docs_ras.html",
             "docs_weld.html",
+            "docs_ldb.html",
             "docs_c_bindings.html",
             "docs_c_bindings_install.html",
             "docs_c_bindings_usage.html",

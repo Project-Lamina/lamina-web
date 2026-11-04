@@ -199,6 +199,12 @@ pub async fn docs_page(
             "Install weld and use it in place of ld, lld, or mold, with the flags it accepts and the gaps it still has.",
             "weld",
         ),
+        "ldb" => (
+            "docs_ldb.html",
+            "ldb Debugger",
+            "ldb, the debugger: breakpoints, backtraces and return values over ptrace, reading Lamina's DWARF with its own parser.",
+            "ldb",
+        ),
         "c-bindings" => (
             "docs_c_bindings.html",
             "C Bindings Development SDK",
